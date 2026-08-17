@@ -1,13 +1,15 @@
 --[[
-    NOVA HUB - STUDIO EDITION
+    NOVA HUB - STUDIO EDITION v2.0
     LocalScript
     StarterPlayer > StarterPlayerScripts
 
-    VERSÃO PROFISSIONAL
-    • Interface moderna e organizada
-    • Sistema de cores avançado com preview
+    MELHORIAS:
+    • Interface moderna e profissional
+    • Sistema de cores avançado centralizado
+    • Dropdown com bordas corrigidas
+    • Botão de maximizar elegante
+    • Linhas com bordas arredondadas
     • Animações suaves
-    • Detalhes visuais aprimorados
 ]]
 
 ------------------------------------------------------------
@@ -176,13 +178,16 @@ HeaderBottomFix.BackgroundColor3 = Color3.fromRGB(20,21,27)
 HeaderBottomFix.BorderSizePixel = 0
 HeaderBottomFix.Parent = Header
 
--- Linha separadora
 local HeaderLine = Instance.new("Frame")
 HeaderLine.Size = UDim2.new(1,0,0,1)
 HeaderLine.Position = UDim2.new(0,0,1,0)
 HeaderLine.BackgroundColor3 = Color3.fromRGB(40,42,52)
 HeaderLine.BorderSizePixel = 0
 HeaderLine.Parent = Header
+
+local HeaderLineCorner = Instance.new("UICorner")
+HeaderLineCorner.CornerRadius = UDim.new(1,0)
+HeaderLineCorner.Parent = HeaderLine
 
 local Logo = Instance.new("TextLabel")
 Logo.Size = UDim2.fromOffset(34,34)
@@ -255,7 +260,6 @@ Close.Parent = Header
 Instance.new("UICorner",Minimize).CornerRadius = UDim.new(0,7)
 Instance.new("UICorner",Close).CornerRadius = UDim.new(0,7)
 
--- Hover effects
 Minimize.MouseEnter:Connect(function()
     Tween(Minimize,{BackgroundColor3 = HoverColor(), TextColor3 = Color3.new(1,1,1)})
 end)
@@ -291,7 +295,6 @@ SidebarTopFix.BackgroundColor3 = Color3.fromRGB(18,19,24)
 SidebarTopFix.BorderSizePixel = 0
 SidebarTopFix.Parent = Sidebar
 
--- Linha separadora vertical
 local SidebarLine = Instance.new("Frame")
 SidebarLine.Size = UDim2.new(0,1,1,0)
 SidebarLine.Position = UDim2.new(1,0,0,0)
@@ -370,6 +373,10 @@ PageLine.Position = UDim2.fromOffset(14,36)
 PageLine.BackgroundColor3 = Color3.fromRGB(40,42,52)
 PageLine.BorderSizePixel = 0
 PageLine.Parent = Content
+
+local PageLineCorner = Instance.new("UICorner")
+PageLineCorner.CornerRadius = UDim.new(1,0)
+PageLineCorner.Parent = PageLine
 
 local Scroll = Instance.new("ScrollingFrame")
 Scroll.Size = UDim2.new(1,-24,1,-50)
@@ -461,7 +468,7 @@ local function RefreshToggleAccent()
 end
 
 ------------------------------------------------------------
--- TOGGLE MELHORADO
+-- TOGGLE
 ------------------------------------------------------------
 
 local function Toggle(Parent, Title, Description, Initial, Callback)
@@ -563,7 +570,7 @@ local function Toggle(Parent, Title, Description, Initial, Callback)
 end
 
 ------------------------------------------------------------
--- SLIDER MELHORADO
+-- SLIDER
 ------------------------------------------------------------
 
 local function Slider(Parent, Title, Min, Max, Value, Callback, Format)
@@ -690,7 +697,7 @@ local function Slider(Parent, Title, Min, Max, Value, Callback, Format)
 end
 
 ------------------------------------------------------------
--- DROPDOWN MELHORADO
+-- DROPDOWN (CORRIGIDO)
 ------------------------------------------------------------
 
 local function Dropdown(Parent, Title, Options, Current, Callback)
@@ -734,7 +741,7 @@ local function Dropdown(Parent, Title, Options, Current, Callback)
 
     local ButtonCorner = Instance.new("UICorner")
     ButtonCorner.CornerRadius = UDim.new(0,7)
-    ButtonCorner.Parent = Row
+    ButtonCorner.Parent = Button
 
     Button.MouseEnter:Connect(function()
         Tween(Button,{BackgroundColor3 = HoverColor()})
@@ -813,7 +820,7 @@ local function Dropdown(Parent, Title, Options, Current, Callback)
 end
 
 ------------------------------------------------------------
--- COLOR PICKER AVANÇADO
+-- COLOR PICKER AVANÇADO (CENTRALIZADO COM BOTÃO X)
 ------------------------------------------------------------
 
 local function ColorPicker(Parent, Title, Current, Callback)
@@ -876,70 +883,135 @@ local function ColorPicker(Parent, Title, Current, Callback)
         {"Amarelo", Color3.fromRGB(255,210,70)},
         {"Laranja", Color3.fromRGB(255,150,50)},
         {"Ciano", Color3.fromRGB(60,220,255)},
-        {"Rosa", Color3.fromRGB(255,100,200)}
+        {"Rosa", Color3.fromRGB(255,100,200)},
+        {"Cinza", Color3.fromRGB(150,150,160)},
+        {"Marrom", Color3.fromRGB(139,69,19)}
     }
 
     Preview.MouseButton1Click:Connect(function()
         ClosePopup()
 
+        local Overlay = Instance.new("Frame")
+        Overlay.Size = UDim2.fromScale(1,1)
+        Overlay.BackgroundColor3 = Color3.fromRGB(0,0,0)
+        Overlay.BackgroundTransparency = 0.5
+        Overlay.ZIndex = 998
+        Overlay.Parent = PopupLayer
+
         local Popup = Instance.new("Frame")
-        Popup.Size = UDim2.fromOffset(200, 300)
-        Popup.Position = UDim2.fromOffset(
-            Row.AbsolutePosition.X + Row.AbsoluteSize.X - 210,
-            Row.AbsolutePosition.Y + Row.AbsoluteSize.Y + 3
-        )
+        Popup.Size = UDim2.fromOffset(260, 340)
+        Popup.Position = UDim2.new(0.5, -130, 0.5, -170)
         Popup.BackgroundColor3 = Color3.fromRGB(28,30,38)
         Popup.BorderSizePixel = 0
-        Popup.ZIndex = 1000
+        Popup.ZIndex = 999
         Popup.Parent = PopupLayer
 
         ActivePopup = Popup
 
         local PopupCorner = Instance.new("UICorner")
-        PopupCorner.CornerRadius = UDim.new(0,10)
+        PopupCorner.CornerRadius = UDim.new(0,14)
         PopupCorner.Parent = Popup
 
         local PopupStroke = Instance.new("UIStroke")
-        PopupStroke.Color = Color3.fromRGB(50,52,63)
-        PopupStroke.Thickness = 1
+        PopupStroke.Color = Color3.fromRGB(60,62,73)
+        PopupStroke.Thickness = 2
         PopupStroke.Parent = Popup
 
-        -- Título
+        local PopupShadow = Instance.new("UIStroke")
+        PopupShadow.Color = Color3.fromRGB(0,0,0)
+        PopupShadow.Thickness = 4
+        PopupShadow.Transparency = 0.6
+        PopupShadow.Parent = Popup
+
+        local CloseButton = Instance.new("TextButton")
+        CloseButton.Size = UDim2.fromOffset(30,30)
+        CloseButton.Position = UDim2.new(1,-35,0,5)
+        CloseButton.BackgroundColor3 = Color3.fromRGB(40,42,52)
+        CloseButton.Text = "×"
+        CloseButton.TextColor3 = Color3.fromRGB(200,200,210)
+        CloseButton.TextSize = 16
+        CloseButton.Font = Enum.Font.GothamBold
+        CloseButton.AutoButtonColor = false
+        CloseButton.ZIndex = 1000
+        CloseButton.Parent = Popup
+
+        local CloseCorner = Instance.new("UICorner")
+        CloseCorner.CornerRadius = UDim.new(0,8)
+        CloseCorner.Parent = CloseButton
+
+        CloseButton.MouseEnter:Connect(function()
+            Tween(CloseButton,{
+                BackgroundColor3 = Color3.fromRGB(200,60,60),
+                TextColor3 = Color3.new(1,1,1)
+            })
+        end)
+
+        CloseButton.MouseLeave:Connect(function()
+            Tween(CloseButton,{
+                BackgroundColor3 = Color3.fromRGB(40,42,52),
+                TextColor3 = Color3.fromRGB(200,200,210)
+            })
+        end)
+
+        CloseButton.MouseButton1Click:Connect(function()
+            ClosePopup()
+            Overlay:Destroy()
+        end)
+
+        Overlay.InputBegan:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                ClosePopup()
+                Overlay:Destroy()
+            end
+        end)
+
         local PopupTitle = Instance.new("TextLabel")
-        PopupTitle.Size = UDim2.new(1,0,0,30)
-        PopupTitle.Position = UDim2.fromOffset(0,5)
+        PopupTitle.Size = UDim2.new(1,-50,0,30)
+        PopupTitle.Position = UDim2.fromOffset(15,8)
         PopupTitle.BackgroundTransparency = 1
-        PopupTitle.Text = "Selecionar Cor"
+        PopupTitle.Text = "🎨 Selecionar Cor"
         PopupTitle.TextColor3 = Color3.new(1,1,1)
-        PopupTitle.TextSize = 11
+        PopupTitle.TextSize = 13
         PopupTitle.Font = Enum.Font.GothamBold
-        PopupTitle.ZIndex = 1001
+        PopupTitle.TextXAlignment = Enum.TextXAlignment.Left
+        PopupTitle.ZIndex = 1000
         PopupTitle.Parent = Popup
 
-        -- Grid de cores
+        local TitleLine = Instance.new("Frame")
+        TitleLine.Size = UDim2.new(1,-30,0,1)
+        TitleLine.Position = UDim2.fromOffset(15,40)
+        TitleLine.BackgroundColor3 = Color3.fromRGB(50,52,63)
+        TitleLine.BorderSizePixel = 0
+        TitleLine.ZIndex = 1000
+        TitleLine.Parent = Popup
+
+        local TitleLineCorner = Instance.new("UICorner")
+        TitleLineCorner.CornerRadius = UDim.new(1,0)
+        TitleLineCorner.Parent = TitleLine
+
         local Grid = Instance.new("Frame")
-        Grid.Size = UDim2.new(1,-20,0,250)
-        Grid.Position = UDim2.fromOffset(10,40)
+        Grid.Size = UDim2.new(1,-30,0,270)
+        Grid.Position = UDim2.fromOffset(15,55)
         Grid.BackgroundTransparency = 1
-        Grid.ZIndex = 1001
+        Grid.ZIndex = 1000
         Grid.Parent = Popup
 
         local GridLayout = Instance.new("UIGridLayout")
-        GridLayout.CellSize = UDim2.fromOffset(42,42)
-        GridLayout.CellPadding = UDim2.fromOffset(5,5)
+        GridLayout.CellSize = UDim2.fromOffset(50,50)
+        GridLayout.CellPadding = UDim2.fromOffset(8,8)
         GridLayout.FillDirectionMaxCells = 4
         GridLayout.Parent = Grid
 
         for Index,Data in ipairs(Colors) do
             local ColorButton = Instance.new("TextButton")
-            ColorButton.Size = UDim2.fromOffset(42,42)
+            ColorButton.Size = UDim2.fromOffset(50,50)
             ColorButton.BackgroundColor3 = Data[2]
             ColorButton.Text = ""
-            ColorButton.ZIndex = 1002
+            ColorButton.ZIndex = 1001
             ColorButton.Parent = Grid
 
             local ColorCorner = Instance.new("UICorner")
-            ColorCorner.CornerRadius = UDim.new(0,6)
+            ColorCorner.CornerRadius = UDim.new(0,8)
             ColorCorner.Parent = ColorButton
 
             local ColorStroke = Instance.new("UIStroke")
@@ -948,9 +1020,15 @@ local function ColorPicker(Parent, Title, Current, Callback)
             ColorStroke.Transparency = 0.3
             ColorStroke.Parent = ColorButton
 
-            -- Tooltip com nome da cor
+            if Data[2] == Current then
+                local SelectedIndicator = Instance.new("UIStroke")
+                SelectedIndicator.Color = Accent()
+                SelectedIndicator.Thickness = 3
+                SelectedIndicator.Parent = ColorButton
+            end
+
             local Tooltip = Instance.new("TextLabel")
-            Tooltip.Size = UDim2.new(1,0,0,18)
+            Tooltip.Size = UDim2.new(1,0,0,16)
             Tooltip.Position = UDim2.new(0,0,1,2)
             Tooltip.BackgroundTransparency = 1
             Tooltip.Text = Data[1]
@@ -958,16 +1036,16 @@ local function ColorPicker(Parent, Title, Current, Callback)
             Tooltip.TextSize = 7
             Tooltip.Font = Enum.Font.GothamMedium
             Tooltip.Visible = false
-            Tooltip.ZIndex = 1003
+            Tooltip.ZIndex = 1002
             Tooltip.Parent = ColorButton
 
             ColorButton.MouseEnter:Connect(function()
-                Tween(ColorButton,{Size = UDim2.fromOffset(46,46)})
+                Tween(ColorButton,{Size = UDim2.fromOffset(55,55)})
                 Tooltip.Visible = true
             end)
 
             ColorButton.MouseLeave:Connect(function()
-                Tween(ColorButton,{Size = UDim2.fromOffset(42,42)})
+                Tween(ColorButton,{Size = UDim2.fromOffset(50,50)})
                 Tooltip.Visible = false
             end)
 
@@ -975,6 +1053,7 @@ local function ColorPicker(Parent, Title, Current, Callback)
                 Current = Data[2]
                 Preview.BackgroundColor3 = Current
                 ClosePopup()
+                Overlay:Destroy()
 
                 if Callback then
                     Callback(Current)
@@ -2063,22 +2142,36 @@ UserInputService.InputEnded:Connect(function(Input)
 end)
 
 ------------------------------------------------------------
--- MINIMIZE/MAXIMIZE
+-- MINIMIZE/MAXIMIZE (ELEGANTE)
 ------------------------------------------------------------
 
 local Mini = Instance.new("TextButton")
-Mini.Size = UDim2.fromOffset(46,46)
-Mini.Position = UDim2.new(0,18,.5,-23)
+Mini.Size = UDim2.fromOffset(50,50)
+Mini.Position = UDim2.new(0,15,.5,-25)
 Mini.BackgroundColor3 = Accent()
 Mini.Text = "N"
 Mini.TextColor3 = Color3.new(1,1,1)
-Mini.TextSize = 16
+Mini.TextSize = 17
 Mini.Font = Enum.Font.GothamBold
 Mini.Visible = false
 Mini.AutoButtonColor = false
 Mini.Parent = Gui
 
-Instance.new("UICorner",Mini).CornerRadius = UDim.new(1,0)
+local MiniCorner = Instance.new("UICorner")
+MiniCorner.CornerRadius = UDim.new(0,12)
+MiniCorner.Parent = Mini
+
+local MiniShadow = Instance.new("UIStroke")
+MiniShadow.Color = Color3.fromRGB(0,0,0)
+MiniShadow.Thickness = 2
+MiniShadow.Transparency = 0.5
+MiniShadow.Parent = Mini
+
+local MiniGlow = Instance.new("UIStroke")
+MiniGlow.Color = Color3.fromRGB(255,255,255)
+MiniGlow.Thickness = 1
+MiniGlow.Transparency = 0.7
+MiniGlow.Parent = Mini
 
 local function MinimizeHub()
     ClosePopup()
@@ -2090,9 +2183,9 @@ local function MinimizeHub()
     Mini.Visible = true
     Mini.Size = UDim2.fromOffset(0,0)
     Mini.AnchorPoint = Vector2.new(0.5, 0.5)
-    Mini.Position = UDim2.new(0, 18, 0.5, -23)
+    Mini.Position = UDim2.new(0, 15, 0.5, -25)
 
-    Tween(Mini, {Size = UDim2.fromOffset(46, 46)}, TweenBounce)
+    Tween(Mini, {Size = UDim2.fromOffset(50, 50)}, TweenBounce)
 
     Main.Size = UDim2.fromOffset(380, 320)
     Main.Position = UDim2.new(0.5, -190, 0.5, -160)
@@ -2101,6 +2194,14 @@ end
 
 Minimize.MouseButton1Click:Connect(MinimizeHub)
 Close.MouseButton1Click:Connect(MinimizeHub)
+
+Mini.MouseEnter:Connect(function()
+    Tween(Mini,{Size = UDim2.fromOffset(55,55)})
+end)
+
+Mini.MouseLeave:Connect(function()
+    Tween(Mini,{Size = UDim2.fromOffset(50,50)})
+end)
 
 Mini.MouseButton1Click:Connect(function()
     Mini.Visible = false
