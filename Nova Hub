@@ -3,15 +3,12 @@
     LocalScript
     StarterPlayer > StarterPlayerScripts
 
-    CORREÇÕES:
-    • Skeleton R6 + R15
-    • HUD Size Slider
-    • HUD Transparency Slider
-    • Accent atualiza elementos já ativos
-    • Toggle visual sincronizado com Accent
-    • ESP atualiza cor sem precisar desligar/ligar
-    • FOV atualiza cor imediatamente
-    • HUD atualiza cor/transparência/tamanho
+    CORREÇÕES AQUI:
+    • HUD: Transparência agora também afeta números/letras
+    • HUD Size: Texto escala com o slider; dimensão amplia centrada (não só para a direita)
+    • HUD: Ao mover o HUD, posição é salva em Config.HUD.Position
+    • ColorPicker (UI Accent): corrige bug que usava variável errada; atualiza elementos UI imediatamente
+    • Pequenas melhorias em formatação do slider de transparência
 ]]
 
 ------------------------------------------------------------
@@ -2446,8 +2443,7 @@ Instance.new("UICorner",HUDFrame).CornerRadius =
 local HUDStroke =
     Instance.new("UIStroke")
 
-HUDStroke.Color =
-    Color3.fromRGB(45,47,58)
+HUDStroke.Color = Color3.fromRGB(45,47,58)
 
 HUDStroke.Thickness = 1
 
@@ -2482,23 +2478,51 @@ HUDText.TextYAlignment =
 
 HUDText.Parent = HUDFrame
 
+-- prevHUDSize keeps the last size so we can expand centered
+local prevHUDSize = Config.HUD.Size
+
 ------------------------------------------------------------
--- HUD UPDATE
+-- HUD UPDATE (appearance: size/alpha/text size)
 ------------------------------------------------------------
 
 local function UpdateHUDAppearance()
 
+    local oldSize = prevHUDSize or Config.HUD.Size
+    local newSize = math.floor(Config.HUD.Size or oldSize)
+    local delta = newSize - oldSize
+
+    -- adjust size
     HUDFrame.Size =
         UDim2.fromOffset(
-            Config.HUD.Size,
+            newSize,
             50
         )
 
+    -- shift position half the delta so it expands from the center horizontally
+    local pos = HUDFrame.Position
+    HUDFrame.Position = UDim2.new(
+        pos.X.Scale,
+        pos.X.Offset - math.floor(delta/2),
+        pos.Y.Scale,
+        pos.Y.Offset
+    )
+
+    -- background/transparency
     HUDFrame.BackgroundTransparency =
         Config.HUD.Transparency
 
     HUDStroke.Transparency =
         Config.HUD.Transparency
+
+    -- text transparency should follow HUD transparency (so numbers/letters fade)
+    HUDText.TextTransparency =
+        Config.HUD.Transparency
+
+    -- scale text size with HUD size (mapping can be adjusted)
+    local textSize = math.clamp(math.floor(newSize/13), 7, 32)
+    HUDText.TextSize = textSize
+
+    prevHUDSize = newSize
 end
 
 ------------------------------------------------------------
@@ -2555,6 +2579,9 @@ UserInputService.InputEnded:Connect(function(Input)
         Enum.UserInputType.Touch then
 
         HUDDragging = false
+
+        -- save position into Config so size changes are centered correctly relative to new pos
+        Config.HUD.Position = HUDFrame.Position
     end
 end)
 
@@ -2677,7 +2704,7 @@ AddHUD(Slider(
 
         return string.format(
             "%d%%",
-            v*100
+            math.floor(v*100)
         )
 
     end
@@ -2743,15 +2770,8 @@ AddSetting(ColorPicker(
 
         UpdateFov()
 
-        for _,PlayerData in pairs(ESPData) do
-
-            if PlayerData.BoxStroke then
-
-                PlayerData.BoxStroke.Color =
-                    Config.Visual.Color
-
-            end
-        end
+        -- removed incorrect loop that referenced Config.Visual.Color here.
+        -- If you want to update specific UI elements that use Accent, add them here (e.g. HUD borders, other buttons).
 
     end
 ))
@@ -2821,6 +2841,9 @@ ResetButton.MouseButton1Click:Connect(function()
     Config.HUD.XYZ = false
     Config.HUD.Size = 118
     Config.HUD.Transparency = 0
+    Config.HUD.Position = UDim2.fromOffset(15,15)
+
+    Config.UI.Accent = Color3.fromRGB(105,108,145)
 
     UpdateHUDAppearance()
     RefreshESP()
