@@ -10,6 +10,7 @@
     • ColorPicker (UI Accent): corrige bug que usava variável errada; atualiza elementos UI imediatamente
     • Animações de minimizar/maximizar sincronizadas (sem delay)
     • Bordas arredondadas em todo o painel
+    • Skeleton ESP: Corrigido bug de linhas presas na tela quando teleporta
 ]]
 
 ------------------------------------------------------------
@@ -191,7 +192,6 @@ Main.BackgroundColor3 = DarkColor()
 Main.BorderSizePixel = 0
 Main.Parent = Gui
 
--- Borda arredondada maior e uniforme
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0,16)
 MainCorner.Parent = Main
@@ -201,7 +201,6 @@ MainStroke.Color = Color3.fromRGB(45,47,58)
 MainStroke.Thickness = 1
 MainStroke.Parent = Main
 
--- Aplicar borda arredondada no stroke também
 local StrokeCorner = Instance.new("UICorner")
 StrokeCorner.CornerRadius = UDim.new(0,16)
 StrokeCorner.Parent = MainStroke
@@ -216,12 +215,10 @@ Header.BackgroundColor3 = Color3.fromRGB(19,20,26)
 Header.BorderSizePixel = 0
 Header.Parent = Main
 
--- Borda arredondada no topo do header
 local HeaderCorner = Instance.new("UICorner")
 HeaderCorner.CornerRadius = UDim.new(0,16)
 HeaderCorner.Parent = Header
 
--- Corrigir cantos inferiores do header (devem ser retos)
 local HeaderBottomFix = Instance.new("Frame")
 HeaderBottomFix.Size = UDim2.new(1,0,0,16)
 HeaderBottomFix.Position = UDim2.new(0,0,1,-16)
@@ -307,12 +304,10 @@ Sidebar.BackgroundColor3 = Color3.fromRGB(17,18,23)
 Sidebar.BorderSizePixel = 0
 Sidebar.Parent = Main
 
--- Borda arredondada no canto inferior esquerdo
 local SidebarCorner = Instance.new("UICorner")
 SidebarCorner.CornerRadius = UDim.new(0,16)
 SidebarCorner.Parent = Sidebar
 
--- Corrigir cantos superiores do sidebar (devem ser retos)
 local SidebarTopFix = Instance.new("Frame")
 SidebarTopFix.Size = UDim2.new(1,0,0,16)
 SidebarTopFix.Position = UDim2.new(0,0,0,0)
@@ -1345,6 +1340,22 @@ local function RemoveESP(Player)
     ESPData[Player] = nil
 end
 
+-- Função para limpar skeleton quando teleporta
+local function CleanupSkeleton(Player)
+
+    local Data = ESPData[Player]
+
+    if not Data or not Data.Skeleton then
+        return
+    end
+
+    for _,Bone in pairs(Data.Skeleton) do
+        if Bone.Line then
+            Bone.Line.Visible = false
+        end
+    end
+end
+
 local ESPGui = Instance.new("ScreenGui")
 ESPGui.Name = "NovaESP"
 ESPGui.ResetOnSpawn = false
@@ -1371,7 +1382,37 @@ end
 
 local function UpdateLine(Line,A,B)
 
+    -- Verificar se os pontos são válidos
+    if not A or not B then
+        if Line then
+            Line.Visible = false
+        end
+        return
+    end
+
+    -- Verificar se os pontos estão dentro da tela
+    local ScreenSize = Camera.ViewportSize
+    
+    if A.X < -100 or A.X > ScreenSize.X + 100
+        or A.Y < -100 or A.Y > ScreenSize.Y + 100
+        or B.X < -100 or B.X > ScreenSize.X + 100
+        or B.Y < -100 or B.Y > ScreenSize.Y + 100 then
+        
+        if Line then
+            Line.Visible = false
+        end
+        return
+    end
+
     local Delta = B-A
+
+    -- Verificar se a linha é muito grande (indica teleporte)
+    if Delta.Magnitude > 1000 then
+        if Line then
+            Line.Visible = false
+        end
+        return
+    end
 
     Line.Position =
         UDim2.fromOffset(
@@ -2121,7 +2162,7 @@ local function WorldToScreen(Position)
 end
 
 ------------------------------------------------------------
--- ESP RENDER
+-- ESP RENDER (CORRIGIDO)
 ------------------------------------------------------------
 
 RunService.RenderStepped:Connect(function()
@@ -2352,7 +2393,7 @@ RunService.RenderStepped:Connect(function()
         end
 
         ----------------------------------------------------
-        -- SKELETON
+        -- SKELETON (CORRIGIDO)
         ----------------------------------------------------
 
         if Data.Skeleton then
@@ -2374,6 +2415,13 @@ RunService.RenderStepped:Connect(function()
 
                 if A and B then
 
+                    -- Verificar se as partes ainda estão no mesmo personagem
+                    if A.Parent ~= Character or B.Parent ~= Character then
+                        Bone.Line.Visible = false
+                        continue
+                    end
+
+                    -- Verificar se as partes estão visíveis na câmera
                     local AP,AV =
                         WorldToScreen(
                             A.Position
@@ -2384,16 +2432,24 @@ RunService.RenderStepped:Connect(function()
                             B.Position
                         )
 
+                    -- Verificar se ambos os pontos estão na frente da câmera
                     if AV and BV then
 
-                        Bone.Line.BackgroundColor3 =
-                            Config.Visual.Color
+                        -- Verificar se a distância entre os pontos é razoável
+                        local ScreenDistance = (AP - BP).Magnitude
+                        
+                        if ScreenDistance < 500 then -- Evita linhas gigantes quando teleporta
+                            Bone.Line.BackgroundColor3 =
+                                Config.Visual.Color
 
-                        UpdateLine(
-                            Bone.Line,
-                            AP,
-                            BP
-                        )
+                            UpdateLine(
+                                Bone.Line,
+                                AP,
+                                BP
+                            )
+                        else
+                            Bone.Line.Visible = false
+                        end
 
                     else
 
@@ -3250,7 +3306,7 @@ RunService.RenderStepped:Connect(function(DT)
 end)
 
 ------------------------------------------------------------
--- PLAYER EVENTS
+-- PLAYER EVENTS (COM DETECÇÃO DE TELEPORTE)
 ------------------------------------------------------------
 
 local function SetupPlayer(Player)
@@ -3259,7 +3315,10 @@ local function SetupPlayer(Player)
         return
     end
 
+    -- Quando o personagem muda, limpa o skeleton antigo
     Player.CharacterAdded:Connect(function()
+
+        CleanupSkeleton(Player) -- Limpa skeleton antigo
 
         task.wait(.3)
 
@@ -3267,6 +3326,39 @@ local function SetupPlayer(Player)
             CreateESP(Player)
         end
 
+    end)
+
+    -- Detectar teleporte (mudança rápida de posição)
+    local LastPosition = nil
+    
+    Player:GetPropertyChangedSignal("Character"):Connect(function()
+        LastPosition = nil
+        CleanupSkeleton(Player)
+    end)
+    
+    -- Verificar teleporte periodicamente
+    task.spawn(function()
+        while Player.Parent do
+            if Player.Character then
+                local Root = Player.Character:FindFirstChild("HumanoidRootPart")
+                if Root then
+                    local CurrentPosition = Root.Position
+                    
+                    if LastPosition then
+                        local Distance = (CurrentPosition - LastPosition).Magnitude
+                        
+                        -- Se moveu mais de 100 studs rapidamente, é teleporte
+                        if Distance > 100 then
+                            CleanupSkeleton(Player)
+                        end
+                    end
+                    
+                    LastPosition = CurrentPosition
+                end
+            end
+            
+            task.wait(0.5) -- Verifica a cada 0.5 segundos
+        end
     end)
 
     Player:GetPropertyChangedSignal(
