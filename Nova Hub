@@ -8,7 +8,7 @@
     • Sistema de cores avançado centralizado
     • Dropdown com bordas corrigidas
     • Botão de maximizar elegante
-    • Linhas com bordas arredondadas
+    • Linhas com bordas arredondadas (formato pílula)
     • Animações suaves
 ]]
 
@@ -178,9 +178,10 @@ HeaderBottomFix.BackgroundColor3 = Color3.fromRGB(20,21,27)
 HeaderBottomFix.BorderSizePixel = 0
 HeaderBottomFix.Parent = Header
 
+-- Linha separadora do header com bordas arredondadas (formato pílula)
 local HeaderLine = Instance.new("Frame")
-HeaderLine.Size = UDim2.new(1,0,0,1)
-HeaderLine.Position = UDim2.new(0,0,1,0)
+HeaderLine.Size = UDim2.new(1,0,0,2)
+HeaderLine.Position = UDim2.new(0,0,1,-1)
 HeaderLine.BackgroundColor3 = Color3.fromRGB(40,42,52)
 HeaderLine.BorderSizePixel = 0
 HeaderLine.Parent = Header
@@ -295,12 +296,17 @@ SidebarTopFix.BackgroundColor3 = Color3.fromRGB(18,19,24)
 SidebarTopFix.BorderSizePixel = 0
 SidebarTopFix.Parent = Sidebar
 
+-- Linha vertical do sidebar com bordas arredondadas
 local SidebarLine = Instance.new("Frame")
-SidebarLine.Size = UDim2.new(0,1,1,0)
-SidebarLine.Position = UDim2.new(1,0,0,0)
+SidebarLine.Size = UDim2.new(0,2,1,0)
+SidebarLine.Position = UDim2.new(1,-1,0,0)
 SidebarLine.BackgroundColor3 = Color3.fromRGB(40,42,52)
 SidebarLine.BorderSizePixel = 0
 SidebarLine.Parent = Sidebar
+
+local SidebarLineCorner = Instance.new("UICorner")
+SidebarLineCorner.CornerRadius = UDim.new(1,0)
+SidebarLineCorner.Parent = SidebarLine
 
 local ActiveTab = nil
 
@@ -367,9 +373,10 @@ PageTitle.Font = Enum.Font.GothamBold
 PageTitle.TextXAlignment = Enum.TextXAlignment.Left
 PageTitle.Parent = Content
 
+-- Linha separadora com bordas arredondadas (formato pílula)
 local PageLine = Instance.new("Frame")
-PageLine.Size = UDim2.new(1,-28,0,1)
-PageLine.Position = UDim2.fromOffset(14,36)
+PageLine.Size = UDim2.new(1,-28,0,3)
+PageLine.Position = UDim2.fromOffset(14,35)
 PageLine.BackgroundColor3 = Color3.fromRGB(40,42,52)
 PageLine.BorderSizePixel = 0
 PageLine.Parent = Content
@@ -977,8 +984,9 @@ local function ColorPicker(Parent, Title, Current, Callback)
         PopupTitle.ZIndex = 1000
         PopupTitle.Parent = Popup
 
+        -- Linha separadora do popup com bordas arredondadas
         local TitleLine = Instance.new("Frame")
-        TitleLine.Size = UDim2.new(1,-30,0,1)
+        TitleLine.Size = UDim2.new(1,-30,0,2)
         TitleLine.Position = UDim2.fromOffset(15,40)
         TitleLine.BackgroundColor3 = Color3.fromRGB(50,52,63)
         TitleLine.BorderSizePixel = 0
