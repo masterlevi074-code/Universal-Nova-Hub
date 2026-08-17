@@ -10,7 +10,7 @@
     • ColorPicker (UI Accent): corrige bug que usava variável errada; atualiza elementos UI imediatamente
     • Animações de minimizar/maximizar sincronizadas (sem delay)
     • Bordas arredondadas em todo o painel
-    • Skeleton ESP: Botão RESET ao lado do toggle
+    • Skeleton ESP: Botão RESET funcional ao lado do toggle
 ]]
 
 ------------------------------------------------------------
@@ -1362,17 +1362,20 @@ local function CleanAllSkeletons()
         if Data.Skeleton then
             for _, Bone in pairs(Data.Skeleton) do
                 if Bone.Line then
-                    Bone.Line.Visible = false
+                    Bone.Line:Destroy() -- Destroi a linha completamente
                 end
             end
+            Data.Skeleton = nil -- Remove a referência
         end
     end
 end
 
 -- Função para resetar manualmente todos os skeletons
 local function ResetAllSkeletons()
-    -- Limpa todos os skeletons
-    CleanAllSkeletons()
+    -- Remove todos os ESPs
+    for Player in pairs(ESPData) do
+        RemoveESP(Player)
+    end
     
     -- Recria todos os ESPs se necessário
     if Config.Visual.ESP then
@@ -1406,30 +1409,24 @@ end
 
 local function UpdateLine(Line,A,B)
 
-    -- Se a linha não existe, retorna
     if not Line then
         return
     end
 
-    -- Verificar se os pontos são válidos
     if not A or not B then
         Line.Visible = false
         return
     end
 
-    -- Verificar se os pontos são números válidos
     if typeof(A) ~= "Vector2" or typeof(B) ~= "Vector2" then
         Line.Visible = false
         return
     end
 
-    -- Verificar se os pontos são finitos
     if A.X ~= A.X or A.Y ~= A.Y or B.X ~= B.X or B.Y ~= B.Y then
-        Line.Visible = false
-        return
+        Line.Visible = false        return
     end
 
-    -- Verificar se os pontos estão muito fora da tela
     local ScreenSize = Camera.ViewportSize
     
     if A.X < -500 or A.X > ScreenSize.X + 500
@@ -1443,13 +1440,11 @@ local function UpdateLine(Line,A,B)
 
     local Delta = B - A
 
-    -- Verificar se a linha é muito grande (indica teleporte)
     if Delta.Magnitude > 300 then
         Line.Visible = false
         return
     end
 
-    -- Se chegou aqui, a linha é válida
     Line.Position = UDim2.fromOffset(
         (A.X + B.X) / 2,
         (A.Y + B.Y) / 2
@@ -1554,7 +1549,6 @@ local function CreateESP(Player)
 
     ESPData[Player] = Data
 
-    -- Armazenar posição inicial para detectar teleporte
     Data.LastPosition = Root.Position
 
     --------------------------------------------------------
@@ -1770,73 +1764,74 @@ local function VisualToggle(
     -- Se ShowResetButton for true, adiciona botão RESET ao lado do toggle
     if ShowResetButton then
         
-        -- Encontrar o botão do toggle (último filho do Row)
-        local ToggleButton
+        -- Criar botão RESET pequeno
+        local ResetButton = Instance.new("TextButton")
+        ResetButton.Size = UDim2.fromOffset(45, 18)
+        ResetButton.Position = UDim2.new(1, -98, 0.5, -9)
+        ResetButton.BackgroundColor3 = Color3.fromRGB(40,41,50)
+        ResetButton.Text = "RESET"
+        ResetButton.TextColor3 = Color3.fromRGB(180,180,190)
+        ResetButton.TextSize = 7
+        ResetButton.Font = Enum.Font.GothamBold
+        ResetButton.AutoButtonColor = false
+        ResetButton.ZIndex = 10
+        ResetButton.Parent = Row
+        
+        Instance.new("UICorner",ResetButton).CornerRadius = UDim.new(0,5)
+        
+        -- Efeitos hover no botão RESET
+        ResetButton.MouseEnter:Connect(function()
+            Tween(ResetButton, {
+                BackgroundColor3 = Color3.fromRGB(60,61,70),
+                TextColor3 = Color3.new(1,1,1)
+            })
+        end)
+        
+        ResetButton.MouseLeave:Connect(function()
+            Tween(ResetButton, {
+                BackgroundColor3 = Color3.fromRGB(40,41,50),
+                TextColor3 = Color3.fromRGB(180,180,190)
+            })
+        end)
+        
+        -- Função do botão RESET
+        ResetButton.MouseButton1Click:Connect(function()
+            -- Remove todos os ESPs e recria
+            ResetAllSkeletons()
+            
+            -- Feedback visual
+            Tween(ResetButton, {
+                BackgroundColor3 = Color3.fromRGB(80,81,90),
+                TextColor3 = Color3.new(1,1,1)
+            }, TweenFast)
+            
+            task.delay(0.15, function()
+                if ResetButton.Parent then
+                    Tween(ResetButton, {
+                        BackgroundColor3 = Color3.fromRGB(40,41,50),
+                        TextColor3 = Color3.fromRGB(180,180,190)
+                    }, TweenFast)
+                end
+            end)
+        end)
+        
+        -- Ajustar o toggle para não sobrepor o botão RESET
         for _, Child in ipairs(Row:GetChildren()) do
-            if Child:IsA("TextButton") then
-                ToggleButton = Child
-                break
+            if Child:IsA("TextButton") and Child ~= ResetButton then
+                Child.Size = UDim2.fromOffset(38, 21)
+                Child.Position = UDim2.new(1, -48, 0.5, -10)
             end
         end
         
-        if ToggleButton then
-            -- Criar botão RESET pequeno
-            local ResetButton = Instance.new("TextButton")
-            ResetButton.Size = UDim2.fromOffset(45, 18)
-            ResetButton.Position = UDim2.new(1, -100, 0.5, -9) -- Posiciona à esquerda do toggle
-            ResetButton.BackgroundColor3 = Color3.fromRGB(40,41,50)
-            ResetButton.Text = "RESET"
-            ResetButton.TextColor3 = Color3.fromRGB(180,180,190)
-            ResetButton.TextSize = 7
-            ResetButton.Font = Enum.Font.GothamBold
-            ResetButton.AutoButtonColor = false
-            ResetButton.Parent = Row
-            
-            Instance.new("UICorner",ResetButton).CornerRadius = UDim.new(0,5)
-            
-            -- Ajustar posição do toggle para dar espaço ao botão RESET
-            ToggleButton.Position = UDim2.new(1, -48, 0.5, -10)
-            
-            -- Efeitos hover no botão RESET
-            ResetButton.MouseEnter:Connect(function()
-                Tween(ResetButton, {
-                    BackgroundColor3 = Color3.fromRGB(60,61,70),
-                    TextColor3 = Color3.new(1,1,1)
-                })
-            end)
-            
-            ResetButton.MouseLeave:Connect(function()
-                Tween(ResetButton, {
-                    BackgroundColor3 = Color3.fromRGB(40,41,50),
-                    TextColor3 = Color3.fromRGB(180,180,190)
-                })
-            end)
-            
-            -- Função do botão RESET
-            ResetButton.MouseButton1Click:Connect(function()
-                -- Limpa todos os skeletons
-                CleanAllSkeletons()
-                
-                -- Recria os skeletons se o ESP estiver ativo
-                if Config.Visual.ESP and Config.Visual.Skeleton then
-                    RefreshESP()
+        -- Ajustar textos para não ficarem atrás do botão
+        for _, Child in ipairs(Row:GetChildren()) do
+            if Child:IsA("TextLabel") then
+                if Child.TextSize == 9 then
+                    Child.Size = UDim2.new(1, -110, 0, 17)
+                elseif Child.TextSize == 7 then
+                    Child.Size = UDim2.new(1, -110, 0, 13)
                 end
-                
-                -- Feedback visual
-                Tween(ResetButton, {
-                    BackgroundColor3 = Color3.fromRGB(80,81,90),
-                    TextColor3 = Color3.new(1,1,1)
-                }, TweenFast)
-                
-                task.delay(0.15, function()
-                    if ResetButton.Parent then
-                        Tween(ResetButton, {
-                            BackgroundColor3 = Color3.fromRGB(40,41,50),
-                            TextColor3 = Color3.fromRGB(180,180,190)
-                        }, TweenFast)
-                    end
-                end)
-            end)
+            end
         end
     end
 
@@ -2273,12 +2268,12 @@ local function WorldToScreen(Position)
 end
 
 ------------------------------------------------------------
--- ESP RENDER (CORREÇÃO DEFINITIVA)
+-- ESP RENDER
 ------------------------------------------------------------
 
 RunService.RenderStepped:Connect(function()
 
-    -- Verificar teleporte de todos os jogadores (limpeza preventiva)
+    -- Verificar teleporte de todos os jogadores
     for Player, Data in pairs(ESPData) do
         if Data.Skeleton and Player.Character then
             local Root = Player.Character:FindFirstChild("HumanoidRootPart")
@@ -2289,7 +2284,6 @@ RunService.RenderStepped:Connect(function()
                 if LastPos then
                     local TeleportDistance = (CurrentPos - LastPos).Magnitude
                     
-                    -- Se teleportou mais de 30 studs em um frame
                     if TeleportDistance > 30 then
                         CleanupSkeleton(Player)
                     end
@@ -2534,7 +2528,7 @@ RunService.RenderStepped:Connect(function()
         end
 
         ----------------------------------------------------
-        -- SKELETON (CORREÇÃO DEFINITIVA)
+        -- SKELETON
         ----------------------------------------------------
 
         if Data.Skeleton then
@@ -2554,22 +2548,17 @@ RunService.RenderStepped:Connect(function()
                 local B =
                     Parts[Bone.B]
 
-                -- Verificar se as partes existem e estão no personagem correto
                 if A and B and A.Parent == Character and B.Parent == Character then
 
                     local AP, AV = WorldToScreen(A.Position)
                     local BP, BV = WorldToScreen(B.Position)
 
-                    -- Verificar se ambos os pontos estão visíveis
                     if AV and BV and AP and BP then
 
-                        -- Calcular distância na tela
                         local ScreenDistance = (AP - BP).Magnitude
 
-                        -- Verificar se a distância é razoável (não teleportou)
                         if ScreenDistance < 300 then
 
-                            -- Verificar se os pontos estão na tela
                             local ScreenSize = Camera.ViewportSize
                             
                             if AP.X > -100 and AP.X < ScreenSize.X + 100
@@ -2579,7 +2568,6 @@ RunService.RenderStepped:Connect(function()
 
                                 Bone.Line.BackgroundColor3 = Config.Visual.Color
                                 
-                                -- Atualizar linha manualmente
                                 local Delta = BP - AP
                                 
                                 Bone.Line.Position = UDim2.fromOffset(
@@ -2736,11 +2724,10 @@ HUDText.TextYAlignment =
 
 HUDText.Parent = HUDFrame
 
--- prevHUDSize keeps the last size so we can expand centered
 local prevHUDSize = Config.HUD.Size
 
 ------------------------------------------------------------
--- HUD UPDATE (appearance: size/alpha/text size)
+-- HUD UPDATE
 ------------------------------------------------------------
 
 local function UpdateHUDAppearance()
@@ -2749,14 +2736,12 @@ local function UpdateHUDAppearance()
     local newSize = math.floor(Config.HUD.Size or oldSize)
     local delta = newSize - oldSize
 
-    -- adjust size
     HUDFrame.Size =
         UDim2.fromOffset(
             newSize,
             50
         )
 
-    -- shift position half the delta so it expands from the center horizontally
     local pos = HUDFrame.Position
     HUDFrame.Position = UDim2.new(
         pos.X.Scale,
@@ -2765,18 +2750,15 @@ local function UpdateHUDAppearance()
         pos.Y.Offset
     )
 
-    -- background/transparency
     HUDFrame.BackgroundTransparency =
         Config.HUD.Transparency
 
     HUDStroke.Transparency =
         Config.HUD.Transparency
 
-    -- text transparency should follow HUD transparency (so numbers/letters fade)
     HUDText.TextTransparency =
         Config.HUD.Transparency
 
-    -- scale text size with HUD size
     local textSize = math.clamp(math.floor(newSize/13), 7, 32)
     HUDText.TextSize = textSize
 
@@ -2838,7 +2820,6 @@ UserInputService.InputEnded:Connect(function(Input)
 
         HUDDragging = false
 
-        -- save position into Config
         Config.HUD.Position = HUDFrame.Position
     end
 end)
@@ -2912,10 +2893,6 @@ AddHUD(Toggle(
     end
 ))
 
-------------------------------------------------------------
--- HUD SIZE
-------------------------------------------------------------
-
 AddHUD(Slider(
     Scroll,
     "HUD Size",
@@ -2939,10 +2916,6 @@ AddHUD(Slider(
 
     end
 ))
-
-------------------------------------------------------------
--- HUD TRANSPARENCY
-------------------------------------------------------------
 
 AddHUD(Slider(
     Scroll,
@@ -3231,9 +3204,7 @@ DragButton.InputBegan:Connect(function(Input)
     if Input.UserInputType ==
         Enum.UserInputType.MouseButton1
         or Input.UserInputType ==
-        Enum.UserInputType.Touch then
-
-        MainDragging = true
+        Enum.UserInputType.Touch then        MainDragging = true
         MainDragStart = Input.Position
         MainStartPosition = Main.Position
     end
@@ -3276,7 +3247,7 @@ UserInputService.InputEnded:Connect(function(Input)
 end)
 
 ------------------------------------------------------------
--- MINIMIZE/MAXIMIZE (ANIMAÇÕES SINCRONIZADAS)
+-- MINIMIZE/MAXIMIZE
 ------------------------------------------------------------
 
 local Mini =
@@ -3312,10 +3283,8 @@ local function MinimizeHub()
     MainDragging = false
     HUDDragging = false
 
-    -- Esconde o Main imediatamente
     Main.Visible = false
     
-    -- Mostra o Mini imediatamente com animação de crescimento
     Mini.Visible = true
     Mini.Size = UDim2.fromOffset(0,0)
     Mini.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -3325,7 +3294,6 @@ local function MinimizeHub()
         Size = UDim2.fromOffset(46, 46)
     }, TweenBounce)
     
-    -- Reseta o Main para quando for reaberto
     Main.Size = UDim2.fromOffset(365, 300)
     Main.Position = UDim2.new(0.5, -182, 0.5, -150)
     Main.AnchorPoint = Vector2.new(0, 0)
@@ -3336,10 +3304,8 @@ Close.MouseButton1Click:Connect(MinimizeHub)
 
 Mini.MouseButton1Click:Connect(function()
 
-    -- Esconde o Mini imediatamente
     Mini.Visible = false
     
-    -- Mostra o Main imediatamente com animação de crescimento
     Main.Visible = true
     Main.Size = UDim2.fromOffset(0, 0)
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -3349,7 +3315,6 @@ Mini.MouseButton1Click:Connect(function()
         Size = UDim2.fromOffset(365, 300)
     }, TweenSpring)
     
-    -- Reseta posição após animação
     task.delay(0.5, function()
         Main.Position = UDim2.new(0.5, -182, 0.5, -150)
         Main.AnchorPoint = Vector2.new(0, 0)
@@ -3461,7 +3426,7 @@ RunService.RenderStepped:Connect(function(DT)
 end)
 
 ------------------------------------------------------------
--- PLAYER EVENTS (COM DETECÇÃO DE TELEPORTE MELHORADA)
+-- PLAYER EVENTS
 ------------------------------------------------------------
 
 local function SetupPlayer(Player)
@@ -3470,10 +3435,9 @@ local function SetupPlayer(Player)
         return
     end
 
-    -- Quando o personagem muda, limpa o skeleton antigo
     Player.CharacterAdded:Connect(function()
 
-        CleanupSkeleton(Player) -- Limpa skeleton antigo
+        CleanupSkeleton(Player)
 
         task.wait(.3)
 
@@ -3483,7 +3447,6 @@ local function SetupPlayer(Player)
 
     end)
 
-    -- Detectar teleporte (mudança rápida de posição)
     local LastPosition = nil
     
     Player:GetPropertyChangedSignal("Character"):Connect(function()
@@ -3491,7 +3454,6 @@ local function SetupPlayer(Player)
         CleanupSkeleton(Player)
     end)
     
-    -- Verificar teleporte com mais frequência
     task.spawn(function()
         while Player.Parent do
             if Player.Character then
@@ -3502,14 +3464,8 @@ local function SetupPlayer(Player)
                     if LastPosition then
                         local Distance = (CurrentPosition - LastPosition).Magnitude
                         
-                        -- Se moveu mais de 50 studs em 0.1 segundos, é teleporte
                         if Distance > 50 then
                             CleanupSkeleton(Player)
-                            -- Recria o skeleton após teleporte
-                            task.wait(0.5)
-                            if Config.Visual.ESP and Config.Visual.Skeleton then
-                                CreateESP(Player)
-                            end
                         end
                     end
                     
@@ -3517,7 +3473,7 @@ local function SetupPlayer(Player)
                 end
             end
             
-            task.wait(0.1) -- Verifica a cada 0.1 segundos (mais rápido)
+            task.wait(0.1)
         end
     end)
 
