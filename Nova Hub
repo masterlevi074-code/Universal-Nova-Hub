@@ -10,7 +10,7 @@
     • ColorPicker (UI Accent): corrige bug que usava variável errada; atualiza elementos UI imediatamente
     • Animações de minimizar/maximizar sincronizadas (sem delay)
     • Bordas arredondadas em todo o painel
-    • Skeleton ESP: Corrigido bug de linhas presas na tela quando teleporta
+    • Skeleton ESP: Correção definitiva do bug de linhas presas na tela
 ]]
 
 ------------------------------------------------------------
@@ -1356,6 +1356,19 @@ local function CleanupSkeleton(Player)
     end
 end
 
+-- Função para limpar TODOS os skeletons
+local function CleanAllSkeletons()
+    for Player, Data in pairs(ESPData) do
+        if Data.Skeleton then
+            for _, Bone in pairs(Data.Skeleton) do
+                if Bone.Line then
+                    Bone.Line.Visible = false
+                end
+            end
+        end
+    end
+end
+
 local ESPGui = Instance.new("ScreenGui")
 ESPGui.Name = "NovaESP"
 ESPGui.ResetOnSpawn = false
@@ -1382,57 +1395,66 @@ end
 
 local function UpdateLine(Line,A,B)
 
+    -- Se a linha não existe, retorna
+    if not Line then
+        return
+    end
+
     -- Verificar se os pontos são válidos
     if not A or not B then
-        if Line then
-            Line.Visible = false
-        end
+        Line.Visible = false
         return
     end
 
-    -- Verificar se os pontos estão dentro da tela
+    -- Verificar se os pontos são números válidos
+    if typeof(A) ~= "Vector2" or typeof(B) ~= "Vector2" then
+        Line.Visible = false
+        return
+    end
+
+    -- Verificar se os pontos são finitos
+    if A.X ~= A.X or A.Y ~= A.Y or B.X ~= B.X or B.Y ~= B.Y then
+        Line.Visible = false
+        return
+    end
+
+    -- Verificar se os pontos estão muito fora da tela
     local ScreenSize = Camera.ViewportSize
     
-    if A.X < -100 or A.X > ScreenSize.X + 100
-        or A.Y < -100 or A.Y > ScreenSize.Y + 100
-        or B.X < -100 or B.X > ScreenSize.X + 100
-        or B.Y < -100 or B.Y > ScreenSize.Y + 100 then
+    if A.X < -500 or A.X > ScreenSize.X + 500
+        or A.Y < -500 or A.Y > ScreenSize.Y + 500
+        or B.X < -500 or B.X > ScreenSize.X + 500
+        or B.Y < -500 or B.Y > ScreenSize.Y + 500 then
         
-        if Line then
-            Line.Visible = false
-        end
+        Line.Visible = false
         return
     end
 
-    local Delta = B-A
+    local Delta = B - A
 
     -- Verificar se a linha é muito grande (indica teleporte)
-    if Delta.Magnitude > 1000 then
-        if Line then
-            Line.Visible = false
-        end
+    if Delta.Magnitude > 300 then
+        Line.Visible = false
         return
     end
 
-    Line.Position =
-        UDim2.fromOffset(
-            (A.X+B.X)/2,
-            (A.Y+B.Y)/2
-        )
+    -- Se chegou aqui, a linha é válida
+    Line.Position = UDim2.fromOffset(
+        (A.X + B.X) / 2,
+        (A.Y + B.Y) / 2
+    )
 
-    Line.Size =
-        UDim2.fromOffset(
-            Delta.Magnitude,
-            2
-        )
+    Line.Size = UDim2.fromOffset(
+        Delta.Magnitude,
+        2
+    )
 
-    Line.Rotation =
-        math.deg(
-            math.atan2(
-                Delta.Y,
-                Delta.X
-            )
+    Line.Rotation = math.deg(
+        math.atan2(
+            Delta.Y,
+            Delta.X
         )
+    )
 
     Line.Visible = true
 end
@@ -1520,6 +1542,9 @@ local function CreateESP(Player)
     local Data = {}
 
     ESPData[Player] = Data
+
+    -- Armazenar posição inicial para detectar teleporte
+    Data.LastPosition = Root.Position
 
     --------------------------------------------------------
     -- HIGHLIGHT
@@ -2162,10 +2187,32 @@ local function WorldToScreen(Position)
 end
 
 ------------------------------------------------------------
--- ESP RENDER (CORRIGIDO)
+-- ESP RENDER (CORREÇÃO DEFINITIVA)
 ------------------------------------------------------------
 
 RunService.RenderStepped:Connect(function()
+
+    -- Verificar teleporte de todos os jogadores (limpeza preventiva)
+    for Player, Data in pairs(ESPData) do
+        if Data.Skeleton and Player.Character then
+            local Root = Player.Character:FindFirstChild("HumanoidRootPart")
+            if Root then
+                local LastPos = Data.LastPosition
+                local CurrentPos = Root.Position
+                
+                if LastPos then
+                    local TeleportDistance = (CurrentPos - LastPos).Magnitude
+                    
+                    -- Se teleportou mais de 30 studs em um frame
+                    if TeleportDistance > 30 then
+                        CleanupSkeleton(Player)
+                    end
+                end
+                
+                Data.LastPosition = CurrentPos
+            end
+        end
+    end
 
     for Player,Data in pairs(ESPData) do
 
@@ -2368,22 +2415,30 @@ RunService.RenderStepped:Connect(function()
                 local Width =
                     Height*.55
 
-                Data.Box.Position =
-                    UDim2.fromOffset(
-                        (TopPoint.X+BottomPoint.X)/2,
-                        (TopPoint.Y+BottomPoint.Y)/2
-                    )
+                if Height < 500 and Width < 500 then
 
-                Data.Box.Size =
-                    UDim2.fromOffset(
-                        Width,
-                        Height
-                    )
+                    Data.Box.Position =
+                        UDim2.fromOffset(
+                            (TopPoint.X+BottomPoint.X)/2,
+                            (TopPoint.Y+BottomPoint.Y)/2
+                        )
 
-                Data.BoxStroke.Color =
-                    Config.Visual.Color
+                    Data.Box.Size =
+                        UDim2.fromOffset(
+                            Width,
+                            Height
+                        )
 
-                Data.Box.Visible = true
+                    Data.BoxStroke.Color =
+                        Config.Visual.Color
+
+                    Data.Box.Visible = true
+
+                else
+
+                    Data.Box.Visible = false
+
+                end
 
             else
 
@@ -2393,7 +2448,7 @@ RunService.RenderStepped:Connect(function()
         end
 
         ----------------------------------------------------
-        -- SKELETON (CORRIGIDO)
+        -- SKELETON (CORREÇÃO DEFINITIVA)
         ----------------------------------------------------
 
         if Data.Skeleton then
@@ -2413,56 +2468,60 @@ RunService.RenderStepped:Connect(function()
                 local B =
                     Parts[Bone.B]
 
-                if A and B then
+                -- Verificar se as partes existem e estão no personagem correto
+                if A and B and A.Parent == Character and B.Parent == Character then
 
-                    -- Verificar se as partes ainda estão no mesmo personagem
-                    if A.Parent ~= Character or B.Parent ~= Character then
-                        Bone.Line.Visible = false
-                        continue
-                    end
+                    local AP, AV = WorldToScreen(A.Position)
+                    local BP, BV = WorldToScreen(B.Position)
 
-                    -- Verificar se as partes estão visíveis na câmera
-                    local AP,AV =
-                        WorldToScreen(
-                            A.Position
-                        )
+                    -- Verificar se ambos os pontos estão visíveis
+                    if AV and BV and AP and BP then
 
-                    local BP,BV =
-                        WorldToScreen(
-                            B.Position
-                        )
-
-                    -- Verificar se ambos os pontos estão na frente da câmera
-                    if AV and BV then
-
-                        -- Verificar se a distância entre os pontos é razoável
+                        -- Calcular distância na tela
                         local ScreenDistance = (AP - BP).Magnitude
-                        
-                        if ScreenDistance < 500 then -- Evita linhas gigantes quando teleporta
-                            Bone.Line.BackgroundColor3 =
-                                Config.Visual.Color
 
-                            UpdateLine(
-                                Bone.Line,
-                                AP,
-                                BP
-                            )
+                        -- Verificar se a distância é razoável (não teleportou)
+                        if ScreenDistance < 300 then
+
+                            -- Verificar se os pontos estão na tela
+                            local ScreenSize = Camera.ViewportSize
+                            
+                            if AP.X > -100 and AP.X < ScreenSize.X + 100
+                                and AP.Y > -100 and AP.Y < ScreenSize.Y + 100
+                                and BP.X > -100 and BP.X < ScreenSize.X + 100
+                                and BP.Y > -100 and BP.Y < ScreenSize.Y + 100 then
+
+                                Bone.Line.BackgroundColor3 = Config.Visual.Color
+                                
+                                -- Atualizar linha manualmente
+                                local Delta = BP - AP
+                                
+                                Bone.Line.Position = UDim2.fromOffset(
+                                    (AP.X + BP.X) / 2,
+                                    (AP.Y + BP.Y) / 2
+                                )
+                                
+                                Bone.Line.Size = UDim2.fromOffset(
+                                    Delta.Magnitude,
+                                    2
+                                )
+                                
+                                Bone.Line.Rotation = math.deg(
+                                    math.atan2(Delta.Y, Delta.X)
+                                )
+                                
+                                Bone.Line.Visible = true
+                            else
+                                Bone.Line.Visible = false
+                            end
                         else
                             Bone.Line.Visible = false
                         end
-
                     else
-
-                        Bone.Line.Visible =
-                            false
-
+                        Bone.Line.Visible = false
                     end
-
                 else
-
-                    Bone.Line.Visible =
-                        false
-
+                    Bone.Line.Visible = false
                 end
             end
         end
@@ -2492,14 +2551,24 @@ RunService.RenderStepped:Connect(function()
                         Point.Y
                     )
 
-                Data.Tracer.BackgroundColor3 =
-                    Config.Visual.Color
+                local TracerDistance = (End - Start).Magnitude
+                
+                if TracerDistance < 1000 then
 
-                UpdateLine(
-                    Data.Tracer,
-                    Start,
-                    End
-                )
+                    Data.Tracer.BackgroundColor3 =
+                        Config.Visual.Color
+
+                    UpdateLine(
+                        Data.Tracer,
+                        Start,
+                        End
+                    )
+
+                else
+
+                    Data.Tracer.Visible = false
+
+                end
 
             else
 
@@ -3306,7 +3375,7 @@ RunService.RenderStepped:Connect(function(DT)
 end)
 
 ------------------------------------------------------------
--- PLAYER EVENTS (COM DETECÇÃO DE TELEPORTE)
+-- PLAYER EVENTS (COM DETECÇÃO DE TELEPORTE MELHORADA)
 ------------------------------------------------------------
 
 local function SetupPlayer(Player)
@@ -3336,7 +3405,7 @@ local function SetupPlayer(Player)
         CleanupSkeleton(Player)
     end)
     
-    -- Verificar teleporte periodicamente
+    -- Verificar teleporte com mais frequência
     task.spawn(function()
         while Player.Parent do
             if Player.Character then
@@ -3347,8 +3416,8 @@ local function SetupPlayer(Player)
                     if LastPosition then
                         local Distance = (CurrentPosition - LastPosition).Magnitude
                         
-                        -- Se moveu mais de 100 studs rapidamente, é teleporte
-                        if Distance > 100 then
+                        -- Se moveu mais de 50 studs em 0.1 segundos, é teleporte
+                        if Distance > 50 then
                             CleanupSkeleton(Player)
                         end
                     end
@@ -3357,7 +3426,7 @@ local function SetupPlayer(Player)
                 end
             end
             
-            task.wait(0.5) -- Verifica a cada 0.5 segundos
+            task.wait(0.1) -- Verifica a cada 0.1 segundos (mais rápido)
         end
     end)
 
