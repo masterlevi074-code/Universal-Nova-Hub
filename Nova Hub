@@ -10,7 +10,7 @@
     • ColorPicker (UI Accent): corrige bug que usava variável errada; atualiza elementos UI imediatamente
     • Animações de minimizar/maximizar sincronizadas (sem delay)
     • Bordas arredondadas em todo o painel
-    • Skeleton ESP: Botão RESET funcional ao lado do toggle
+    • Texto "bug" em amarelo ao lado do toggle Skeleton
 ]]
 
 ------------------------------------------------------------
@@ -1131,82 +1131,35 @@ end
 -- VISUAL PAGE
 ------------------------------------------------------------
 
-local function VisualToggle(Title, Description, Key, ShowResetButton)
+local function VisualToggle(Title, Description, Key, ShowBugText)
     local Row = Toggle(Scroll, Title, Description, Config.Visual[Key], function(v)
         Config.Visual[Key] = v
         RefreshESP()
     end)
 
-    if ShowResetButton then
-        local ResetButton = Instance.new("TextButton")
-        ResetButton.Size = UDim2.fromOffset(45, 18)
-        ResetButton.Position = UDim2.new(1, -98, 0.5, -9)
-        ResetButton.BackgroundColor3 = Color3.fromRGB(40,41,50)
-        ResetButton.Text = "RESET"
-        ResetButton.TextColor3 = Color3.fromRGB(180,180,190)
-        ResetButton.TextSize = 7
-        ResetButton.Font = Enum.Font.GothamBold
-        ResetButton.AutoButtonColor = false
-        ResetButton.ZIndex = 10
-        ResetButton.Parent = Row
+    if ShowBugText then
+        local BugLabel = Instance.new("TextLabel")
+        BugLabel.Size = UDim2.fromOffset(45, 18)
+        BugLabel.Position = UDim2.new(1, -98, 0.5, -9)
+        BugLabel.BackgroundTransparency = 1
+        BugLabel.Text = "bug"
+        BugLabel.TextColor3 = Color3.fromRGB(255,200,50) -- Amarelo
+        BugLabel.TextSize = 8
+        BugLabel.Font = Enum.Font.GothamBold
+        BugLabel.TextXAlignment = Enum.TextXAlignment.Center
+        BugLabel.TextYAlignment = Enum.TextYAlignment.Center
+        BugLabel.ZIndex = 10
+        BugLabel.Parent = Row
 
-        Instance.new("UICorner",ResetButton).CornerRadius = UDim.new(0,5)
-
-        ResetButton.MouseEnter:Connect(function()
-            Tween(ResetButton, {
-                BackgroundColor3 = Color3.fromRGB(60,61,70),
-                TextColor3 = Color3.new(1,1,1)
-            })
-        end)
-
-        ResetButton.MouseLeave:Connect(function()
-            Tween(ResetButton, {
-                BackgroundColor3 = Color3.fromRGB(40,41,50),
-                TextColor3 = Color3.fromRGB(180,180,190)
-            })
-        end)
-
-        ResetButton.MouseButton1Click:Connect(function()
-            -- Reset direto
-            for Player in pairs(ESPData) do
-                RemoveESP(Player)
-            end
-
-            if Config.Visual.ESP then
-                for _,Player in ipairs(Players:GetPlayers()) do
-                    if Player ~= LocalPlayer then
-                        CreateESP(Player)
-                    end
-                end
-            end
-
-            -- Feedback visual
-            Tween(ResetButton, {
-                BackgroundColor3 = Color3.fromRGB(80,81,90),
-                TextColor3 = Color3.new(1,1,1)
-            }, TweenFast)
-
-            task.delay(0.15, function()
-                if ResetButton.Parent then
-                    Tween(ResetButton, {
-                        BackgroundColor3 = Color3.fromRGB(40,41,50),
-                        TextColor3 = Color3.fromRGB(180,180,190)
-                    }, TweenFast)
-                end
-            end)
-        end)
-
-        -- Ajustar o toggle para não sobrepor o botão RESET
         for _, Child in ipairs(Row:GetChildren()) do
-            if Child:IsA("TextButton") and Child ~= ResetButton then
+            if Child:IsA("TextButton") then
                 Child.Size = UDim2.fromOffset(38, 21)
                 Child.Position = UDim2.new(1, -48, 0.5, -10)
             end
         end
 
-        -- Ajustar textos para não ficarem atrás do botão
         for _, Child in ipairs(Row:GetChildren()) do
-            if Child:IsA("TextLabel") then
+            if Child:IsA("TextLabel") and Child ~= BugLabel then
                 if Child.TextSize == 9 then
                     Child.Size = UDim2.new(1, -110, 0, 17)
                 elseif Child.TextSize == 7 then
@@ -1446,7 +1399,9 @@ RunService.RenderStepped:Connect(function()
 
             if Data.Skeleton then
                 for _,Bone in pairs(Data.Skeleton) do
-                    Bone.Line.Visible = false
+                    if Bone.Line then
+                        Bone.Line.Visible = false
+                    end
                 end
             end
 
@@ -1467,7 +1422,9 @@ RunService.RenderStepped:Connect(function()
 
             if Data.Skeleton then
                 for _,Bone in pairs(Data.Skeleton) do
-                    Bone.Line.Visible = false
+                    if Bone.Line then
+                        Bone.Line.Visible = false
+                    end
                 end
             end
 
@@ -1525,30 +1482,34 @@ RunService.RenderStepped:Connect(function()
             local Parts = GetCharacterParts(Character)
 
             for _,Bone in pairs(Data.Skeleton) do
-                local A = Parts[Bone.A]
-                local B = Parts[Bone.B]
+                if Bone.Line and Bone.Line.Parent then
+                    local A = Parts[Bone.A]
+                    local B = Parts[Bone.B]
 
-                if A and B and A.Parent == Character and B.Parent == Character then
-                    local AP, AV = WorldToScreen(A.Position)
-                    local BP, BV = WorldToScreen(B.Position)
+                    if A and B and A.Parent == Character and B.Parent == Character then
+                        local AP, AV = WorldToScreen(A.Position)
+                        local BP, BV = WorldToScreen(B.Position)
 
-                    if AV and BV and AP and BP then
-                        local ScreenDistance = (AP - BP).Magnitude
+                        if AV and BV and AP and BP then
+                            local ScreenDistance = (AP - BP).Magnitude
 
-                        if ScreenDistance < 300 then
-                            local ScreenSize = Camera.ViewportSize
+                            if ScreenDistance < 300 then
+                                local ScreenSize = Camera.ViewportSize
 
-                            if AP.X > -100 and AP.X < ScreenSize.X + 100
-                                and AP.Y > -100 and AP.Y < ScreenSize.Y + 100
-                                and BP.X > -100 and BP.X < ScreenSize.X + 100
-                                and BP.Y > -100 and BP.Y < ScreenSize.Y + 100 then
+                                if AP.X > -100 and AP.X < ScreenSize.X + 100
+                                    and AP.Y > -100 and AP.Y < ScreenSize.Y + 100
+                                    and BP.X > -100 and BP.X < ScreenSize.X + 100
+                                    and BP.Y > -100 and BP.Y < ScreenSize.Y + 100 then
 
-                                Bone.Line.BackgroundColor3 = Config.Visual.Color
-                                local Delta = BP - AP
-                                Bone.Line.Position = UDim2.fromOffset((AP.X + BP.X) / 2, (AP.Y + BP.Y) / 2)
-                                Bone.Line.Size = UDim2.fromOffset(Delta.Magnitude, 2)
-                                Bone.Line.Rotation = math.deg(math.atan2(Delta.Y, Delta.X))
-                                Bone.Line.Visible = true
+                                    Bone.Line.BackgroundColor3 = Config.Visual.Color
+                                    local Delta = BP - AP
+                                    Bone.Line.Position = UDim2.fromOffset((AP.X + BP.X) / 2, (AP.Y + BP.Y) / 2)
+                                    Bone.Line.Size = UDim2.fromOffset(Delta.Magnitude, 2)
+                                    Bone.Line.Rotation = math.deg(math.atan2(Delta.Y, Delta.X))
+                                    Bone.Line.Visible = true
+                                else
+                                    Bone.Line.Visible = false
+                                end
                             else
                                 Bone.Line.Visible = false
                             end
@@ -1558,8 +1519,6 @@ RunService.RenderStepped:Connect(function()
                     else
                         Bone.Line.Visible = false
                     end
-                else
-                    Bone.Line.Visible = false
                 end
             end
         end
