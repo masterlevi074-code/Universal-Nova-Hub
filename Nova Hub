@@ -10,7 +10,7 @@
     • ColorPicker (UI Accent): corrige bug que usava variável errada; atualiza elementos UI imediatamente
     • Animações de minimizar/maximizar sincronizadas (sem delay)
     • Bordas arredondadas em todo o painel
-    • Skeleton ESP: Correção definitiva do bug de linhas presas na tela
+    • Skeleton ESP: Botão RESET ao lado do toggle
 ]]
 
 ------------------------------------------------------------
@@ -1369,6 +1369,17 @@ local function CleanAllSkeletons()
     end
 end
 
+-- Função para resetar manualmente todos os skeletons
+local function ResetAllSkeletons()
+    -- Limpa todos os skeletons
+    CleanAllSkeletons()
+    
+    -- Recria todos os ESPs se necessário
+    if Config.Visual.ESP then
+        RefreshESP()
+    end
+end
+
 local ESPGui = Instance.new("ScreenGui")
 ESPGui.Name = "NovaESP"
 ESPGui.ResetOnSpawn = false
@@ -1739,7 +1750,8 @@ end
 local function VisualToggle(
     Title,
     Description,
-    Key
+    Key,
+    ShowResetButton
 )
 
     local Row = Toggle(
@@ -1754,6 +1766,79 @@ local function VisualToggle(
 
         end
     )
+
+    -- Se ShowResetButton for true, adiciona botão RESET ao lado do toggle
+    if ShowResetButton then
+        
+        -- Encontrar o botão do toggle (último filho do Row)
+        local ToggleButton
+        for _, Child in ipairs(Row:GetChildren()) do
+            if Child:IsA("TextButton") then
+                ToggleButton = Child
+                break
+            end
+        end
+        
+        if ToggleButton then
+            -- Criar botão RESET pequeno
+            local ResetButton = Instance.new("TextButton")
+            ResetButton.Size = UDim2.fromOffset(45, 18)
+            ResetButton.Position = UDim2.new(1, -100, 0.5, -9) -- Posiciona à esquerda do toggle
+            ResetButton.BackgroundColor3 = Color3.fromRGB(40,41,50)
+            ResetButton.Text = "RESET"
+            ResetButton.TextColor3 = Color3.fromRGB(180,180,190)
+            ResetButton.TextSize = 7
+            ResetButton.Font = Enum.Font.GothamBold
+            ResetButton.AutoButtonColor = false
+            ResetButton.Parent = Row
+            
+            Instance.new("UICorner",ResetButton).CornerRadius = UDim.new(0,5)
+            
+            -- Ajustar posição do toggle para dar espaço ao botão RESET
+            ToggleButton.Position = UDim2.new(1, -48, 0.5, -10)
+            
+            -- Efeitos hover no botão RESET
+            ResetButton.MouseEnter:Connect(function()
+                Tween(ResetButton, {
+                    BackgroundColor3 = Color3.fromRGB(60,61,70),
+                    TextColor3 = Color3.new(1,1,1)
+                })
+            end)
+            
+            ResetButton.MouseLeave:Connect(function()
+                Tween(ResetButton, {
+                    BackgroundColor3 = Color3.fromRGB(40,41,50),
+                    TextColor3 = Color3.fromRGB(180,180,190)
+                })
+            end)
+            
+            -- Função do botão RESET
+            ResetButton.MouseButton1Click:Connect(function()
+                -- Limpa todos os skeletons
+                CleanAllSkeletons()
+                
+                -- Recria os skeletons se o ESP estiver ativo
+                if Config.Visual.ESP and Config.Visual.Skeleton then
+                    RefreshESP()
+                end
+                
+                -- Feedback visual
+                Tween(ResetButton, {
+                    BackgroundColor3 = Color3.fromRGB(80,81,90),
+                    TextColor3 = Color3.new(1,1,1)
+                }, TweenFast)
+                
+                task.delay(0.15, function()
+                    if ResetButton.Parent then
+                        Tween(ResetButton, {
+                            BackgroundColor3 = Color3.fromRGB(40,41,50),
+                            TextColor3 = Color3.fromRGB(180,180,190)
+                        }, TweenFast)
+                    end
+                end)
+            end)
+        end
+    end
 
     table.insert(
         VisualRows,
@@ -1778,7 +1863,8 @@ VisualToggle(
 VisualToggle(
     "Skeleton ESP",
     "Display character skeleton",
-    "Skeleton"
+    "Skeleton",
+    true  -- Mostra o botão RESET
 )
 
 VisualToggle(
@@ -3419,6 +3505,11 @@ local function SetupPlayer(Player)
                         -- Se moveu mais de 50 studs em 0.1 segundos, é teleporte
                         if Distance > 50 then
                             CleanupSkeleton(Player)
+                            -- Recria o skeleton após teleporte
+                            task.wait(0.5)
+                            if Config.Visual.ESP and Config.Visual.Skeleton then
+                                CreateESP(Player)
+                            end
                         end
                     end
                     
