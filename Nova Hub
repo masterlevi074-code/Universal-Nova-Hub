@@ -8,7 +8,7 @@
     • HUD Size: Texto escala com o slider; dimensão amplia centrada (não só para a direita)
     • HUD: Ao mover o HUD, posição é salva em Config.HUD.Position
     • ColorPicker (UI Accent): corrige bug que usava variável errada; atualiza elementos UI imediatamente
-    • Pequenas melhorias em formatação do slider de transparência
+    • Animações suaves de minimizar/maximizar
 ]]
 
 ------------------------------------------------------------
@@ -102,11 +102,11 @@ local Config = {
 }
 
 ------------------------------------------------------------
--- TWEEN
+-- TWEEN INFOS
 ------------------------------------------------------------
 
 local TweenFast = TweenInfo.new(
-    0.12,
+    0.15,
     Enum.EasingStyle.Quad,
     Enum.EasingDirection.Out
 )
@@ -117,11 +117,22 @@ local TweenSmooth = TweenInfo.new(
     Enum.EasingDirection.Out
 )
 
--- Modified Tween: returns the Tween object (or nil if animations disabled)
+local TweenBounce = TweenInfo.new(
+    0.4,
+    Enum.EasingStyle.Back,
+    Enum.EasingDirection.Out
+)
+
+local TweenSpring = TweenInfo.new(
+    0.5,
+    Enum.EasingStyle.Elastic,
+    Enum.EasingDirection.Out
+)
+
 local function Tween(Object, Properties, Info)
 
     if not Object or not Object.Parent then
-        return nil
+        return
     end
 
     if not Config.UI.Animations then
@@ -130,16 +141,14 @@ local function Tween(Object, Properties, Info)
             Object[Property] = Value
         end
 
-        return nil
+        return
     end
 
-    local tw = TweenService:Create(
+    TweenService:Create(
         Object,
         Info or TweenFast,
         Properties
-    )
-    tw:Play()
-    return tw
+    ):Play()
 end
 
 ------------------------------------------------------------
@@ -180,8 +189,6 @@ Main.Position = UDim2.new(.5,-182,.5,-150)
 Main.BackgroundColor3 = DarkColor()
 Main.BorderSizePixel = 0
 Main.Parent = Gui
--- Ensure children don't draw outside the frame while animating
-Main.ClipsDescendants = true
 
 Instance.new("UICorner",Main).CornerRadius =
     UDim.new(0,12)
@@ -2448,7 +2455,8 @@ Instance.new("UICorner",HUDFrame).CornerRadius =
 local HUDStroke =
     Instance.new("UIStroke")
 
-HUDStroke.Color = Color3.fromRGB(45,47,58)
+HUDStroke.Color =
+    Color3.fromRGB(45,47,58)
 
 HUDStroke.Thickness = 1
 
@@ -2523,7 +2531,7 @@ local function UpdateHUDAppearance()
     HUDText.TextTransparency =
         Config.HUD.Transparency
 
-    -- scale text size with HUD size (mapping can be adjusted)
+    -- scale text size with HUD size
     local textSize = math.clamp(math.floor(newSize/13), 7, 32)
     HUDText.TextSize = textSize
 
@@ -2585,7 +2593,7 @@ UserInputService.InputEnded:Connect(function(Input)
 
         HUDDragging = false
 
-        -- save position into Config so size changes are centered correctly relative to new pos
+        -- save position into Config
         Config.HUD.Position = HUDFrame.Position
     end
 end)
@@ -2774,9 +2782,6 @@ AddSetting(ColorPicker(
         RefreshToggleAccent()
 
         UpdateFov()
-
-        -- removed incorrect loop that referenced Config.Visual.Color here.
-        -- If you want to update specific UI elements that use Accent, add them here (e.g. HUD borders, other buttons).
 
     end
 ))
@@ -3026,7 +3031,7 @@ UserInputService.InputEnded:Connect(function(Input)
 end)
 
 ------------------------------------------------------------
--- MINIMIZE
+-- MINIMIZE/MAXIMIZE (ANIMAÇÕES MELHORADAS)
 ------------------------------------------------------------
 
 local Mini =
@@ -3056,101 +3061,94 @@ Mini.Parent = Gui
 Instance.new("UICorner",Mini).CornerRadius =
     UDim.new(1,0)
 
+-- Flag para evitar múltiplos cliques durante animação
+local IsAnimating = false
+
 local function MinimizeHub()
 
-    ClosePopup()
+    if IsAnimating then return end
+    IsAnimating = true
 
+    ClosePopup()
     MainDragging = false
     HUDDragging = false
 
     if Config.UI.Animations then
-
-        -- animate height down to header height (46)
-        local tw = Tween(
-            Main,
-            {
-                Size =
-                    UDim2.fromOffset(365,46)
-            },
-            TweenSmooth
-        )
-
-        if tw then
-            tw.Completed:Connect(function()
-                if Main and Main.Parent then
-                    Main.Visible = false
-
-                    -- reset size so when restored we can animate from collapsed height
-                    Main.Size =
-                        UDim2.fromOffset(
-                            365,
-                            300
-                        )
-
-                    Mini.Visible = true
-                end
-            end)
-        else
-            -- fallback
-            Main.Visible = false
-            Main.Size = UDim2.fromOffset(365,300)
-            Mini.Visible = true
-        end
-
+        -- Anima o Main encolhendo (escala e opacidade)
+        Main.AnchorPoint = Vector2.new(0.5, 0.5)
+        Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+        
+        Tween(Main, {
+            Size = UDim2.fromOffset(0, 0),
+            Position = UDim2.new(0.5, 0, 0.5, 0)
+        }, TweenFast)
+        
+        -- Mostra o Mini com animação de bounce
+        task.wait(0.15)
+        Mini.Visible = true
+        Main.Visible = false
+        
+        Mini.Size = UDim2.fromOffset(0, 0)
+        Mini.Position = UDim2.new(0, 18, 0.5, -23)
+        Mini.AnchorPoint = Vector2.new(0.5, 0.5)
+        
+        Tween(Mini, {
+            Size = UDim2.fromOffset(46, 46)
+        }, TweenBounce)
+        
+        -- Reseta o Main para quando for reaberto
+        task.wait(0.4)
+        Main.Size = UDim2.fromOffset(365, 300)
+        Main.Position = UDim2.new(0.5, -182, 0.5, -150)
+        Main.AnchorPoint = Vector2.new(0, 0)
+        IsAnimating = false
+        
     else
-
+        -- Sem animação
         Main.Visible = false
         Mini.Visible = true
-
+        IsAnimating = false
     end
 end
 
-Minimize.MouseButton1Click:Connect(
-    MinimizeHub
-)
-
-Close.MouseButton1Click:Connect(
-    MinimizeHub
-)
+Minimize.MouseButton1Click:Connect(MinimizeHub)
+Close.MouseButton1Click:Connect(MinimizeHub)
 
 Mini.MouseButton1Click:Connect(function()
 
-    -- restore
-    Main.Visible = true
-    Mini.Visible = false
+    if IsAnimating then return end
+    IsAnimating = true
 
     if Config.UI.Animations then
-
-        -- start collapsed (header height) and animate to full
-        Main.Size =
-            UDim2.fromOffset(
-                365,
-                46
-            )
-
-        local tw = Tween(
-            Main,
-            {
-                Size =
-                    UDim2.fromOffset(
-                        365,
-                        300
-                    )
-            },
-            TweenSmooth
-        )
-
-        -- no further action required on completion here, but safe to listen if needed
-        -- if tw then tw.Completed:Connect(function() end) end
-
+        -- Anima o Mini sumindo
+        Tween(Mini, {
+            Size = UDim2.fromOffset(0, 0)
+        }, TweenFast)
+        
+        task.wait(0.15)
+        Mini.Visible = false
+        
+        -- Mostra o Main com animação de spring (elástico)
+        Main.Visible = true
+        Main.Size = UDim2.fromOffset(0, 0)
+        Main.AnchorPoint = Vector2.new(0.5, 0.5)
+        Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+        
+        Tween(Main, {
+            Size = UDim2.fromOffset(365, 300)
+        }, TweenSpring)
+        
+        task.wait(0.5)
+        Main.Position = UDim2.new(0.5, -182, 0.5, -150)
+        Main.AnchorPoint = Vector2.new(0, 0)
+        IsAnimating = false
+        
     else
-
-        Main.Size =
-            UDim2.fromOffset(
-                365,
-                300
-            )
-
+        -- Sem animação
+        Mini.Visible = false
+        Main.Visible = true
+        Main.Size = UDim2.fromOffset(365, 300)
+        IsAnimating = false
     end
 end)
 
