@@ -3,11 +3,10 @@
     LocalScript
     StarterPlayer > StarterPlayerScripts
 
-    Mudanças solicitadas:
-    • Ao minimizar, toda a janela (cabeçalho e conteúdo) some com animação para baixo.
-    • ColorPicker completamente reformulado: paleta de swatches, entrada HEX, preview e presets.
-    • Bordas do painel (Main, popups, HUD, botões principais) 100% redondas.
-    • Mantive as outras correções anteriores (Tween retorna Tween, HUD salva posição, HUD texto/transparência acompanha).
+    Versão solicitada:
+    • Apenas o painel principal (Main) com borda 100% arredondada.
+    • Outros elementos usam raios pequenos (0,7 / 0,8 / 0,6) para evitar bugs visuais.
+    • Mantém ColorPicker profissional, minimização completa e outras melhorias.
 ]]
 
 ------------------------------------------------------------
@@ -194,7 +193,7 @@ Main.Parent = Gui
 Main.ClipsDescendants = true
 
 local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(1,0) -- 100% rounded
+mainCorner.CornerRadius = UDim.new(1,0) -- 100% rounded only for Main
 mainCorner.Parent = Main
 
 local MainStroke = Instance.new("UIStroke")
@@ -223,7 +222,7 @@ Logo.Font = Enum.Font.GothamBold
 Logo.Parent = Header
 
 local logoCorner = Instance.new("UICorner")
-logoCorner.CornerRadius = UDim.new(1,0)
+logoCorner.CornerRadius = UDim.new(0,8)
 logoCorner.Parent = Logo
 
 local HeaderTitle = Instance.new("TextLabel")
@@ -265,7 +264,7 @@ Minimize.Font = Enum.Font.GothamBold
 Minimize.Parent = Header
 
 local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(1,0)
+closeCorner.CornerRadius = UDim.new(0,7)
 closeCorner.Parent = Minimize
 
 local Close = Instance.new("TextButton")
@@ -279,7 +278,7 @@ Close.Font = Enum.Font.GothamBold
 Close.Parent = Header
 
 local closeCorner2 = Instance.new("UICorner")
-closeCorner2.CornerRadius = UDim.new(1,0)
+closeCorner2.CornerRadius = UDim.new(0,7)
 closeCorner2.Parent = Close
 
 ------------------------------------------------------------
@@ -294,7 +293,7 @@ Sidebar.BorderSizePixel = 0
 Sidebar.Parent = Main
 
 local sideCorner = Instance.new("UICorner")
-sideCorner.CornerRadius = UDim.new(1,0)
+sideCorner.CornerRadius = UDim.new(0,9)
 sideCorner.Parent = Sidebar
 
 local function MakeTab(Text,Y)
@@ -310,7 +309,7 @@ local function MakeTab(Text,Y)
     Button.Parent = Sidebar
 
     local bc = Instance.new("UICorner")
-    bc.CornerRadius = UDim.new(1,0)
+    bc.CornerRadius = UDim.new(0,9)
     bc.Parent = Button
 
     Button.MouseEnter:Connect(function()
@@ -364,7 +363,7 @@ Layout.SortOrder = Enum.SortOrder.LayoutOrder
 Layout.Parent = Scroll
 
 ------------------------------------------------------------
--- POPUPS (popups rounded)
+-- POPUPS (rounded but small radius)
 ------------------------------------------------------------
 
 local PopupLayer = Instance.new("Frame")
@@ -393,7 +392,7 @@ local function MakePopup(width,height)
     Popup.Parent = PopupLayer
 
     local pc = Instance.new("UICorner")
-    pc.CornerRadius = UDim.new(1,0)
+    pc.CornerRadius = UDim.new(0,8)
     pc.Parent = Popup
 
     ActivePopup = Popup
@@ -417,7 +416,7 @@ Fov.Position = UDim2.fromScale(.5,.5)
 Fov.BackgroundTransparency = 1
 Fov.Parent = FovGui
 
-local fovCorner = Instance.new("UICorner"); fovCorner.CornerRadius = UDim.new(1,0); fovCorner.Parent = Fov
+local fovCorner = Instance.new("UICorner"); fovCorner.CornerRadius = UDim.new(0,9); fovCorner.Parent = Fov
 
 local FovStroke = Instance.new("UIStroke")
 FovStroke.Thickness = Config.Aim.Thickness
@@ -458,7 +457,7 @@ local function Toggle(Parent, Title, Description, Initial, Callback)
     Row.BorderSizePixel = 0
     Row.Parent = Parent
 
-    local rcorner = Instance.new("UICorner"); rcorner.CornerRadius = UDim.new(1,0); rcorner.Parent = Row
+    local rcorner = Instance.new("UICorner"); rcorner.CornerRadius = UDim.new(0,8); rcorner.Parent = Row
 
     local Name = Instance.new("TextLabel")
     Name.Size = UDim2.new(1,-65,0,17)
@@ -490,7 +489,7 @@ local function Toggle(Parent, Title, Description, Initial, Callback)
     Button.AutoButtonColor = false
     Button.Parent = Row
 
-    local bc = Instance.new("UICorner"); bc.CornerRadius = UDim.new(1,0); bc.Parent = Button
+    local bc = Instance.new("UICorner"); bc.CornerRadius = UDim.new(0,7); bc.Parent = Button
 
     local Knob = Instance.new("Frame")
     Knob.Size = UDim2.fromOffset(15,15)
@@ -498,7 +497,7 @@ local function Toggle(Parent, Title, Description, Initial, Callback)
     Knob.BackgroundColor3 = Color3.fromRGB(155,158,168)
     Knob.Parent = Button
 
-    local kn = Instance.new("UICorner"); kn.CornerRadius = UDim.new(1,0); kn.Parent = Knob
+    local kn = Instance.new("UICorner"); kn.CornerRadius = UDim.new(0,7); kn.Parent = Knob
 
     local State = Initial
 
@@ -540,7 +539,7 @@ local function Slider(Parent, Title, Min, Max, Value, Callback, Format)
     Row.BorderSizePixel = 0
     Row.Parent = Parent
 
-    local rcorner = Instance.new("UICorner"); rcorner.CornerRadius = UDim.new(1,0); rcorner.Parent = Row
+    local rcorner = Instance.new("UICorner"); rcorner.CornerRadius = UDim.new(0,8); rcorner.Parent = Row
 
     local Label = Instance.new("TextLabel")
     Label.Size = UDim2.new(1,-60,0,18)
@@ -571,13 +570,13 @@ local function Slider(Parent, Title, Min, Max, Value, Callback, Format)
     Bar.AutoButtonColor = false
     Bar.Parent = Row
 
-    local bcorner = Instance.new("UICorner"); bcorner.CornerRadius = UDim.new(1,0); bcorner.Parent = Bar
+    local bcorner = Instance.new("UICorner"); bcorner.CornerRadius = UDim.new(0,7); bcorner.Parent = Bar
 
     local Fill = Instance.new("Frame")
     Fill.BackgroundColor3 = Accent()
     Fill.BorderSizePixel = 0
     Fill.Parent = Bar
-    local fcorner = Instance.new("UICorner"); fcorner.CornerRadius = UDim.new(1,0); fcorner.Parent = Fill
+    local fcorner = Instance.new("UICorner"); fcorner.CornerRadius = UDim.new(0,7); fcorner.Parent = Fill
 
     local function UpdateAccent() if Fill.Parent then Fill.BackgroundColor3 = Accent() end end
     table.insert(ToggleRenderers, UpdateAccent)
@@ -626,7 +625,7 @@ local function Dropdown(Parent, Title, Options, Current, Callback)
     Row.BorderSizePixel = 0
     Row.Parent = Parent
 
-    local rcorner = Instance.new("UICorner"); rcorner.CornerRadius = UDim.new(1,0); rcorner.Parent = Row
+    local rcorner = Instance.new("UICorner"); rcorner.CornerRadius = UDim.new(0,8); rcorner.Parent = Row
 
     local Label = Instance.new("TextLabel")
     Label.Size = UDim2.new(1,-125,1,0)
@@ -650,7 +649,7 @@ local function Dropdown(Parent, Title, Options, Current, Callback)
     Button.AutoButtonColor = false
     Button.Parent = Row
 
-    local bcorner = Instance.new("UICorner"); bcorner.CornerRadius = UDim.new(1,0); bcorner.Parent = Button
+    local bcorner = Instance.new("UICorner"); bcorner.CornerRadius = UDim.new(0,7); bcorner.Parent = Button
 
     Button.MouseButton1Click:Connect(function()
         ClosePopup()
@@ -686,10 +685,6 @@ end
 
 ------------------------------------------------------------
 -- PROFESSIONAL COLOR PICKER
--- - grid swatches (hue x sat)
--- - HEX input + apply
--- - preview
--- - preset swatches row
 ------------------------------------------------------------
 
 local function ColorPicker(Parent, Title, Current, Callback)
@@ -699,7 +694,7 @@ local function ColorPicker(Parent, Title, Current, Callback)
     Row.BorderSizePixel = 0
     Row.Parent = Parent
 
-    local rcorner = Instance.new("UICorner"); rcorner.CornerRadius = UDim.new(1,0); rcorner.Parent = Row
+    local rcorner = Instance.new("UICorner"); rcorner.CornerRadius = UDim.new(0,8); rcorner.Parent = Row
 
     local Label = Instance.new("TextLabel")
     Label.Size = UDim2.new(1,-140,0,18)
@@ -720,34 +715,29 @@ local function ColorPicker(Parent, Title, Current, Callback)
     Preview.AutoButtonColor = false
     Preview.Parent = Row
 
-    local prevCorner = Instance.new("UICorner"); prevCorner.CornerRadius = UDim.new(1,0); prevCorner.Parent = Preview
+    local prevCorner = Instance.new("UICorner"); prevCorner.CornerRadius = UDim.new(0,8); prevCorner.Parent = Preview
 
-    -- small indicator to show selection border
     local previewBorder = Instance.new("UIStroke"); previewBorder.Color = Color3.new(0,0,0); previewBorder.Thickness = 1; previewBorder.Parent = Preview
 
     local function openPicker()
         ClosePopup()
         local PopupW, PopupH = 320, 260
         local Popup = MakePopup(PopupW, PopupH)
-        -- position near row (but keep in screen)
         local x = math.clamp(Row.AbsolutePosition.X + (Row.AbsoluteSize.X - PopupW), 8, math.max(8, workspace.CurrentCamera.ViewportSize.X - PopupW - 8))
         local y = math.clamp(Row.AbsolutePosition.Y + Row.AbsoluteSize.Y + 6, 8, math.max(8, workspace.CurrentCamera.ViewportSize.Y - PopupH - 8))
         Popup.Position = UDim2.fromOffset(x,y)
 
-        -- left: swatch grid
         local GridLeft = Instance.new("Frame")
         GridLeft.Size = UDim2.fromOffset(200,160)
         GridLeft.Position = UDim2.fromOffset(10,10)
         GridLeft.BackgroundTransparency = 1
         GridLeft.Parent = Popup
 
-        -- grid generation: hues x saturations
         local cols = 10
         local rows = 8
         local sw = 200 / cols
         local sh = 160 / rows
 
-        local currentHSV = {Color3.toHSV(Current)} -- h,s,v
         local selectedColor = Current
 
         local function selectColor(color)
@@ -757,8 +747,8 @@ local function ColorPicker(Parent, Title, Current, Callback)
 
         for r = 1, rows do
             for c = 1, cols do
-                local hue = (c - 1) / (cols - 1) -- 0..1
-                local sat = 1 - ((r - 1) / (rows - 1)) * 0.95 -- top is high sat
+                local hue = (c - 1) / (cols - 1)
+                local sat = 1 - ((r - 1) / (rows - 1)) * 0.95
                 local col3 = Color3.fromHSV(hue, sat, 1)
                 local swatch = Instance.new("TextButton")
                 swatch.Size = UDim2.fromOffset(sw - 4, sh - 4)
@@ -767,14 +757,13 @@ local function ColorPicker(Parent, Title, Current, Callback)
                 swatch.Text = ""
                 swatch.AutoButtonColor = false
                 swatch.Parent = GridLeft
-                local sc = Instance.new("UICorner"); sc.CornerRadius = UDim.new(1,0); sc.Parent = swatch
+                local sc = Instance.new("UICorner"); sc.CornerRadius = UDim.new(0,6); sc.Parent = swatch
                 swatch.MouseButton1Click:Connect(function()
                     selectColor(col3)
                 end)
             end
         end
 
-        -- presets row
         local Presets = {
             Color3.fromRGB(255,255,255),
             Color3.fromRGB(0,0,0),
@@ -795,29 +784,27 @@ local function ColorPicker(Parent, Title, Current, Callback)
             btn.Text = ""
             btn.AutoButtonColor = false
             btn.Parent = Popup
-            local pcorn = Instance.new("UICorner"); pcorn.CornerRadius = UDim.new(1,0); pcorn.Parent = btn
+            local pcorn = Instance.new("UICorner"); pcorn.CornerRadius = UDim.new(0,6); pcorn.Parent = btn
             btn.MouseButton1Click:Connect(function()
                 selectColor(pc)
             end)
         end
 
-        -- right side: preview, hex input, apply/cancel
         local rightX = 220
         local previewBox = Instance.new("Frame")
         previewBox.Size = UDim2.fromOffset(84,84)
         previewBox.Position = UDim2.fromOffset(rightX, 12)
         previewBox.BackgroundColor3 = Color3.fromRGB(38,40,48)
         previewBox.Parent = Popup
-        local pcorner = Instance.new("UICorner"); pcorner.CornerRadius = UDim.new(1,0); pcorner.Parent = previewBox
+        local pcorner = Instance.new("UICorner"); pcorner.CornerRadius = UDim.new(0,8); pcorner.Parent = previewBox
 
         local livePreview = Instance.new("Frame")
         livePreview.Size = UDim2.fromOffset(64,64)
         livePreview.Position = UDim2.fromOffset(10,10)
         livePreview.BackgroundColor3 = selectedColor
         livePreview.Parent = previewBox
-        local lcorner = Instance.new("UICorner"); lcorner.CornerRadius = UDim.new(1,0); lcorner.Parent = livePreview
+        local lcorner = Instance.new("UICorner"); lcorner.CornerRadius = UDim.new(0,8); lcorner.Parent = livePreview
 
-        -- HEX input
         local HexLabel = Instance.new("TextLabel")
         HexLabel.Size = UDim2.fromOffset(84,16)
         HexLabel.Position = UDim2.fromOffset(rightX, 110)
@@ -836,10 +823,9 @@ local function ColorPicker(Parent, Title, Current, Callback)
         HexBox.TextColor3 = Color3.fromRGB(220,221,227)
         HexBox.BackgroundColor3 = Color3.fromRGB(31,33,41)
         HexBox.Parent = Popup
-        local hexCorner = Instance.new("UICorner"); hexCorner.CornerRadius = UDim.new(1,0); hexCorner.Parent = HexBox
+        local hexCorner = Instance.new("UICorner"); hexCorner.CornerRadius = UDim.new(0,7); hexCorner.Parent = HexBox
         HexBox.PlaceholderText = "#RRGGBB"
 
-        -- apply & cancel
         local Apply = Instance.new("TextButton")
         Apply.Size = UDim2.fromOffset(84,28)
         Apply.Position = UDim2.fromOffset(rightX, 170)
@@ -848,7 +834,7 @@ local function ColorPicker(Parent, Title, Current, Callback)
         Apply.TextColor3 = Color3.new(1,1,1)
         Apply.Font = Enum.Font.GothamBold
         Apply.Parent = Popup
-        local aCorner = Instance.new("UICorner"); aCorner.CornerRadius = UDim.new(1,0); aCorner.Parent = Apply
+        local aCorner = Instance.new("UICorner"); aCorner.CornerRadius = UDim.new(0,7); aCorner.Parent = Apply
 
         local Cancel = Instance.new("TextButton")
         Cancel.Size = UDim2.fromOffset(84,28)
@@ -858,16 +844,13 @@ local function ColorPicker(Parent, Title, Current, Callback)
         Cancel.TextColor3 = Color3.fromRGB(220,221,227)
         Cancel.Font = Enum.Font.GothamMedium
         Cancel.Parent = Popup
-        local cCorner = Instance.new("UICorner"); cCorner.CornerRadius = UDim.new(1,0); cCorner.Parent = Cancel
+        local cCorner = Instance.new("UICorner"); cCorner.CornerRadius = UDim.new(0,7); cCorner.Parent = Cancel
 
-        -- interactions
-        -- clicking on any swatch already sets selectedColor; update live preview
         local function refreshLive()
             livePreview.BackgroundColor3 = selectedColor
             HexBox.Text = Color3ToHex(selectedColor)
         end
 
-        -- hex enter
         HexBox.FocusLost:Connect(function(enterPressed)
             if HexBox.Text then
                 local parsed = HexToColor3(HexBox.Text)
@@ -878,7 +861,6 @@ local function ColorPicker(Parent, Title, Current, Callback)
             end
         end)
 
-        -- apply
         Apply.MouseButton1Click:Connect(function()
             Current = selectedColor
             Preview.BackgroundColor3 = Current
@@ -891,8 +873,6 @@ local function ColorPicker(Parent, Title, Current, Callback)
             ClosePopup()
         end)
 
-        -- live update when selectColor is called
-        -- we already set Preview when selecting; also update live preview periodically
         spawn(function()
             while ActivePopup == Popup do
                 refreshLive()
@@ -906,14 +886,13 @@ local function ColorPicker(Parent, Title, Current, Callback)
 end
 
 ------------------------------------------------------------
--- AIM / VISUAL / HUD building (unchanged logic, use builders above)
+-- AIM / VISUAL / HUD building (uses the builders above)
 ------------------------------------------------------------
 
 local function AddAim(Row) table.insert(AimRows,Row) end
 local function AddHUD(Row) table.insert(HUDRows,Row) end
 local function AddSetting(Row) table.insert(SettingsRows,Row) end
 
--- (Aim page rows)
 AddAim(Toggle(Scroll,"Aim Assist","Follow valid targets inside the FOV",Config.Aim.Enabled,function(v) Config.Aim.Enabled = v end))
 AddAim(Toggle(Scroll,"FOV Circle","Show targeting radius",Config.Aim.FOVEnabled,function(v) Config.Aim.FOVEnabled = v UpdateFov() end))
 AddAim(Slider(Scroll,"FOV Radius",40,250,Config.Aim.FOV,function(v) Config.Aim.FOV = v UpdateFov() end, function(v) return string.format("%.0f",v) end))
@@ -930,7 +909,7 @@ AddAim(Toggle(Scroll,"Team Check","Ignore teammates",Config.Aim.TeamCheck,functi
 AddAim(Toggle(Scroll,"Wall Check","Ignore targets behind walls",Config.Aim.WallCheck,function(v) Config.Aim.WallCheck = v end))
 
 ------------------------------------------------------------
--- ESP rendering logic (kept as before)
+-- ESP rendering logic (kept)
 ------------------------------------------------------------
 
 local ESPData = {}
@@ -1053,7 +1032,7 @@ local function CreateESP(Player)
         Stroke.Thickness = 1.5
         Stroke.Parent = Box
 
-        local bcorner = Instance.new("UICorner"); bcorner.CornerRadius = UDim.new(1,0); bcorner.Parent = Box
+        local bcorner = Instance.new("UICorner"); bcorner.CornerRadius = UDim.new(0,8); bcorner.Parent = Box
 
         Data.Box = Box
         Data.BoxStroke = Stroke
@@ -1086,7 +1065,7 @@ local function RefreshESP()
 end
 
 ------------------------------------------------------------
--- TARGET / AIM (kept)
+-- TARGET / AIM
 ------------------------------------------------------------
 
 local function IsValidTarget(Player)
@@ -1299,7 +1278,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 ------------------------------------------------------------
--- HUD (100% rounded)
+-- HUD (rounded small radius)
 ------------------------------------------------------------
 
 local HUDFrame = Instance.new("Frame")
@@ -1311,7 +1290,7 @@ HUDFrame.BorderSizePixel = 0
 HUDFrame.Visible = Config.HUD.Enabled
 HUDFrame.Parent = Gui
 
-local hudCorner = Instance.new("UICorner"); hudCorner.CornerRadius = UDim.new(1,0); hudCorner.Parent = HUDFrame
+local hudCorner = Instance.new("UICorner"); hudCorner.CornerRadius = UDim.new(0,8); hudCorner.Parent = HUDFrame
 
 local HUDStroke = Instance.new("UIStroke")
 HUDStroke.Color = Color3.fromRGB(45,47,58)
@@ -1419,7 +1398,7 @@ ResetButton.TextSize = 9
 ResetButton.Font = Enum.Font.GothamMedium
 ResetButton.AutoButtonColor = false
 ResetButton.Parent = Scroll
-local rcorner = Instance.new("UICorner"); rcorner.CornerRadius = UDim.new(1,0); rcorner.Parent = ResetButton
+local rcorner = Instance.new("UICorner"); rcorner.CornerRadius = UDim.new(0,8); rcorner.Parent = ResetButton
 AddSetting(ResetButton)
 
 ResetButton.MouseButton1Click:Connect(function()
@@ -1554,7 +1533,6 @@ end)
 
 ------------------------------------------------------------
 -- MINIMIZE: entire Main slides down and hides; restore slides up
--- Uses Tween returned object to wait for completion.
 ------------------------------------------------------------
 
 local Mini = Instance.new("TextButton")
@@ -1568,16 +1546,14 @@ Mini.Font = Enum.Font.GothamBold
 Mini.Visible = false
 Mini.AutoButtonColor = false
 Mini.Parent = Gui
-local miniCorner = Instance.new("UICorner"); miniCorner.CornerRadius = UDim.new(1,0); miniCorner.Parent = Mini
+local miniCorner = Instance.new("UICorner"); miniCorner.CornerRadius = UDim.new(0,8); miniCorner.Parent = Mini
 
--- We'll move the whole Main down by 220 pixels (off-screen feel) when minimizing.
 local function MinimizeHub()
     ClosePopup()
     MainDragging = false
     HUDDragging = false
 
     if Config.UI.Animations then
-        -- fade header text and content slightly while animating
         Tween(HeaderTitle, {TextTransparency = 1}, TweenFast)
         Tween(HeaderSub, {TextTransparency = 1}, TweenFast)
         Tween(PageTitle, {TextTransparency = 1}, TweenFast)
@@ -1586,10 +1562,8 @@ local function MinimizeHub()
             tw.Completed:Connect(function()
                 if Main and Main.Parent then
                     Main.Visible = false
-                    -- reset position/size so future open behaves
                     Main.Size = UDim2.fromOffset(365,300)
                     Main.Position = UDim2.new(.5,-182,.5,-150)
-                    -- restore text transparency to visible for next open
                     HeaderTitle.TextTransparency = 0
                     HeaderSub.TextTransparency = 0
                     PageTitle.TextTransparency = 0
@@ -1611,12 +1585,10 @@ Minimize.MouseButton1Click:Connect(MinimizeHub)
 Close.MouseButton1Click:Connect(MinimizeHub)
 
 Mini.MouseButton1Click:Connect(function()
-    -- restore
     Mini.Visible = false
     Main.Visible = true
     if Config.UI.Animations then
-        -- start below and animate to center
-        Main.Position = UDim2.new(Main.Position.X.Scale, Main.Position.X.Offset, Main.Position.Y.Scale, Main.Position.Y.Offset + 220)
+        Main.Position = UDim2.fromOffset(Main.Position.X.Offset, Main.Position.Y.Offset + 220)
         Main.Size = UDim2.fromOffset(365,0)
         Tween(HeaderTitle, {TextTransparency = 1}, TweenFast)
         Tween(HeaderSub, {TextTransparency = 1}, TweenFast)
@@ -1712,4 +1684,4 @@ RefreshESP()
 RefreshToggleAccent()
 ShowAim()
 
-print("NOVA HUB - STUDIO EDITION carregado com melhorias: minimização completa, ColorPicker profissional e bordas 100% redondas.")
+print("NOVA HUB - STUDIO EDITION carregado (apenas Main com borda 100% arredondada).")
