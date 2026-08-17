@@ -9,6 +9,7 @@
     • HUD: Ao mover o HUD, posição é salva em Config.HUD.Position
     • ColorPicker (UI Accent): corrige bug que usava variável errada; atualiza elementos UI imediatamente
     • Animações de minimizar/maximizar sincronizadas (sem delay)
+    • Bordas arredondadas em todo o painel
 ]]
 
 ------------------------------------------------------------
@@ -190,13 +191,20 @@ Main.BackgroundColor3 = DarkColor()
 Main.BorderSizePixel = 0
 Main.Parent = Gui
 
-Instance.new("UICorner",Main).CornerRadius =
-    UDim.new(0,12)
+-- Borda arredondada maior e uniforme
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0,16)
+MainCorner.Parent = Main
 
 local MainStroke = Instance.new("UIStroke")
 MainStroke.Color = Color3.fromRGB(45,47,58)
 MainStroke.Thickness = 1
 MainStroke.Parent = Main
+
+-- Aplicar borda arredondada no stroke também
+local StrokeCorner = Instance.new("UICorner")
+StrokeCorner.CornerRadius = UDim.new(0,16)
+StrokeCorner.Parent = MainStroke
 
 ------------------------------------------------------------
 -- HEADER
@@ -207,6 +215,19 @@ Header.Size = UDim2.new(1,0,0,46)
 Header.BackgroundColor3 = Color3.fromRGB(19,20,26)
 Header.BorderSizePixel = 0
 Header.Parent = Main
+
+-- Borda arredondada no topo do header
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(0,16)
+HeaderCorner.Parent = Header
+
+-- Corrigir cantos inferiores do header (devem ser retos)
+local HeaderBottomFix = Instance.new("Frame")
+HeaderBottomFix.Size = UDim2.new(1,0,0,16)
+HeaderBottomFix.Position = UDim2.new(0,0,1,-16)
+HeaderBottomFix.BackgroundColor3 = Color3.fromRGB(19,20,26)
+HeaderBottomFix.BorderSizePixel = 0
+HeaderBottomFix.Parent = Header
 
 local Logo = Instance.new("TextLabel")
 Logo.Size = UDim2.fromOffset(32,32)
@@ -285,6 +306,19 @@ Sidebar.Position = UDim2.fromOffset(0,46)
 Sidebar.BackgroundColor3 = Color3.fromRGB(17,18,23)
 Sidebar.BorderSizePixel = 0
 Sidebar.Parent = Main
+
+-- Borda arredondada no canto inferior esquerdo
+local SidebarCorner = Instance.new("UICorner")
+SidebarCorner.CornerRadius = UDim.new(0,16)
+SidebarCorner.Parent = Sidebar
+
+-- Corrigir cantos superiores do sidebar (devem ser retos)
+local SidebarTopFix = Instance.new("Frame")
+SidebarTopFix.Size = UDim2.new(1,0,0,16)
+SidebarTopFix.Position = UDim2.new(0,0,0,0)
+SidebarTopFix.BackgroundColor3 = Color3.fromRGB(17,18,23)
+SidebarTopFix.BorderSizePixel = 0
+SidebarTopFix.Parent = Sidebar
 
 local function MakeTab(Text,Y)
 
