@@ -3,14 +3,11 @@
     LocalScript
     StarterPlayer > StarterPlayerScripts
 
-    CORREÇÕES AQUI:
-    • HUD: Transparência agora também afeta números/letras
-    • HUD Size: Texto escala com o slider; dimensão amplia centrada (não só para a direita)
-    • HUD: Ao mover o HUD, posição é salva em Config.HUD.Position
-    • ColorPicker (UI Accent): corrige bug que usava variável errada; atualiza elementos UI imediatamente
-    • Animações de minimizar/maximizar sincronizadas (sem delay)
-    • Bordas arredondadas em todo o painel
-    • Texto "bug" em amarelo ao lado do toggle Skeleton
+    VERSÃO PROFISSIONAL
+    • Interface moderna e organizada
+    • Sistema de cores avançado com preview
+    • Animações suaves
+    • Detalhes visuais aprimorados
 ]]
 
 ------------------------------------------------------------
@@ -32,73 +29,50 @@ local Camera = workspace.CurrentCamera
 ------------------------------------------------------------
 
 local Config = {
-
     Aim = {
         Enabled = false,
-
         FOVEnabled = true,
         FOV = 110,
         Thickness = 2,
         Color = Color3.fromRGB(170,175,255),
-
         Smoothness = 0.15,
-
         TargetPart = "Head",
-
         TeamCheck = false,
         WallCheck = false,
-
         TargetPriority = false,
         PriorityMode = "Crosshair",
-
         TargetHighlight = false,
-
         Prediction = false,
         PredictionStrength = 0.12
     },
-
     Visual = {
-
         ESP = false,
-
         Box = false,
         Skeleton = false,
         Name = false,
         Health = false,
         Distance = false,
         Tracer = false,
-
         Highlight = false,
         Chams = false,
-
         TeamCheck = false,
-
         Color = Color3.fromRGB(255,255,255),
-
         MaxDistance = 1500
     },
-
     HUD = {
-
         Enabled = true,
-
         FPS = true,
         Ping = true,
         Players = true,
         XYZ = false,
-
         Position = UDim2.fromOffset(15,15),
-
         Size = 118,
         Transparency = 0
     },
-
     UI = {
-
         Animations = true,
         Notifications = true,
         Performance = false,
-
         Accent = Color3.fromRGB(105,108,145)
     }
 }
@@ -132,11 +106,15 @@ local function Accent()
 end
 
 local function PanelColor()
-    return Color3.fromRGB(20,21,27)
+    return Color3.fromRGB(22,23,29)
 end
 
 local function DarkColor()
-    return Color3.fromRGB(15,16,21)
+    return Color3.fromRGB(16,17,22)
+end
+
+local function HoverColor()
+    return Color3.fromRGB(32,34,42)
 end
 
 ------------------------------------------------------------
@@ -156,8 +134,8 @@ Gui.Parent = PlayerGui
 
 local Main = Instance.new("Frame")
 Main.Name = "Main"
-Main.Size = UDim2.fromOffset(365,300)
-Main.Position = UDim2.new(.5,-182,.5,-150)
+Main.Size = UDim2.fromOffset(380,320)
+Main.Position = UDim2.new(.5,-190,.5,-160)
 Main.BackgroundColor3 = DarkColor()
 Main.BorderSizePixel = 0
 Main.Parent = Gui
@@ -166,22 +144,24 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0,16)
 MainCorner.Parent = Main
 
+local MainShadow = Instance.new("UIStroke")
+MainShadow.Color = Color3.fromRGB(0,0,0)
+MainShadow.Thickness = 2
+MainShadow.Transparency = 0.5
+MainShadow.Parent = Main
+
 local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(45,47,58)
+MainStroke.Color = Color3.fromRGB(50,52,63)
 MainStroke.Thickness = 1
 MainStroke.Parent = Main
-
-local StrokeCorner = Instance.new("UICorner")
-StrokeCorner.CornerRadius = UDim.new(0,16)
-StrokeCorner.Parent = MainStroke
 
 ------------------------------------------------------------
 -- HEADER
 ------------------------------------------------------------
 
 local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1,0,0,46)
-Header.BackgroundColor3 = Color3.fromRGB(19,20,26)
+Header.Size = UDim2.new(1,0,0,50)
+Header.BackgroundColor3 = Color3.fromRGB(20,21,27)
 Header.BorderSizePixel = 0
 Header.Parent = Main
 
@@ -192,39 +172,55 @@ HeaderCorner.Parent = Header
 local HeaderBottomFix = Instance.new("Frame")
 HeaderBottomFix.Size = UDim2.new(1,0,0,16)
 HeaderBottomFix.Position = UDim2.new(0,0,1,-16)
-HeaderBottomFix.BackgroundColor3 = Color3.fromRGB(19,20,26)
+HeaderBottomFix.BackgroundColor3 = Color3.fromRGB(20,21,27)
 HeaderBottomFix.BorderSizePixel = 0
 HeaderBottomFix.Parent = Header
 
+-- Linha separadora
+local HeaderLine = Instance.new("Frame")
+HeaderLine.Size = UDim2.new(1,0,0,1)
+HeaderLine.Position = UDim2.new(0,0,1,0)
+HeaderLine.BackgroundColor3 = Color3.fromRGB(40,42,52)
+HeaderLine.BorderSizePixel = 0
+HeaderLine.Parent = Header
+
 local Logo = Instance.new("TextLabel")
-Logo.Size = UDim2.fromOffset(32,32)
-Logo.Position = UDim2.fromOffset(8,7)
+Logo.Size = UDim2.fromOffset(34,34)
+Logo.Position = UDim2.fromOffset(8,8)
 Logo.BackgroundColor3 = Accent()
 Logo.Text = "N"
 Logo.TextColor3 = Color3.new(1,1,1)
-Logo.TextSize = 14
+Logo.TextSize = 15
 Logo.Font = Enum.Font.GothamBold
 Logo.Parent = Header
 
-Instance.new("UICorner",Logo).CornerRadius = UDim.new(0,8)
+local LogoCorner = Instance.new("UICorner")
+LogoCorner.CornerRadius = UDim.new(0,9)
+LogoCorner.Parent = Logo
+
+local LogoGlow = Instance.new("UIStroke")
+LogoGlow.Color = Color3.fromRGB(255,255,255)
+LogoGlow.Thickness = 1
+LogoGlow.Transparency = 0.7
+LogoGlow.Parent = Logo
 
 local HeaderTitle = Instance.new("TextLabel")
-HeaderTitle.Position = UDim2.fromOffset(49,5)
-HeaderTitle.Size = UDim2.fromOffset(160,18)
+HeaderTitle.Position = UDim2.fromOffset(52,6)
+HeaderTitle.Size = UDim2.fromOffset(170,18)
 HeaderTitle.BackgroundTransparency = 1
 HeaderTitle.Text = "NOVA HUB"
 HeaderTitle.TextColor3 = Color3.new(1,1,1)
-HeaderTitle.TextSize = 12
+HeaderTitle.TextSize = 13
 HeaderTitle.Font = Enum.Font.GothamBold
 HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
 HeaderTitle.Parent = Header
 
 local HeaderSub = Instance.new("TextLabel")
-HeaderSub.Position = UDim2.fromOffset(49,24)
-HeaderSub.Size = UDim2.fromOffset(160,14)
+HeaderSub.Position = UDim2.fromOffset(52,25)
+HeaderSub.Size = UDim2.fromOffset(170,14)
 HeaderSub.BackgroundTransparency = 1
-HeaderSub.Text = "STUDIO EDITION"
-HeaderSub.TextColor3 = Color3.fromRGB(90,93,103)
+HeaderSub.Text = "STUDIO EDITION v2.0"
+HeaderSub.TextColor3 = Color3.fromRGB(110,113,125)
 HeaderSub.TextSize = 7
 HeaderSub.Font = Enum.Font.GothamMedium
 HeaderSub.TextXAlignment = Enum.TextXAlignment.Left
@@ -237,9 +233,9 @@ DragButton.Text = ""
 DragButton.Parent = Header
 
 local Minimize = Instance.new("TextButton")
-Minimize.Size = UDim2.fromOffset(28,28)
-Minimize.Position = UDim2.new(1,-65,0,9)
-Minimize.BackgroundColor3 = Color3.fromRGB(29,30,38)
+Minimize.Size = UDim2.fromOffset(30,30)
+Minimize.Position = UDim2.new(1,-68,0,10)
+Minimize.BackgroundColor3 = Color3.fromRGB(30,31,39)
 Minimize.Text = "—"
 Minimize.TextColor3 = Color3.fromRGB(180,180,190)
 Minimize.TextSize = 12
@@ -247,9 +243,9 @@ Minimize.Font = Enum.Font.GothamBold
 Minimize.Parent = Header
 
 local Close = Instance.new("TextButton")
-Close.Size = UDim2.fromOffset(28,28)
-Close.Position = UDim2.new(1,-33,0,9)
-Close.BackgroundColor3 = Color3.fromRGB(29,30,38)
+Close.Size = UDim2.fromOffset(30,30)
+Close.Position = UDim2.new(1,-34,0,10)
+Close.BackgroundColor3 = Color3.fromRGB(30,31,39)
 Close.Text = "×"
 Close.TextColor3 = Color3.fromRGB(180,180,190)
 Close.TextSize = 16
@@ -259,14 +255,28 @@ Close.Parent = Header
 Instance.new("UICorner",Minimize).CornerRadius = UDim.new(0,7)
 Instance.new("UICorner",Close).CornerRadius = UDim.new(0,7)
 
+-- Hover effects
+Minimize.MouseEnter:Connect(function()
+    Tween(Minimize,{BackgroundColor3 = HoverColor(), TextColor3 = Color3.new(1,1,1)})
+end)
+Minimize.MouseLeave:Connect(function()
+    Tween(Minimize,{BackgroundColor3 = Color3.fromRGB(30,31,39), TextColor3 = Color3.fromRGB(180,180,190)})
+end)
+Close.MouseEnter:Connect(function()
+    Tween(Close,{BackgroundColor3 = Color3.fromRGB(200,60,60), TextColor3 = Color3.new(1,1,1)})
+end)
+Close.MouseLeave:Connect(function()
+    Tween(Close,{BackgroundColor3 = Color3.fromRGB(30,31,39), TextColor3 = Color3.fromRGB(180,180,190)})
+end)
+
 ------------------------------------------------------------
 -- SIDEBAR
 ------------------------------------------------------------
 
 local Sidebar = Instance.new("Frame")
-Sidebar.Size = UDim2.new(0,60,1,-46)
-Sidebar.Position = UDim2.fromOffset(0,46)
-Sidebar.BackgroundColor3 = Color3.fromRGB(17,18,23)
+Sidebar.Size = UDim2.new(0,65,1,-50)
+Sidebar.Position = UDim2.fromOffset(0,50)
+Sidebar.BackgroundColor3 = Color3.fromRGB(18,19,24)
 Sidebar.BorderSizePixel = 0
 Sidebar.Parent = Main
 
@@ -277,79 +287,103 @@ SidebarCorner.Parent = Sidebar
 local SidebarTopFix = Instance.new("Frame")
 SidebarTopFix.Size = UDim2.new(1,0,0,16)
 SidebarTopFix.Position = UDim2.new(0,0,0,0)
-SidebarTopFix.BackgroundColor3 = Color3.fromRGB(17,18,23)
+SidebarTopFix.BackgroundColor3 = Color3.fromRGB(18,19,24)
 SidebarTopFix.BorderSizePixel = 0
 SidebarTopFix.Parent = Sidebar
 
+-- Linha separadora vertical
+local SidebarLine = Instance.new("Frame")
+SidebarLine.Size = UDim2.new(0,1,1,0)
+SidebarLine.Position = UDim2.new(1,0,0,0)
+SidebarLine.BackgroundColor3 = Color3.fromRGB(40,42,52)
+SidebarLine.BorderSizePixel = 0
+SidebarLine.Parent = Sidebar
+
+local ActiveTab = nil
+
 local function MakeTab(Text,Y)
     local Button = Instance.new("TextButton")
-    Button.Size = UDim2.fromOffset(40,38)
+    Button.Size = UDim2.fromOffset(45,40)
     Button.Position = UDim2.fromOffset(10,Y)
-    Button.BackgroundColor3 = Color3.fromRGB(17,18,23)
+    Button.BackgroundColor3 = Color3.fromRGB(18,19,24)
     Button.Text = Text
     Button.TextColor3 = Color3.fromRGB(130,133,143)
-    Button.TextSize = 17
+    Button.TextSize = 18
     Button.Font = Enum.Font.GothamBold
     Button.AutoButtonColor = false
     Button.Parent = Sidebar
 
-    Instance.new("UICorner",Button).CornerRadius = UDim.new(0,9)
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0,10)
+    Corner.Parent = Button
 
     Button.MouseEnter:Connect(function()
-        Tween(Button,{
-            BackgroundColor3 = Color3.fromRGB(27,29,37),
-            TextColor3 = Color3.new(1,1,1)
-        })
+        if ActiveTab ~= Button then
+            Tween(Button,{
+                BackgroundColor3 = Color3.fromRGB(28,30,38),
+                TextColor3 = Color3.new(1,1,1)
+            })
+        end
     end)
 
     Button.MouseLeave:Connect(function()
-        Tween(Button,{
-            BackgroundColor3 = Color3.fromRGB(17,18,23),
-            TextColor3 = Color3.fromRGB(130,133,143)
-        })
+        if ActiveTab ~= Button then
+            Tween(Button,{
+                BackgroundColor3 = Color3.fromRGB(18,19,24),
+                TextColor3 = Color3.fromRGB(130,133,143)
+            })
+        end
     end)
 
     return Button
 end
 
 local AimTab = MakeTab("◎",10)
-local VisualTab = MakeTab("◉",55)
-local HUDTab = MakeTab("▣",100)
-local SettingsTab = MakeTab("⚙",145)
+local VisualTab = MakeTab("◉",58)
+local HUDTab = MakeTab("▣",106)
+local SettingsTab = MakeTab("⚙",154)
 
 ------------------------------------------------------------
 -- CONTENT
 ------------------------------------------------------------
 
 local Content = Instance.new("Frame")
-Content.Size = UDim2.new(1,-60,1,-46)
-Content.Position = UDim2.fromOffset(60,46)
+Content.Size = UDim2.new(1,-65,1,-50)
+Content.Position = UDim2.fromOffset(65,50)
 Content.BackgroundTransparency = 1
 Content.Parent = Main
 
 local PageTitle = Instance.new("TextLabel")
-PageTitle.Size = UDim2.new(1,-20,0,22)
-PageTitle.Position = UDim2.fromOffset(12,7)
+PageTitle.Size = UDim2.new(1,-20,0,25)
+PageTitle.Position = UDim2.fromOffset(14,8)
 PageTitle.BackgroundTransparency = 1
 PageTitle.Text = "Aim Assist"
 PageTitle.TextColor3 = Color3.new(1,1,1)
-PageTitle.TextSize = 15
+PageTitle.TextSize = 16
 PageTitle.Font = Enum.Font.GothamBold
 PageTitle.TextXAlignment = Enum.TextXAlignment.Left
 PageTitle.Parent = Content
 
+local PageLine = Instance.new("Frame")
+PageLine.Size = UDim2.new(1,-28,0,1)
+PageLine.Position = UDim2.fromOffset(14,36)
+PageLine.BackgroundColor3 = Color3.fromRGB(40,42,52)
+PageLine.BorderSizePixel = 0
+PageLine.Parent = Content
+
 local Scroll = Instance.new("ScrollingFrame")
-Scroll.Size = UDim2.new(1,-22,1,-48)
-Scroll.Position = UDim2.fromOffset(11,45)
+Scroll.Size = UDim2.new(1,-24,1,-50)
+Scroll.Position = UDim2.fromOffset(12,44)
 Scroll.BackgroundTransparency = 1
 Scroll.BorderSizePixel = 0
-Scroll.ScrollBarThickness = 2
+Scroll.ScrollBarThickness = 3
+Scroll.ScrollBarImageColor3 = Accent()
 Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 Scroll.CanvasSize = UDim2.new()
 Scroll.Parent = Content
 
 local Layout = Instance.new("UIListLayout")
-Layout.Padding = UDim.new(0,6)
+Layout.Padding = UDim.new(0,7)
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 Layout.Parent = Scroll
 
@@ -427,57 +461,69 @@ local function RefreshToggleAccent()
 end
 
 ------------------------------------------------------------
--- TOGGLE
+-- TOGGLE MELHORADO
 ------------------------------------------------------------
 
 local function Toggle(Parent, Title, Description, Initial, Callback)
     local Row = Instance.new("Frame")
-    Row.Size = UDim2.new(1,-2,0,43)
+    Row.Size = UDim2.new(1,-2,0,46)
     Row.BackgroundColor3 = PanelColor()
     Row.BorderSizePixel = 0
     Row.Parent = Parent
 
-    Instance.new("UICorner",Row).CornerRadius = UDim.new(0,8)
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0,9)
+    Corner.Parent = Row
+
+    local Stroke = Instance.new("UIStroke")
+    Stroke.Color = Color3.fromRGB(40,42,52)
+    Stroke.Thickness = 1
+    Stroke.Transparency = 0.5
+    Stroke.Parent = Row
 
     local Name = Instance.new("TextLabel")
-    Name.Size = UDim2.new(1,-65,0,17)
-    Name.Position = UDim2.fromOffset(10,4)
+    Name.Size = UDim2.new(1,-65,0,18)
+    Name.Position = UDim2.fromOffset(12,5)
     Name.BackgroundTransparency = 1
     Name.Text = Title
-    Name.TextColor3 = Color3.fromRGB(220,221,227)
+    Name.TextColor3 = Color3.fromRGB(230,231,237)
     Name.TextSize = 9
-    Name.Font = Enum.Font.GothamMedium
+    Name.Font = Enum.Font.GothamBold
     Name.TextXAlignment = Enum.TextXAlignment.Left
     Name.Parent = Row
 
     local Desc = Instance.new("TextLabel")
     Desc.Size = UDim2.new(1,-65,0,13)
-    Desc.Position = UDim2.fromOffset(10,22)
+    Desc.Position = UDim2.fromOffset(12,24)
     Desc.BackgroundTransparency = 1
     Desc.Text = Description
-    Desc.TextColor3 = Color3.fromRGB(84,87,98)
+    Desc.TextColor3 = Color3.fromRGB(100,103,115)
     Desc.TextSize = 7
     Desc.Font = Enum.Font.GothamMedium
     Desc.TextXAlignment = Enum.TextXAlignment.Left
     Desc.Parent = Row
 
     local Button = Instance.new("TextButton")
-    Button.Size = UDim2.fromOffset(38,21)
-    Button.Position = UDim2.new(1,-48,.5,-10)
+    Button.Size = UDim2.fromOffset(40,22)
+    Button.Position = UDim2.new(1,-50,.5,-11)
     Button.BackgroundColor3 = Color3.fromRGB(37,39,47)
     Button.Text = ""
     Button.AutoButtonColor = false
     Button.Parent = Row
 
-    Instance.new("UICorner",Button).CornerRadius = UDim.new(1,0)
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.CornerRadius = UDim.new(1,0)
+    ButtonCorner.Parent = Button
 
     local Knob = Instance.new("Frame")
-    Knob.Size = UDim2.fromOffset(15,15)
+    Knob.Size = UDim2.fromOffset(16,16)
     Knob.Position = UDim2.fromOffset(3,3)
     Knob.BackgroundColor3 = Color3.fromRGB(155,158,168)
     Knob.Parent = Button
 
-    Instance.new("UICorner",Knob).CornerRadius = UDim.new(1,0)
+    local KnobCorner = Instance.new("UICorner")
+    KnobCorner.CornerRadius = UDim.new(1,0)
+    KnobCorner.Parent = Knob
 
     local State = Initial
 
@@ -485,7 +531,7 @@ local function Toggle(Parent, Title, Description, Initial, Callback)
         if not Button.Parent then return end
         if State then
             Button.BackgroundColor3 = Accent()
-            Knob.Position = UDim2.new(1,-18,0,3)
+            Knob.Position = UDim2.new(1,-19,0,3)
             Knob.BackgroundColor3 = Color3.new(1,1,1)
         else
             Button.BackgroundColor3 = Color3.fromRGB(37,39,47)
@@ -500,11 +546,10 @@ local function Toggle(Parent, Title, Description, Initial, Callback)
         State = not State
         Render()
 
-        Tween(Button,{Size = UDim2.fromOffset(41,23)},TweenFast)
-
+        Tween(Button,{Size = UDim2.fromOffset(43,24)},TweenFast)
         task.delay(.07,function()
             if Button.Parent then
-                Tween(Button,{Size = UDim2.fromOffset(38,21)},TweenFast)
+                Tween(Button,{Size = UDim2.fromOffset(40,22)},TweenFast)
             end
         end)
 
@@ -514,60 +559,76 @@ local function Toggle(Parent, Title, Description, Initial, Callback)
     end)
 
     Render()
-
     return Row
 end
 
 ------------------------------------------------------------
--- SLIDER
+-- SLIDER MELHORADO
 ------------------------------------------------------------
 
 local function Slider(Parent, Title, Min, Max, Value, Callback, Format)
     local Row = Instance.new("Frame")
-    Row.Size = UDim2.new(1,-2,0,54)
+    Row.Size = UDim2.new(1,-2,0,58)
     Row.BackgroundColor3 = PanelColor()
     Row.BorderSizePixel = 0
     Row.Parent = Parent
 
-    Instance.new("UICorner",Row).CornerRadius = UDim.new(0,8)
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0,9)
+    Corner.Parent = Row
+
+    local Stroke = Instance.new("UIStroke")
+    Stroke.Color = Color3.fromRGB(40,42,52)
+    Stroke.Thickness = 1
+    Stroke.Transparency = 0.5
+    Stroke.Parent = Row
 
     local Label = Instance.new("TextLabel")
     Label.Size = UDim2.new(1,-60,0,18)
-    Label.Position = UDim2.fromOffset(10,4)
+    Label.Position = UDim2.fromOffset(12,5)
     Label.BackgroundTransparency = 1
     Label.Text = Title
-    Label.TextColor3 = Color3.fromRGB(220,221,227)
+    Label.TextColor3 = Color3.fromRGB(230,231,237)
     Label.TextSize = 9
-    Label.Font = Enum.Font.GothamMedium
+    Label.Font = Enum.Font.GothamBold
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = Row
 
     local Number = Instance.new("TextLabel")
-    Number.Size = UDim2.fromOffset(48,18)
-    Number.Position = UDim2.new(1,-58,0,4)
-    Number.BackgroundTransparency = 1
-    Number.TextColor3 = Color3.fromRGB(150,153,164)
+    Number.Size = UDim2.fromOffset(50,20)
+    Number.Position = UDim2.new(1,-62,0,4)
+    Number.BackgroundColor3 = Color3.fromRGB(35,37,45)
+    Number.TextColor3 = Color3.fromRGB(180,183,194)
     Number.TextSize = 8
     Number.Font = Enum.Font.GothamBold
-    Number.TextXAlignment = Enum.TextXAlignment.Right
+    Number.TextXAlignment = Enum.TextXAlignment.Center
+    Number.TextYAlignment = Enum.TextYAlignment.Center
     Number.Parent = Row
 
+    local NumberCorner = Instance.new("UICorner")
+    NumberCorner.CornerRadius = UDim.new(0,5)
+    NumberCorner.Parent = Number
+
     local Bar = Instance.new("TextButton")
-    Bar.Size = UDim2.new(1,-20,0,5)
-    Bar.Position = UDim2.fromOffset(10,37)
+    Bar.Size = UDim2.new(1,-24,0,6)
+    Bar.Position = UDim2.fromOffset(12,40)
     Bar.BackgroundColor3 = Color3.fromRGB(38,40,48)
     Bar.Text = ""
     Bar.AutoButtonColor = false
     Bar.Parent = Row
 
-    Instance.new("UICorner",Bar).CornerRadius = UDim.new(1,0)
+    local BarCorner = Instance.new("UICorner")
+    BarCorner.CornerRadius = UDim.new(1,0)
+    BarCorner.Parent = Bar
 
     local Fill = Instance.new("Frame")
     Fill.BackgroundColor3 = Accent()
     Fill.BorderSizePixel = 0
     Fill.Parent = Bar
 
-    Instance.new("UICorner",Fill).CornerRadius = UDim.new(1,0)
+    local FillCorner = Instance.new("UICorner")
+    FillCorner.CornerRadius = UDim.new(1,0)
+    FillCorner.Parent = Fill
 
     local function UpdateAccent()
         if Fill.Parent then
@@ -629,78 +690,111 @@ local function Slider(Parent, Title, Min, Max, Value, Callback, Format)
 end
 
 ------------------------------------------------------------
--- DROPDOWN
+-- DROPDOWN MELHORADO
 ------------------------------------------------------------
 
 local function Dropdown(Parent, Title, Options, Current, Callback)
     local Row = Instance.new("Frame")
-    Row.Size = UDim2.new(1,-2,0,42)
+    Row.Size = UDim2.new(1,-2,0,44)
     Row.BackgroundColor3 = PanelColor()
     Row.BorderSizePixel = 0
     Row.Parent = Parent
 
-    Instance.new("UICorner",Row).CornerRadius = UDim.new(0,8)
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0,9)
+    Corner.Parent = Row
+
+    local Stroke = Instance.new("UIStroke")
+    Stroke.Color = Color3.fromRGB(40,42,52)
+    Stroke.Thickness = 1
+    Stroke.Transparency = 0.5
+    Stroke.Parent = Row
 
     local Label = Instance.new("TextLabel")
     Label.Size = UDim2.new(1,-125,1,0)
-    Label.Position = UDim2.fromOffset(10,0)
+    Label.Position = UDim2.fromOffset(12,0)
     Label.BackgroundTransparency = 1
     Label.Text = Title
-    Label.TextColor3 = Color3.fromRGB(220,221,227)
+    Label.TextColor3 = Color3.fromRGB(230,231,237)
     Label.TextSize = 9
-    Label.Font = Enum.Font.GothamMedium
+    Label.Font = Enum.Font.GothamBold
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = Row
 
     local Button = Instance.new("TextButton")
-    Button.Size = UDim2.fromOffset(105,28)
-    Button.Position = UDim2.new(1,-115,.5,-14)
-    Button.BackgroundColor3 = Color3.fromRGB(31,33,41)
+    Button.Size = UDim2.fromOffset(110,30)
+    Button.Position = UDim2.new(1,-120,.5,-15)
+    Button.BackgroundColor3 = Color3.fromRGB(32,34,42)
     Button.Text = Current.." ▼"
-    Button.TextColor3 = Color3.fromRGB(175,178,188)
+    Button.TextColor3 = Color3.fromRGB(180,183,194)
     Button.TextSize = 8
-    Button.Font = Enum.Font.GothamMedium
+    Button.Font = Enum.Font.GothamBold
     Button.AutoButtonColor = false
     Button.Parent = Row
 
-    Instance.new("UICorner",Button).CornerRadius = UDim.new(0,7)
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.CornerRadius = UDim.new(0,7)
+    ButtonCorner.Parent = Row
+
+    Button.MouseEnter:Connect(function()
+        Tween(Button,{BackgroundColor3 = HoverColor()})
+    end)
+    Button.MouseLeave:Connect(function()
+        Tween(Button,{BackgroundColor3 = Color3.fromRGB(32,34,42)})
+    end)
 
     Button.MouseButton1Click:Connect(function()
         ClosePopup()
 
         local Popup = Instance.new("Frame")
-        Popup.Size = UDim2.fromOffset(105, #Options*28)
+        Popup.Size = UDim2.fromOffset(110, #Options*30 + 10)
         Popup.Position = UDim2.fromOffset(
-            Row.AbsolutePosition.X + Row.AbsoluteSize.X - 115,
+            Row.AbsolutePosition.X + Row.AbsoluteSize.X - 120,
             Row.AbsolutePosition.Y + Row.AbsoluteSize.Y + 3
         )
-        Popup.BackgroundColor3 = Color3.fromRGB(24,25,32)
+        Popup.BackgroundColor3 = Color3.fromRGB(28,30,38)
         Popup.BorderSizePixel = 0
         Popup.ZIndex = 1000
         Popup.Parent = PopupLayer
 
         ActivePopup = Popup
 
-        Instance.new("UICorner",Popup).CornerRadius = UDim.new(0,7)
+        local PopupCorner = Instance.new("UICorner")
+        PopupCorner.CornerRadius = UDim.new(0,8)
+        PopupCorner.Parent = Popup
 
         for Index,Option in ipairs(Options) do
             local OptionButton = Instance.new("TextButton")
-            OptionButton.Size = UDim2.new(1,0,0,28)
-            OptionButton.Position = UDim2.fromOffset(0,(Index-1)*28)
-            OptionButton.BackgroundTransparency = 1
+            OptionButton.Size = UDim2.new(1,-10,0,26)
+            OptionButton.Position = UDim2.fromOffset(5,5+(Index-1)*30)
+            OptionButton.BackgroundColor3 = Color3.fromRGB(28,30,38)
             OptionButton.Text = Option
-            OptionButton.TextColor3 = Color3.fromRGB(195,197,205)
+            OptionButton.TextColor3 = Color3.fromRGB(200,202,210)
             OptionButton.TextSize = 8
             OptionButton.Font = Enum.Font.GothamMedium
+            OptionButton.AutoButtonColor = false
             OptionButton.ZIndex = 1001
             OptionButton.Parent = Popup
 
+            local OptionCorner = Instance.new("UICorner")
+            OptionCorner.CornerRadius = UDim.new(0,5)
+            OptionCorner.Parent = OptionButton
+
+            if Option == Current then
+                OptionButton.BackgroundColor3 = Accent()
+                OptionButton.TextColor3 = Color3.new(1,1,1)
+            end
+
             OptionButton.MouseEnter:Connect(function()
-                Tween(OptionButton,{BackgroundTransparency = .75})
+                if Option ~= Current then
+                    Tween(OptionButton,{BackgroundColor3 = HoverColor()})
+                end
             end)
 
             OptionButton.MouseLeave:Connect(function()
-                Tween(OptionButton,{BackgroundTransparency = 1})
+                if Option ~= Current then
+                    Tween(OptionButton,{BackgroundColor3 = Color3.fromRGB(28,30,38)})
+                end
             end)
 
             OptionButton.MouseButton1Click:Connect(function()
@@ -719,82 +813,165 @@ local function Dropdown(Parent, Title, Options, Current, Callback)
 end
 
 ------------------------------------------------------------
--- COLOR PICKER
+-- COLOR PICKER AVANÇADO
 ------------------------------------------------------------
 
 local function ColorPicker(Parent, Title, Current, Callback)
     local Row = Instance.new("Frame")
-    Row.Size = UDim2.new(1,-2,0,42)
+    Row.Size = UDim2.new(1,-2,0,44)
     Row.BackgroundColor3 = PanelColor()
     Row.BorderSizePixel = 0
     Row.Parent = Parent
 
-    Instance.new("UICorner",Row).CornerRadius = UDim.new(0,8)
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0,9)
+    Corner.Parent = Row
+
+    local Stroke = Instance.new("UIStroke")
+    Stroke.Color = Color3.fromRGB(40,42,52)
+    Stroke.Thickness = 1
+    Stroke.Transparency = 0.5
+    Stroke.Parent = Row
 
     local Label = Instance.new("TextLabel")
     Label.Size = UDim2.new(1,-70,1,0)
-    Label.Position = UDim2.fromOffset(10,0)
+    Label.Position = UDim2.fromOffset(12,0)
     Label.BackgroundTransparency = 1
     Label.Text = Title
-    Label.TextColor3 = Color3.fromRGB(220,221,227)
+    Label.TextColor3 = Color3.fromRGB(230,231,237)
     Label.TextSize = 9
-    Label.Font = Enum.Font.GothamMedium
+    Label.Font = Enum.Font.GothamBold
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = Row
 
     local Preview = Instance.new("TextButton")
-    Preview.Size = UDim2.fromOffset(42,24)
-    Preview.Position = UDim2.new(1,-52,.5,-12)
+    Preview.Size = UDim2.fromOffset(48,28)
+    Preview.Position = UDim2.new(1,-58,.5,-14)
     Preview.BackgroundColor3 = Current
     Preview.Text = ""
     Preview.AutoButtonColor = false
     Preview.Parent = Row
 
-    Instance.new("UICorner",Preview).CornerRadius = UDim.new(0,7)
+    local PreviewCorner = Instance.new("UICorner")
+    PreviewCorner.CornerRadius = UDim.new(0,7)
+    PreviewCorner.Parent = Preview
+
+    local PreviewStroke = Instance.new("UIStroke")
+    PreviewStroke.Color = Color3.fromRGB(255,255,255)
+    PreviewStroke.Thickness = 1
+    PreviewStroke.Transparency = 0.5
+    PreviewStroke.Parent = Preview
 
     local Colors = {
-        {"Branco",Color3.fromRGB(255,255,255)},
-        {"Vermelho",Color3.fromRGB(255,80,80)},
-        {"Azul",Color3.fromRGB(80,150,255)},
-        {"Verde",Color3.fromRGB(80,255,150)},
-        {"Roxo",Color3.fromRGB(190,100,255)},
-        {"Amarelo",Color3.fromRGB(255,210,70)},
-        {"Ciano",Color3.fromRGB(60,220,255)}
+        {"Branco", Color3.fromRGB(255,255,255)},
+        {"Preto", Color3.fromRGB(30,30,30)},
+        {"Vermelho", Color3.fromRGB(255,80,80)},
+        {"Vermelho Escuro", Color3.fromRGB(180,40,40)},
+        {"Azul", Color3.fromRGB(80,150,255)},
+        {"Azul Escuro", Color3.fromRGB(40,80,180)},
+        {"Verde", Color3.fromRGB(80,255,150)},
+        {"Verde Escuro", Color3.fromRGB(40,180,80)},
+        {"Roxo", Color3.fromRGB(190,100,255)},
+        {"Roxo Escuro", Color3.fromRGB(120,60,180)},
+        {"Amarelo", Color3.fromRGB(255,210,70)},
+        {"Laranja", Color3.fromRGB(255,150,50)},
+        {"Ciano", Color3.fromRGB(60,220,255)},
+        {"Rosa", Color3.fromRGB(255,100,200)}
     }
 
     Preview.MouseButton1Click:Connect(function()
         ClosePopup()
 
         local Popup = Instance.new("Frame")
-        Popup.Size = UDim2.fromOffset(180,190)
+        Popup.Size = UDim2.fromOffset(200, 300)
         Popup.Position = UDim2.fromOffset(
-            Row.AbsolutePosition.X + Row.AbsoluteSize.X - 190,
+            Row.AbsolutePosition.X + Row.AbsoluteSize.X - 210,
             Row.AbsolutePosition.Y + Row.AbsoluteSize.Y + 3
         )
-        Popup.BackgroundColor3 = Color3.fromRGB(24,25,32)
+        Popup.BackgroundColor3 = Color3.fromRGB(28,30,38)
         Popup.BorderSizePixel = 0
         Popup.ZIndex = 1000
         Popup.Parent = PopupLayer
 
         ActivePopup = Popup
 
-        Instance.new("UICorner",Popup).CornerRadius = UDim.new(0,8)
+        local PopupCorner = Instance.new("UICorner")
+        PopupCorner.CornerRadius = UDim.new(0,10)
+        PopupCorner.Parent = Popup
+
+        local PopupStroke = Instance.new("UIStroke")
+        PopupStroke.Color = Color3.fromRGB(50,52,63)
+        PopupStroke.Thickness = 1
+        PopupStroke.Parent = Popup
+
+        -- Título
+        local PopupTitle = Instance.new("TextLabel")
+        PopupTitle.Size = UDim2.new(1,0,0,30)
+        PopupTitle.Position = UDim2.fromOffset(0,5)
+        PopupTitle.BackgroundTransparency = 1
+        PopupTitle.Text = "Selecionar Cor"
+        PopupTitle.TextColor3 = Color3.new(1,1,1)
+        PopupTitle.TextSize = 11
+        PopupTitle.Font = Enum.Font.GothamBold
+        PopupTitle.ZIndex = 1001
+        PopupTitle.Parent = Popup
+
+        -- Grid de cores
+        local Grid = Instance.new("Frame")
+        Grid.Size = UDim2.new(1,-20,0,250)
+        Grid.Position = UDim2.fromOffset(10,40)
+        Grid.BackgroundTransparency = 1
+        Grid.ZIndex = 1001
+        Grid.Parent = Popup
+
+        local GridLayout = Instance.new("UIGridLayout")
+        GridLayout.CellSize = UDim2.fromOffset(42,42)
+        GridLayout.CellPadding = UDim2.fromOffset(5,5)
+        GridLayout.FillDirectionMaxCells = 4
+        GridLayout.Parent = Grid
 
         for Index,Data in ipairs(Colors) do
-            local Button = Instance.new("TextButton")
-            Button.Size = UDim2.fromOffset(150,20)
-            Button.Position = UDim2.fromOffset(15,8+(Index-1)*25)
-            Button.BackgroundColor3 = Data[2]
-            Button.Text = Data[1]
-            Button.TextColor3 = Color3.new(0,0,0)
-            Button.TextSize = 8
-            Button.Font = Enum.Font.GothamBold
-            Button.ZIndex = 1001
-            Button.Parent = Popup
+            local ColorButton = Instance.new("TextButton")
+            ColorButton.Size = UDim2.fromOffset(42,42)
+            ColorButton.BackgroundColor3 = Data[2]
+            ColorButton.Text = ""
+            ColorButton.ZIndex = 1002
+            ColorButton.Parent = Grid
 
-            Instance.new("UICorner",Button).CornerRadius = UDim.new(0,5)
+            local ColorCorner = Instance.new("UICorner")
+            ColorCorner.CornerRadius = UDim.new(0,6)
+            ColorCorner.Parent = ColorButton
 
-            Button.MouseButton1Click:Connect(function()
+            local ColorStroke = Instance.new("UIStroke")
+            ColorStroke.Color = Color3.fromRGB(255,255,255)
+            ColorStroke.Thickness = 1
+            ColorStroke.Transparency = 0.3
+            ColorStroke.Parent = ColorButton
+
+            -- Tooltip com nome da cor
+            local Tooltip = Instance.new("TextLabel")
+            Tooltip.Size = UDim2.new(1,0,0,18)
+            Tooltip.Position = UDim2.new(0,0,1,2)
+            Tooltip.BackgroundTransparency = 1
+            Tooltip.Text = Data[1]
+            Tooltip.TextColor3 = Color3.fromRGB(150,153,164)
+            Tooltip.TextSize = 7
+            Tooltip.Font = Enum.Font.GothamMedium
+            Tooltip.Visible = false
+            Tooltip.ZIndex = 1003
+            Tooltip.Parent = ColorButton
+
+            ColorButton.MouseEnter:Connect(function()
+                Tween(ColorButton,{Size = UDim2.fromOffset(46,46)})
+                Tooltip.Visible = true
+            end)
+
+            ColorButton.MouseLeave:Connect(function()
+                Tween(ColorButton,{Size = UDim2.fromOffset(42,42)})
+                Tooltip.Visible = false
+            end)
+
+            ColorButton.MouseButton1Click:Connect(function()
                 Current = Data[2]
                 Preview.BackgroundColor3 = Current
                 ClosePopup()
@@ -1143,7 +1320,7 @@ local function VisualToggle(Title, Description, Key, ShowBugText)
         BugLabel.Position = UDim2.new(1, -98, 0.5, -9)
         BugLabel.BackgroundTransparency = 1
         BugLabel.Text = "bug"
-        BugLabel.TextColor3 = Color3.fromRGB(255,200,50) -- Amarelo
+        BugLabel.TextColor3 = Color3.fromRGB(255,200,50)
         BugLabel.TextSize = 8
         BugLabel.Font = Enum.Font.GothamBold
         BugLabel.TextXAlignment = Enum.TextXAlignment.Center
@@ -1153,15 +1330,15 @@ local function VisualToggle(Title, Description, Key, ShowBugText)
 
         for _, Child in ipairs(Row:GetChildren()) do
             if Child:IsA("TextButton") then
-                Child.Size = UDim2.fromOffset(38, 21)
-                Child.Position = UDim2.new(1, -48, 0.5, -10)
+                Child.Size = UDim2.fromOffset(40, 22)
+                Child.Position = UDim2.new(1, -50, 0.5, -11)
             end
         end
 
         for _, Child in ipairs(Row:GetChildren()) do
             if Child:IsA("TextLabel") and Child ~= BugLabel then
                 if Child.TextSize == 9 then
-                    Child.Size = UDim2.new(1, -110, 0, 17)
+                    Child.Size = UDim2.new(1, -110, 0, 18)
                 elseif Child.TextSize == 7 then
                     Child.Size = UDim2.new(1, -110, 0, 13)
                 end
@@ -1366,7 +1543,6 @@ end
 ------------------------------------------------------------
 
 RunService.RenderStepped:Connect(function()
-    -- Verificar teleporte
     for Player, Data in pairs(ESPData) do
         if Data.Skeleton and Player.Character then
             local Root = Player.Character:FindFirstChild("HumanoidRootPart")
@@ -1376,7 +1552,6 @@ RunService.RenderStepped:Connect(function()
 
                 if LastPos then
                     local TeleportDistance = (CurrentPos - LastPos).Magnitude
-
                     if TeleportDistance > 30 then
                         CleanupSkeleton(Player)
                     end
@@ -1716,13 +1891,20 @@ ResetButton.BackgroundColor3 = Color3.fromRGB(30,31,39)
 ResetButton.Text = "↻   Reset Settings"
 ResetButton.TextColor3 = Color3.fromRGB(220,221,227)
 ResetButton.TextSize = 9
-ResetButton.Font = Enum.Font.GothamMedium
+ResetButton.Font = Enum.Font.GothamBold
 ResetButton.AutoButtonColor = false
 ResetButton.Parent = Scroll
 
 Instance.new("UICorner",ResetButton).CornerRadius = UDim.new(0,8)
 
 AddSetting(ResetButton)
+
+ResetButton.MouseEnter:Connect(function()
+    Tween(ResetButton,{BackgroundColor3 = HoverColor()})
+end)
+ResetButton.MouseLeave:Connect(function()
+    Tween(ResetButton,{BackgroundColor3 = Color3.fromRGB(30,31,39)})
+end)
 
 ResetButton.MouseButton1Click:Connect(function()
     Config.Aim.Enabled = false
@@ -1779,8 +1961,23 @@ local function HideAll()
 end
 
 local function AnimatePage()
-    Scroll.Position = UDim2.fromOffset(25,45)
-    Tween(Scroll, {Position = UDim2.fromOffset(11,45)}, TweenSmooth)
+    Scroll.Position = UDim2.fromOffset(25,44)
+    Tween(Scroll, {Position = UDim2.fromOffset(12,44)}, TweenSmooth)
+end
+
+local function SetActiveTab(Tab)
+    ActiveTab = Tab
+    for _,Child in ipairs(Sidebar:GetChildren()) do
+        if Child:IsA("TextButton") then
+            if Child == Tab then
+                Child.BackgroundColor3 = Accent()
+                Child.TextColor3 = Color3.new(1,1,1)
+            else
+                Child.BackgroundColor3 = Color3.fromRGB(18,19,24)
+                Child.TextColor3 = Color3.fromRGB(130,133,143)
+            end
+        end
+    end
 end
 
 local function ShowAim()
@@ -1790,6 +1987,7 @@ local function ShowAim()
     Scroll.CanvasPosition = Vector2.zero
     AnimatePage()
     ClosePopup()
+    SetActiveTab(AimTab)
 end
 
 local function ShowVisual()
@@ -1799,6 +1997,7 @@ local function ShowVisual()
     Scroll.CanvasPosition = Vector2.zero
     AnimatePage()
     ClosePopup()
+    SetActiveTab(VisualTab)
 end
 
 local function ShowHUD()
@@ -1808,6 +2007,7 @@ local function ShowHUD()
     Scroll.CanvasPosition = Vector2.zero
     AnimatePage()
     ClosePopup()
+    SetActiveTab(HUDTab)
 end
 
 local function ShowSettings()
@@ -1817,6 +2017,7 @@ local function ShowSettings()
     Scroll.CanvasPosition = Vector2.zero
     AnimatePage()
     ClosePopup()
+    SetActiveTab(SettingsTab)
 end
 
 AimTab.MouseButton1Click:Connect(ShowAim)
@@ -1893,8 +2094,8 @@ local function MinimizeHub()
 
     Tween(Mini, {Size = UDim2.fromOffset(46, 46)}, TweenBounce)
 
-    Main.Size = UDim2.fromOffset(365, 300)
-    Main.Position = UDim2.new(0.5, -182, 0.5, -150)
+    Main.Size = UDim2.fromOffset(380, 320)
+    Main.Position = UDim2.new(0.5, -190, 0.5, -160)
     Main.AnchorPoint = Vector2.new(0, 0)
 end
 
@@ -1909,10 +2110,10 @@ Mini.MouseButton1Click:Connect(function()
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
     Main.Position = UDim2.new(0.5, 0, 0.5, 0)
 
-    Tween(Main, {Size = UDim2.fromOffset(365, 300)}, TweenSpring)
+    Tween(Main, {Size = UDim2.fromOffset(380, 320)}, TweenSpring)
 
     task.delay(0.5, function()
-        Main.Position = UDim2.new(0.5, -182, 0.5, -150)
+        Main.Position = UDim2.new(0.5, -190, 0.5, -160)
         Main.AnchorPoint = Vector2.new(0, 0)
     end)
 end)
@@ -2048,4 +2249,4 @@ RefreshESP()
 RefreshToggleAccent()
 ShowAim()
 
-print("NOVA HUB - STUDIO EDITION carregado com correções.")
+print("NOVA HUB - STUDIO EDITION v2.0 carregado com sucesso!")
