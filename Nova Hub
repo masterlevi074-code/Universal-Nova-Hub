@@ -8,7 +8,7 @@
     • HUD Size: Texto escala com o slider; dimensão amplia centrada (não só para a direita)
     • HUD: Ao mover o HUD, posição é salva em Config.HUD.Position
     • ColorPicker (UI Accent): corrige bug que usava variável errada; atualiza elementos UI imediatamente
-    • Animações suaves de minimizar/maximizar
+    • Animações de minimizar/maximizar sincronizadas (sem delay)
 ]]
 
 ------------------------------------------------------------
@@ -3031,7 +3031,7 @@ UserInputService.InputEnded:Connect(function(Input)
 end)
 
 ------------------------------------------------------------
--- MINIMIZE/MAXIMIZE (ANIMAÇÕES MELHORADAS)
+-- MINIMIZE/MAXIMIZE (ANIMAÇÕES SINCRONIZADAS)
 ------------------------------------------------------------
 
 local Mini =
@@ -3061,54 +3061,29 @@ Mini.Parent = Gui
 Instance.new("UICorner",Mini).CornerRadius =
     UDim.new(1,0)
 
--- Flag para evitar múltiplos cliques durante animação
-local IsAnimating = false
-
 local function MinimizeHub()
-
-    if IsAnimating then return end
-    IsAnimating = true
 
     ClosePopup()
     MainDragging = false
     HUDDragging = false
 
-    if Config.UI.Animations then
-        -- Anima o Main encolhendo (escala e opacidade)
-        Main.AnchorPoint = Vector2.new(0.5, 0.5)
-        Main.Position = UDim2.new(0.5, 0, 0.5, 0)
-        
-        Tween(Main, {
-            Size = UDim2.fromOffset(0, 0),
-            Position = UDim2.new(0.5, 0, 0.5, 0)
-        }, TweenFast)
-        
-        -- Mostra o Mini com animação de bounce
-        task.wait(0.15)
-        Mini.Visible = true
-        Main.Visible = false
-        
-        Mini.Size = UDim2.fromOffset(0, 0)
-        Mini.Position = UDim2.new(0, 18, 0.5, -23)
-        Mini.AnchorPoint = Vector2.new(0.5, 0.5)
-        
-        Tween(Mini, {
-            Size = UDim2.fromOffset(46, 46)
-        }, TweenBounce)
-        
-        -- Reseta o Main para quando for reaberto
-        task.wait(0.4)
-        Main.Size = UDim2.fromOffset(365, 300)
-        Main.Position = UDim2.new(0.5, -182, 0.5, -150)
-        Main.AnchorPoint = Vector2.new(0, 0)
-        IsAnimating = false
-        
-    else
-        -- Sem animação
-        Main.Visible = false
-        Mini.Visible = true
-        IsAnimating = false
-    end
+    -- Esconde o Main imediatamente
+    Main.Visible = false
+    
+    -- Mostra o Mini imediatamente com animação de crescimento
+    Mini.Visible = true
+    Mini.Size = UDim2.fromOffset(0,0)
+    Mini.AnchorPoint = Vector2.new(0.5, 0.5)
+    Mini.Position = UDim2.new(0, 18, 0.5, -23)
+    
+    Tween(Mini, {
+        Size = UDim2.fromOffset(46, 46)
+    }, TweenBounce)
+    
+    -- Reseta o Main para quando for reaberto
+    Main.Size = UDim2.fromOffset(365, 300)
+    Main.Position = UDim2.new(0.5, -182, 0.5, -150)
+    Main.AnchorPoint = Vector2.new(0, 0)
 end
 
 Minimize.MouseButton1Click:Connect(MinimizeHub)
@@ -3116,40 +3091,24 @@ Close.MouseButton1Click:Connect(MinimizeHub)
 
 Mini.MouseButton1Click:Connect(function()
 
-    if IsAnimating then return end
-    IsAnimating = true
-
-    if Config.UI.Animations then
-        -- Anima o Mini sumindo
-        Tween(Mini, {
-            Size = UDim2.fromOffset(0, 0)
-        }, TweenFast)
-        
-        task.wait(0.15)
-        Mini.Visible = false
-        
-        -- Mostra o Main com animação de spring (elástico)
-        Main.Visible = true
-        Main.Size = UDim2.fromOffset(0, 0)
-        Main.AnchorPoint = Vector2.new(0.5, 0.5)
-        Main.Position = UDim2.new(0.5, 0, 0.5, 0)
-        
-        Tween(Main, {
-            Size = UDim2.fromOffset(365, 300)
-        }, TweenSpring)
-        
-        task.wait(0.5)
+    -- Esconde o Mini imediatamente
+    Mini.Visible = false
+    
+    -- Mostra o Main imediatamente com animação de crescimento
+    Main.Visible = true
+    Main.Size = UDim2.fromOffset(0, 0)
+    Main.AnchorPoint = Vector2.new(0.5, 0.5)
+    Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+    
+    Tween(Main, {
+        Size = UDim2.fromOffset(365, 300)
+    }, TweenSpring)
+    
+    -- Reseta posição após animação
+    task.delay(0.5, function()
         Main.Position = UDim2.new(0.5, -182, 0.5, -150)
         Main.AnchorPoint = Vector2.new(0, 0)
-        IsAnimating = false
-        
-    else
-        -- Sem animação
-        Mini.Visible = false
-        Main.Visible = true
-        Main.Size = UDim2.fromOffset(365, 300)
-        IsAnimating = false
-    end
+    end)
 end)
 
 ------------------------------------------------------------
