@@ -3,15 +3,11 @@
     LocalScript
     StarterPlayer > StarterPlayerScripts
 
-    MELHORIAS:
-    • Interface moderna e profissional
-    • Sistema de cores avançado centralizado
-    • Efeitos sonoros nos cliques
-    • Confirmação ao fechar (desativa tudo)
-    • Perfil do usuário no sidebar
-    • FOV desativado por padrão
-    • Skeleton ESP corrigido (sem bugs)
-    • Efeitos visuais no painel
+    CORREÇÕES:
+    • Som de clique corrigido
+    • Minimizar corrigido
+    • Removido "bug" do skeleton
+    • Perfil: nome em cima da foto, versão abaixo
 ]]
 
 ------------------------------------------------------------
@@ -140,13 +136,13 @@ Gui.DisplayOrder = 100
 Gui.Parent = PlayerGui
 
 ------------------------------------------------------------
--- SOUND FUNCTIONS
+-- SOUND FUNCTIONS (CORRIGIDO)
 ------------------------------------------------------------
 
 local function PlayClickSound()
     if Config.UI.SoundEffects then
         local Sound = Instance.new("Sound")
-        Sound.SoundId = "rbxassetid://9116338650"
+        Sound.SoundId = "rbxassetid://12222203" -- Som de clique válido
         Sound.Volume = 0.3
         Sound.Parent = Gui
         Sound:Play()
@@ -159,7 +155,7 @@ end
 local function PlayHoverSound()
     if Config.UI.SoundEffects then
         local Sound = Instance.new("Sound")
-        Sound.SoundId = "rbxassetid://9116338650"
+        Sound.SoundId = "rbxassetid://12222203"
         Sound.Volume = 0.1
         Sound.Parent = Gui
         Sound:Play()
@@ -361,11 +357,6 @@ Close.MouseLeave:Connect(function()
     Tween(Close,{BackgroundColor3 = Color3.fromRGB(30,31,39), TextColor3 = Color3.fromRGB(180,180,190)})
 end)
 
-Minimize.MouseButton1Click:Connect(function()
-    PlayClickSound()
-    MinimizeHub()
-end)
-
 ------------------------------------------------------------
 -- SIDEBAR
 ------------------------------------------------------------
@@ -405,10 +396,10 @@ SidebarLineGlow.Thickness = 2
 SidebarLineGlow.Transparency = 0.5
 SidebarLineGlow.Parent = SidebarLine
 
--- Perfil do usuário
+-- Perfil do usuário (nome em cima, foto no meio, versão embaixo)
 local ProfileContainer = Instance.new("Frame")
-ProfileContainer.Size = UDim2.new(1,-10,0,60)
-ProfileContainer.Position = UDim2.fromOffset(5,200)
+ProfileContainer.Size = UDim2.new(1,-10,0,85)
+ProfileContainer.Position = UDim2.fromOffset(5,185)
 ProfileContainer.BackgroundColor3 = Color3.fromRGB(22,23,29)
 ProfileContainer.BorderSizePixel = 0
 ProfileContainer.Parent = Sidebar
@@ -423,9 +414,22 @@ ProfileStroke.Thickness = 1
 ProfileStroke.Transparency = 0.5
 ProfileStroke.Parent = ProfileContainer
 
+-- Nome do usuário (em cima)
+local UserNameLabel = Instance.new("TextLabel")
+UserNameLabel.Size = UDim2.new(1,-10,0,16)
+UserNameLabel.Position = UDim2.fromOffset(5,5)
+UserNameLabel.BackgroundTransparency = 1
+UserNameLabel.Text = LocalPlayer.DisplayName
+UserNameLabel.TextColor3 = Color3.new(1,1,1)
+UserNameLabel.TextSize = 8
+UserNameLabel.Font = Enum.Font.GothamBold
+UserNameLabel.TextXAlignment = Enum.TextXAlignment.Center
+UserNameLabel.Parent = ProfileContainer
+
+-- Avatar (no meio)
 local AvatarImage = Instance.new("ImageLabel")
 AvatarImage.Size = UDim2.fromOffset(40,40)
-AvatarImage.Position = UDim2.fromOffset(5,10)
+AvatarImage.Position = UDim2.fromOffset(12,22)
 AvatarImage.BackgroundColor3 = Color3.fromRGB(30,31,39)
 AvatarImage.BorderSizePixel = 0
 AvatarImage.Parent = ProfileContainer
@@ -438,26 +442,16 @@ local UserId = LocalPlayer.UserId
 local AvatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId="..UserId.."&width=100&height=100&format=png"
 AvatarImage.Image = AvatarUrl
 
-local UserNameLabel = Instance.new("TextLabel")
-UserNameLabel.Size = UDim2.new(1,-50,0,18)
-UserNameLabel.Position = UDim2.fromOffset(50,8)
-UserNameLabel.BackgroundTransparency = 1
-UserNameLabel.Text = LocalPlayer.DisplayName
-UserNameLabel.TextColor3 = Color3.new(1,1,1)
-UserNameLabel.TextSize = 8
-UserNameLabel.Font = Enum.Font.GothamBold
-UserNameLabel.TextXAlignment = Enum.TextXAlignment.Left
-UserNameLabel.Parent = ProfileContainer
-
+-- Versão (embaixo)
 local VersionLabel = Instance.new("TextLabel")
-VersionLabel.Size = UDim2.new(1,-50,0,14)
-VersionLabel.Position = UDim2.fromOffset(50,28)
+VersionLabel.Size = UDim2.new(1,-10,0,14)
+VersionLabel.Position = UDim2.fromOffset(5,65)
 VersionLabel.BackgroundTransparency = 1
-VersionLabel.Text = "Nova Hub v3.0"
+VersionLabel.Text = "V3"
 VersionLabel.TextColor3 = Color3.fromRGB(110,113,125)
-VersionLabel.TextSize = 6
-VersionLabel.Font = Enum.Font.GothamMedium
-VersionLabel.TextXAlignment = Enum.TextXAlignment.Left
+VersionLabel.TextSize = 7
+VersionLabel.Font = Enum.Font.GothamBold
+VersionLabel.TextXAlignment = Enum.TextXAlignment.Center
 VersionLabel.Parent = ProfileContainer
 
 local ActiveTab = nil
@@ -505,9 +499,9 @@ local function MakeTab(Text,Y)
 end
 
 local AimTab = MakeTab("◎",10)
-local VisualTab = MakeTab("◉",58)
-local HUDTab = MakeTab("▣",106)
-local SettingsTab = MakeTab("⚙",154)
+local VisualTab = MakeTab("◉",55)
+local HUDTab = MakeTab("▣",100)
+local SettingsTab = MakeTab("⚙",145)
 
 ------------------------------------------------------------
 -- CONTENT
@@ -958,8 +952,7 @@ local function Dropdown(Parent, Title, Options, Current, Callback)
         PopupCorner.CornerRadius = UDim.new(0,8)
         PopupCorner.Parent = Popup
 
-        for Index,Option in ipairs(Options) do
-            local OptionButton = Instance.new("TextButton")
+        for Index,Option in ipairs(Options) do            local OptionButton = Instance.new("TextButton")
             OptionButton.Size = UDim2.new(1,-10,0,26)
             OptionButton.Position = UDim2.fromOffset(5,5+(Index-1)*30)
             OptionButton.BackgroundColor3 = Color3.fromRGB(28,30,38)
@@ -1341,13 +1334,11 @@ end
 local function RemoveESP(Player)
     local Data = ESPData[Player]
     if not Data then return end
-
     for _,Object in pairs(Data) do
         if typeof(Object) == "Instance" then
             Object:Destroy()
         end
     end
-
     ESPData[Player] = nil
 end
 
@@ -1401,24 +1392,19 @@ local function CreateSkeleton(player)
         Skeletons[player].Folder:Destroy()
         Skeletons[player] = nil
     end
-
     local character = player.Character
     if not character then return end
-
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     if not humanoid then return end
-
     local folder = Instance.new("Folder")
     folder.Name = player.Name .. "_Skeleton"
     folder.Parent = ESPGui
-
     local connections
     if humanoid.RigType == Enum.HumanoidRigType.R15 then
         connections = R15Skeleton
     else
         connections = R6Skeleton
     end
-
     local bones = {}
     for index, connection in ipairs(connections) do
         local part1 = character:FindFirstChild(connection[1])
@@ -1432,7 +1418,6 @@ local function CreateSkeleton(player)
             }
         end
     end
-
     Skeletons[player] = {
         Character = character,
         Folder = folder,
@@ -1453,22 +1438,16 @@ local function CreateESP(Player)
     if Player == LocalPlayer then return end
     RemoveESP(Player)
     RemoveSkeleton(Player)
-
     if not Config.Visual.ESP then return end
     if IsTeammate(Player) then return end
-
     local Character = Player.Character
     if not Character then return end
-
     local Root = Character:FindFirstChild("HumanoidRootPart")
     local Head = Character:FindFirstChild("Head")
     local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-
     if not Root or not Head or not Humanoid then return end
-
     local Data = {}
     ESPData[Player] = Data
-
     if Config.Visual.Highlight or Config.Visual.Chams then
         local Highlight = Instance.new("Highlight")
         Highlight.Name = "NovaESPHighlight"
@@ -1481,7 +1460,6 @@ local function CreateESP(Player)
         Highlight.Parent = Character
         Data.Highlight = Highlight
     end
-
     if Config.Visual.Name or Config.Visual.Health or Config.Visual.Distance then
         local Billboard = Instance.new("BillboardGui")
         Billboard.Name = "NovaESPInfo"
@@ -1490,7 +1468,6 @@ local function CreateESP(Player)
         Billboard.StudsOffset = Vector3.new(0,3,0)
         Billboard.AlwaysOnTop = true
         Billboard.Parent = Head
-
         local Text = Instance.new("TextLabel")
         Text.Size = UDim2.fromScale(1,1)
         Text.BackgroundTransparency = 1
@@ -1499,11 +1476,9 @@ local function CreateESP(Player)
         Text.TextSize = Config.Visual.TextSize
         Text.Font = Enum.Font.GothamBold
         Text.Parent = Billboard
-
         Data.Billboard = Billboard
         Data.InfoText = Text
     end
-
     if Config.Visual.Box then
         local Box = Instance.new("Frame")
         Box.Name = "NovaBox"
@@ -1512,20 +1487,16 @@ local function CreateESP(Player)
         Box.BorderSizePixel = 0
         Box.Visible = false
         Box.Parent = ESPGui
-
         local Stroke = Instance.new("UIStroke")
         Stroke.Color = Config.Visual.Color
         Stroke.Thickness = Config.Visual.BoxThickness
         Stroke.Parent = Box
-
         Data.Box = Box
         Data.BoxStroke = Stroke
     end
-
     if Config.Visual.Skeleton then
         CreateSkeleton(Player)
     end
-
     if Config.Visual.Tracer then
         local Tracer = Instance.new("Frame")
         Tracer.Name = "NovaTracer"
@@ -1546,9 +1517,7 @@ local function RefreshESP()
     for Player in pairs(Skeletons) do
         RemoveSkeleton(Player)
     end
-
     if not Config.Visual.ESP then return end
-
     for _,Player in ipairs(Players:GetPlayers()) do
         if Player ~= LocalPlayer then
             CreateESP(Player)
@@ -1557,54 +1526,21 @@ local function RefreshESP()
 end
 
 ------------------------------------------------------------
--- VISUAL PAGE
+-- VISUAL PAGE (SEM "bug")
 ------------------------------------------------------------
 
-local function VisualToggle(Title, Description, Key, ShowBugText)
+local function VisualToggle(Title, Description, Key)
     local Row = Toggle(Scroll, Title, Description, Config.Visual[Key], function(v)
         Config.Visual[Key] = v
         RefreshESP()
     end)
-
-    if ShowBugText then
-        local BugLabel = Instance.new("TextLabel")
-        BugLabel.Size = UDim2.fromOffset(45, 18)
-        BugLabel.Position = UDim2.new(1, -98, 0.5, -9)
-        BugLabel.BackgroundTransparency = 1
-        BugLabel.Text = "bug"
-        BugLabel.TextColor3 = Color3.fromRGB(255,200,50)
-        BugLabel.TextSize = 8
-        BugLabel.Font = Enum.Font.GothamBold
-        BugLabel.TextXAlignment = Enum.TextXAlignment.Center
-        BugLabel.TextYAlignment = Enum.TextYAlignment.Center
-        BugLabel.ZIndex = 10
-        BugLabel.Parent = Row
-
-        for _, Child in ipairs(Row:GetChildren()) do
-            if Child:IsA("TextButton") then
-                Child.Size = UDim2.fromOffset(40, 22)
-                Child.Position = UDim2.new(1, -50, 0.5, -11)
-            end
-        end
-
-        for _, Child in ipairs(Row:GetChildren()) do
-            if Child:IsA("TextLabel") and Child ~= BugLabel then
-                if Child.TextSize == 9 then
-                    Child.Size = UDim2.new(1, -110, 0, 18)
-                elseif Child.TextSize == 7 then
-                    Child.Size = UDim2.new(1, -110, 0, 13)
-                end
-            end
-        end
-    end
-
     table.insert(VisualRows, Row)
     return Row
 end
 
 VisualToggle("ESP", "Enable player visualization", "ESP")
 VisualToggle("Box ESP", "Display player boxes", "Box")
-VisualToggle("Skeleton ESP", "Display character skeleton", "Skeleton", true)
+VisualToggle("Skeleton ESP", "Display character skeleton", "Skeleton")
 VisualToggle("Name ESP", "Display player names", "Name")
 VisualToggle("Health ESP", "Display health", "Health")
 VisualToggle("Distance ESP", "Display distance", "Distance")
@@ -1771,7 +1707,6 @@ RunService.RenderStepped:Connect(function()
     Camera = workspace.CurrentCamera
     if not Camera then return end
 
-    -- Atualizar skeletons
     for player, data in pairs(Skeletons) do
         if not player.Parent then
             RemoveSkeleton(player)
@@ -1842,7 +1777,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Atualizar ESP normal
     for Player,Data in pairs(ESPData) do
         local Character = Player.Character
         local Root = Character and Character:FindFirstChild("HumanoidRootPart")
@@ -1883,7 +1817,8 @@ RunService.RenderStepped:Connect(function()
             local BottomPoint = Camera:WorldToViewportPoint(Root.Position - Vector3.new(0,3,0))
             if TopPoint.Z > 0 and BottomPoint.Z > 0 then
                 local Height = math.abs(BottomPoint.Y - TopPoint.Y)
-                local Width = Height*.55                if Height < 500 and Width < 500 then
+                local Width = Height*.55
+                if Height < 500 and Width < 500 then
                     Data.Box.Position = UDim2.fromOffset((TopPoint.X+BottomPoint.X)/2, (TopPoint.Y+BottomPoint.Y)/2)
                     Data.Box.Size = UDim2.fromOffset(Width, Height)
                     Data.BoxStroke.Color = Config.Visual.Color
@@ -1904,7 +1839,6 @@ RunService.RenderStepped:Connect(function()
                 local TracerDistance = (End - Start).Magnitude
                 if TracerDistance < 1000 then
                     Data.Tracer.BackgroundColor3 = Config.Visual.Color
-                    Data.Tracer.Size = UDim2.fromOffset(0, Config.Visual.TracerThickness)
                     local Delta = End - Start
                     Data.Tracer.Position = UDim2.fromOffset((Start.X+End.X)/2, (Start.Y+End.Y)/2)
                     Data.Tracer.Size = UDim2.fromOffset(Delta.Magnitude, Config.Visual.TracerThickness)
@@ -2343,8 +2277,12 @@ local function MinimizeHub()
     Main.AnchorPoint = Vector2.new(0, 0)
 end
 
+Minimize.MouseButton1Click:Connect(function()
+    PlayClickSound()
+    MinimizeHub()
+end)
+
 local function CloseAll()
-    -- Desativar todas as funções
     Config.Aim.Enabled = false
     Config.Aim.FOVEnabled = false
     Config.Visual.ESP = false
@@ -2357,20 +2295,14 @@ local function CloseAll()
     Config.Visual.Highlight = false
     Config.Visual.Chams = false
     Config.HUD.Enabled = false
-
-    -- Limpar ESPs
     for Player in pairs(ESPData) do
         RemoveESP(Player)
     end
     for Player in pairs(Skeletons) do
         RemoveSkeleton(Player)
     end
-
-    -- Atualizar FOV e HUD
     UpdateFov()
     HUDFrame.Visible = false
-
-    -- Destruir GUIs
     Gui:Destroy()
     FovGui:Destroy()
     ESPGui:Destroy()
