@@ -6,12 +6,10 @@
     MELHORIAS:
     • Interface moderna e profissional
     • Sistema de cores avançado centralizado
-    • Dropdown com bordas corrigidas
-    • Botão de maximizar elegante
-    • Linhas com bordas arredondadas (formato pílula)
-    • Listras decorativas no header
-    • Indicador BYPASS com bolinha verde
-    • Mais funções visuais nas configurações
+    • Linhas com cor do UI Accent
+    • Brilhos personalizados
+    • Indicador BYPASS sempre verde
+    • Listras corrigidas
 ]]
 
 ------------------------------------------------------------
@@ -62,7 +60,6 @@ local Config = {
         TeamCheck = false,
         Color = Color3.fromRGB(255,255,255),
         MaxDistance = 1500,
-        -- Novas opções visuais
         BoxThickness = 1.5,
         TracerThickness = 2,
         SkeletonThickness = 2,
@@ -85,11 +82,11 @@ local Config = {
         Notifications = true,
         Performance = false,
         Accent = Color3.fromRGB(105,108,145),
-        -- Novas opções de UI
         ShowBypassIndicator = true,
-        BypassColor = Color3.fromRGB(80,255,80),
+        BypassColor = Color3.fromRGB(80,255,80), -- Sempre verde
         HeaderStripes = true,
-        SidebarStripes = true
+        SidebarStripes = true,
+        GlowEffects = true -- Novo: controla brilhos
     }
 }
 
@@ -133,6 +130,10 @@ local function HoverColor()
     return Color3.fromRGB(32,34,42)
 end
 
+local function GlowColor()
+    return Config.UI.Accent
+end
+
 ------------------------------------------------------------
 -- GUI
 ------------------------------------------------------------
@@ -167,9 +168,16 @@ MainShadow.Transparency = 0.5
 MainShadow.Parent = Main
 
 local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(50,52,63)
+MainStroke.Color = Accent()
 MainStroke.Thickness = 1
 MainStroke.Parent = Main
+
+-- Glow no Main
+local MainGlow = Instance.new("UIStroke")
+MainGlow.Color = Accent()
+MainGlow.Thickness = 3
+MainGlow.Transparency = 0.7
+MainGlow.Parent = Main
 
 ------------------------------------------------------------
 -- HEADER
@@ -192,7 +200,7 @@ HeaderBottomFix.BackgroundColor3 = Color3.fromRGB(20,21,27)
 HeaderBottomFix.BorderSizePixel = 0
 HeaderBottomFix.Parent = Header
 
--- Listras decorativas no header
+-- Listras decorativas no header (corrigidas)
 if Config.UI.HeaderStripes then
     for i = 1, 8 do
         local Stripe = Instance.new("Frame")
@@ -208,17 +216,24 @@ if Config.UI.HeaderStripes then
     end
 end
 
--- Linha separadora do header
+-- Linha separadora do header com cor do accent
 local HeaderLine = Instance.new("Frame")
 HeaderLine.Size = UDim2.new(1,0,0,2)
 HeaderLine.Position = UDim2.new(0,0,1,-1)
-HeaderLine.BackgroundColor3 = Color3.fromRGB(40,42,52)
+HeaderLine.BackgroundColor3 = Accent()
 HeaderLine.BorderSizePixel = 0
 HeaderLine.Parent = Header
 
 local HeaderLineCorner = Instance.new("UICorner")
 HeaderLineCorner.CornerRadius = UDim.new(1,0)
 HeaderLineCorner.Parent = HeaderLine
+
+-- Glow na linha
+local HeaderLineGlow = Instance.new("UIStroke")
+HeaderLineGlow.Color = Accent()
+HeaderLineGlow.Thickness = 2
+HeaderLineGlow.Transparency = 0.5
+HeaderLineGlow.Parent = HeaderLine
 
 local Logo = Instance.new("TextLabel")
 Logo.Size = UDim2.fromOffset(34,34)
@@ -234,10 +249,11 @@ local LogoCorner = Instance.new("UICorner")
 LogoCorner.CornerRadius = UDim.new(0,9)
 LogoCorner.Parent = Logo
 
+-- Glow no logo
 local LogoGlow = Instance.new("UIStroke")
-LogoGlow.Color = Color3.fromRGB(255,255,255)
-LogoGlow.Thickness = 1
-LogoGlow.Transparency = 0.7
+LogoGlow.Color = Accent()
+LogoGlow.Thickness = 3
+LogoGlow.Transparency = 0.5
 LogoGlow.Parent = Logo
 
 local HeaderTitle = Instance.new("TextLabel")
@@ -262,7 +278,7 @@ HeaderSub.Font = Enum.Font.GothamMedium
 HeaderSub.TextXAlignment = Enum.TextXAlignment.Left
 HeaderSub.Parent = Header
 
--- Indicador BYPASS com bolinha verde
+-- Indicador BYPASS (sempre verde)
 local BypassContainer = Instance.new("Frame")
 BypassContainer.Size = UDim2.fromOffset(55,16)
 BypassContainer.Position = UDim2.new(1,-135,0,17)
@@ -272,7 +288,7 @@ BypassContainer.Parent = Header
 local BypassDot = Instance.new("Frame")
 BypassDot.Size = UDim2.fromOffset(6,6)
 BypassDot.Position = UDim2.fromOffset(0,5)
-BypassDot.BackgroundColor3 = Config.UI.BypassColor
+BypassDot.BackgroundColor3 = Color3.fromRGB(80,255,80) -- Verde fixo
 BypassDot.BorderSizePixel = 0
 BypassDot.Parent = BypassContainer
 
@@ -281,7 +297,7 @@ BypassDotCorner.CornerRadius = UDim.new(1,0)
 BypassDotCorner.Parent = BypassDot
 
 local BypassDotGlow = Instance.new("UIStroke")
-BypassDotGlow.Color = Config.UI.BypassColor
+BypassDotGlow.Color = Color3.fromRGB(80,255,80) -- Verde fixo
 BypassDotGlow.Thickness = 2
 BypassDotGlow.Transparency = 0.5
 BypassDotGlow.Parent = BypassDot
@@ -361,7 +377,7 @@ SidebarTopFix.BackgroundColor3 = Color3.fromRGB(18,19,24)
 SidebarTopFix.BorderSizePixel = 0
 SidebarTopFix.Parent = Sidebar
 
--- Listras decorativas no sidebar
+-- Listras decorativas no sidebar (corrigidas)
 if Config.UI.SidebarStripes then
     for i = 1, 6 do
         local Stripe = Instance.new("Frame")
@@ -377,17 +393,24 @@ if Config.UI.SidebarStripes then
     end
 end
 
--- Linha vertical do sidebar
+-- Linha vertical do sidebar com cor do accent
 local SidebarLine = Instance.new("Frame")
 SidebarLine.Size = UDim2.new(0,2,1,0)
 SidebarLine.Position = UDim2.new(1,-1,0,0)
-SidebarLine.BackgroundColor3 = Color3.fromRGB(40,42,52)
+SidebarLine.BackgroundColor3 = Accent()
 SidebarLine.BorderSizePixel = 0
 SidebarLine.Parent = Sidebar
 
 local SidebarLineCorner = Instance.new("UICorner")
 SidebarLineCorner.CornerRadius = UDim.new(1,0)
 SidebarLineCorner.Parent = SidebarLine
+
+-- Glow na linha do sidebar
+local SidebarLineGlow = Instance.new("UIStroke")
+SidebarLineGlow.Color = Accent()
+SidebarLineGlow.Thickness = 2
+SidebarLineGlow.Transparency = 0.5
+SidebarLineGlow.Parent = SidebarLine
 
 local ActiveTab = nil
 
@@ -454,17 +477,24 @@ PageTitle.Font = Enum.Font.GothamBold
 PageTitle.TextXAlignment = Enum.TextXAlignment.Left
 PageTitle.Parent = Content
 
--- Linha separadora com bordas arredondadas
+-- Linha separadora com cor do accent
 local PageLine = Instance.new("Frame")
 PageLine.Size = UDim2.new(1,-28,0,3)
 PageLine.Position = UDim2.fromOffset(14,35)
-PageLine.BackgroundColor3 = Color3.fromRGB(40,42,52)
+PageLine.BackgroundColor3 = Accent()
 PageLine.BorderSizePixel = 0
 PageLine.Parent = Content
 
 local PageLineCorner = Instance.new("UICorner")
 PageLineCorner.CornerRadius = UDim.new(1,0)
 PageLineCorner.Parent = PageLine
+
+-- Glow na linha da página
+local PageLineGlow = Instance.new("UIStroke")
+PageLineGlow.Color = Accent()
+PageLineGlow.Thickness = 2
+PageLineGlow.Transparency = 0.5
+PageLineGlow.Parent = PageLine
 
 local Scroll = Instance.new("ScrollingFrame")
 Scroll.Size = UDim2.new(1,-24,1,-50)
@@ -546,6 +576,7 @@ local SettingsRows = {}
 ------------------------------------------------------------
 
 local ToggleRenderers = {}
+local LineRenderers = {}
 
 local function RefreshToggleAccent()
     for _,Renderer in ipairs(ToggleRenderers) do
@@ -553,6 +584,20 @@ local function RefreshToggleAccent()
             Renderer()
         end
     end
+end
+
+local function RefreshLinesAccent()
+    HeaderLine.BackgroundColor3 = Accent()
+    HeaderLineGlow.Color = Accent()
+    SidebarLine.BackgroundColor3 = Accent()
+    SidebarLineGlow.Color = Accent()
+    PageLine.BackgroundColor3 = Accent()
+    PageLineGlow.Color = Accent()
+    MainStroke.Color = Accent()
+    MainGlow.Color = Accent()
+    Logo.BackgroundColor3 = Accent()
+    LogoGlow.Color = Accent()
+    Scroll.ScrollBarImageColor3 = Accent()
 end
 
 ------------------------------------------------------------
@@ -1001,15 +1046,9 @@ local function ColorPicker(Parent, Title, Current, Callback)
         PopupCorner.Parent = Popup
 
         local PopupStroke = Instance.new("UIStroke")
-        PopupStroke.Color = Color3.fromRGB(60,62,73)
+        PopupStroke.Color = Accent()
         PopupStroke.Thickness = 2
         PopupStroke.Parent = Popup
-
-        local PopupShadow = Instance.new("UIStroke")
-        PopupShadow.Color = Color3.fromRGB(0,0,0)
-        PopupShadow.Thickness = 4
-        PopupShadow.Transparency = 0.6
-        PopupShadow.Parent = Popup
 
         local CloseButton = Instance.new("TextButton")
         CloseButton.Size = UDim2.fromOffset(30,30)
@@ -1068,7 +1107,7 @@ local function ColorPicker(Parent, Title, Current, Callback)
         local TitleLine = Instance.new("Frame")
         TitleLine.Size = UDim2.new(1,-30,0,2)
         TitleLine.Position = UDim2.fromOffset(15,40)
-        TitleLine.BackgroundColor3 = Color3.fromRGB(50,52,63)
+        TitleLine.BackgroundColor3 = Accent()
         TitleLine.BorderSizePixel = 0
         TitleLine.ZIndex = 1000
         TitleLine.Parent = Popup
@@ -1535,7 +1574,6 @@ table.insert(VisualRows, ColorPicker(Scroll, "ESP Color", Config.Visual.Color, f
     RefreshESP()
 end))
 
--- Novos sliders para customização visual
 table.insert(VisualRows, Slider(Scroll, "Box Thickness", 1, 5, Config.Visual.BoxThickness, function(v)
     Config.Visual.BoxThickness = v
     RefreshESP()
@@ -1935,7 +1973,7 @@ HUDFrame.Parent = Gui
 Instance.new("UICorner",HUDFrame).CornerRadius = UDim.new(0,7)
 
 local HUDStroke = Instance.new("UIStroke")
-HUDStroke.Color = Color3.fromRGB(45,47,58)
+HUDStroke.Color = Accent()
 HUDStroke.Thickness = 1
 HUDStroke.Transparency = Config.HUD.Transparency
 HUDStroke.Parent = HUDFrame
@@ -2079,9 +2117,17 @@ AddSetting(Toggle(Scroll, "Bypass Indicator", "Show green bypass dot", Config.UI
     BypassContainer.Visible = v
 end))
 
+AddSetting(Toggle(Scroll, "Glow Effects", "Show glow effects on UI elements", Config.UI.GlowEffects, function(v)
+    Config.UI.GlowEffects = v
+    MainGlow.Visible = v
+    HeaderLineGlow.Visible = v
+    SidebarLineGlow.Visible = v
+    PageLineGlow.Visible = v
+    LogoGlow.Visible = v
+end))
+
 AddSetting(Toggle(Scroll, "Header Stripes", "Show decorative stripes in header", Config.UI.HeaderStripes, function(v)
     Config.UI.HeaderStripes = v
-    -- Recarrega a UI
     for _,Child in ipairs(Header:GetChildren()) do
         if Child:IsA("Frame") and Child.Size == UDim2.new(0,2,1,0) then
             Child.Visible = v
@@ -2100,15 +2146,9 @@ end))
 
 AddSetting(ColorPicker(Scroll, "UI Accent", Config.UI.Accent, function(Color)
     Config.UI.Accent = Color
-    Logo.BackgroundColor3 = Color
+    RefreshLinesAccent()
     RefreshToggleAccent()
     UpdateFov()
-end))
-
-AddSetting(ColorPicker(Scroll, "Bypass Color", Config.UI.BypassColor, function(Color)
-    Config.UI.BypassColor = Color
-    BypassDot.BackgroundColor3 = Color
-    BypassDotGlow.Color = Color
 end))
 
 ------------------------------------------------------------
@@ -2177,14 +2217,18 @@ ResetButton.MouseButton1Click:Connect(function()
 
     Config.UI.Accent = Color3.fromRGB(105,108,145)
     Config.UI.ShowBypassIndicator = true
-    Config.UI.BypassColor = Color3.fromRGB(80,255,80)
+    Config.UI.GlowEffects = true
     Config.UI.HeaderStripes = true
     Config.UI.SidebarStripes = true
 
     BypassContainer.Visible = true
-    BypassDot.BackgroundColor3 = Color3.fromRGB(80,255,80)
-    BypassDotGlow.Color = Color3.fromRGB(80,255,80)
+    MainGlow.Visible = true
+    HeaderLineGlow.Visible = true
+    SidebarLineGlow.Visible = true
+    PageLineGlow.Visible = true
+    LogoGlow.Visible = true
 
+    RefreshLinesAccent()
     UpdateHUDAppearance()
     RefreshESP()
     UpdateFov()
@@ -2331,9 +2375,9 @@ MiniShadow.Transparency = 0.5
 MiniShadow.Parent = Mini
 
 local MiniGlow = Instance.new("UIStroke")
-MiniGlow.Color = Color3.fromRGB(255,255,255)
-MiniGlow.Thickness = 1
-MiniGlow.Transparency = 0.7
+MiniGlow.Color = Accent()
+MiniGlow.Thickness = 2
+MiniGlow.Transparency = 0.5
 MiniGlow.Parent = Mini
 
 local function MinimizeHub()
@@ -2511,6 +2555,7 @@ UpdateFov()
 UpdateHUDAppearance()
 RefreshESP()
 RefreshToggleAccent()
+RefreshLinesAccent()
 ShowAim()
 
 print("NOVA HUB - STUDIO EDITION v2.0 carregado com sucesso!")
