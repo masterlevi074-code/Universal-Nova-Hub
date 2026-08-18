@@ -3,10 +3,10 @@
     LocalScript
     StarterPlayer > StarterPlayerScripts
 
-    NOVAS ABAS:
-    • Customization - Temas, cores, animações
-    • World - Brilho, névoa, full bright
-    • Player - Speed, Fly, No-Clip, Jump
+    LAYOUT HORIZONTAL:
+    • Abas no topo (horizontal)
+    • Perfil no canto inferior esquerdo
+    • Conteúdo organizado abaixo das abas
     • HUD com hora, servidor e tempo de sessão
 ]]
 
@@ -85,7 +85,7 @@ local Config = {
         ShowBypassIndicator = true,
         GlowEffects = true,
         SoundEffects = true,
-        Theme = "Dark" -- Dark, Light, Purple, Red
+        Theme = "Dark"
     },
     Player = {
         SpeedHack = false,
@@ -104,8 +104,7 @@ local Config = {
     },
     Customization = {
         UITheme = "Dark",
-        UIScale = 1,
-        BackgroundOpacity = 1
+        UIScale = 1
     }
 }
 
@@ -196,8 +195,8 @@ end
 
 local Main = Instance.new("Frame")
 Main.Name = "Main"
-Main.Size = UDim2.fromOffset(400,340)
-Main.Position = UDim2.new(.5,-200,.5,-170)
+Main.Size = UDim2.fromOffset(420,360)
+Main.Position = UDim2.new(.5,-210,.5,-180)
 Main.BackgroundColor3 = DarkColor()
 Main.BorderSizePixel = 0
 Main.Parent = Gui
@@ -388,117 +387,42 @@ Minimize.MouseButton1Click:Connect(function()
 end)
 
 ------------------------------------------------------------
--- SIDEBAR (COM MAIS ABAS)
+-- TAB BAR (HORIZONTAL)
 ------------------------------------------------------------
 
-local Sidebar = Instance.new("Frame")
-Sidebar.Size = UDim2.new(0,65,1,-50)
-Sidebar.Position = UDim2.fromOffset(0,50)
-Sidebar.BackgroundColor3 = Color3.fromRGB(18,19,24)
-Sidebar.BorderSizePixel = 0
-Sidebar.Parent = Main
+local TabBar = Instance.new("Frame")
+TabBar.Size = UDim2.new(1,-20,0,35)
+TabBar.Position = UDim2.fromOffset(10,55)
+TabBar.BackgroundColor3 = Color3.fromRGB(18,19,24)
+TabBar.BorderSizePixel = 0
+TabBar.Parent = Main
 
-local SidebarCorner = Instance.new("UICorner")
-SidebarCorner.CornerRadius = UDim.new(0,16)
-SidebarCorner.Parent = Sidebar
+local TabBarCorner = Instance.new("UICorner")
+TabBarCorner.CornerRadius = UDim.new(0,10)
+TabBarCorner.Parent = TabBar
 
-local SidebarTopFix = Instance.new("Frame")
-SidebarTopFix.Size = UDim2.new(1,0,0,16)
-SidebarTopFix.Position = UDim2.new(0,0,0,0)
-SidebarTopFix.BackgroundColor3 = Color3.fromRGB(18,19,24)
-SidebarTopFix.BorderSizePixel = 0
-SidebarTopFix.Parent = Sidebar
-
-local SidebarLine = Instance.new("Frame")
-SidebarLine.Size = UDim2.new(0,2,1,0)
-SidebarLine.Position = UDim2.new(1,-1,0,0)
-SidebarLine.BackgroundColor3 = Accent()
-SidebarLine.BorderSizePixel = 0
-SidebarLine.Parent = Sidebar
-
-local SidebarLineCorner = Instance.new("UICorner")
-SidebarLineCorner.CornerRadius = UDim.new(1,0)
-SidebarLineCorner.Parent = SidebarLine
-
-local SidebarLineGlow = Instance.new("UIStroke")
-SidebarLineGlow.Color = Accent()
-SidebarLineGlow.Thickness = 2
-SidebarLineGlow.Transparency = 0.5
-SidebarLineGlow.Parent = SidebarLine
-
--- Perfil do usuário
-local ProfileContainer = Instance.new("Frame")
-ProfileContainer.Size = UDim2.new(1,-10,0,85)
-ProfileContainer.Position = UDim2.fromOffset(5,245)
-ProfileContainer.BackgroundColor3 = Color3.fromRGB(22,23,29)
-ProfileContainer.BorderSizePixel = 0
-ProfileContainer.Parent = Sidebar
-
-local ProfileCorner = Instance.new("UICorner")
-ProfileCorner.CornerRadius = UDim.new(0,8)
-ProfileCorner.Parent = ProfileContainer
-
-local ProfileStroke = Instance.new("UIStroke")
-ProfileStroke.Color = Accent()
-ProfileStroke.Thickness = 1
-ProfileStroke.Transparency = 0.5
-ProfileStroke.Parent = ProfileContainer
-
-local UserNameLabel = Instance.new("TextLabel")
-UserNameLabel.Size = UDim2.new(1,-10,0,16)
-UserNameLabel.Position = UDim2.fromOffset(5,5)
-UserNameLabel.BackgroundTransparency = 1
-UserNameLabel.Text = LocalPlayer.DisplayName
-UserNameLabel.TextColor3 = Color3.new(1,1,1)
-UserNameLabel.TextSize = 7
-UserNameLabel.Font = Enum.Font.GothamBold
-UserNameLabel.TextXAlignment = Enum.TextXAlignment.Center
-UserNameLabel.TextScaled = true
-UserNameLabel.TextWrapped = true
-UserNameLabel.Parent = ProfileContainer
-
-local AvatarImage = Instance.new("ImageLabel")
-AvatarImage.Size = UDim2.fromOffset(40,40)
-AvatarImage.Position = UDim2.fromOffset(12,22)
-AvatarImage.BackgroundColor3 = Color3.fromRGB(30,31,39)
-AvatarImage.BorderSizePixel = 0
-AvatarImage.Parent = ProfileContainer
-
-local AvatarCorner = Instance.new("UICorner")
-AvatarCorner.CornerRadius = UDim.new(0,20)
-AvatarCorner.Parent = AvatarImage
-
-local UserId = LocalPlayer.UserId
-local AvatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId="..UserId.."&width=100&height=100&format=png"
-AvatarImage.Image = AvatarUrl
-
-local VersionLabel = Instance.new("TextLabel")
-VersionLabel.Size = UDim2.new(1,-10,0,14)
-VersionLabel.Position = UDim2.fromOffset(5,65)
-VersionLabel.BackgroundTransparency = 1
-VersionLabel.Text = "V4"
-VersionLabel.TextColor3 = Color3.fromRGB(110,113,125)
-VersionLabel.TextSize = 7
-VersionLabel.Font = Enum.Font.GothamBold
-VersionLabel.TextXAlignment = Enum.TextXAlignment.Center
-VersionLabel.Parent = ProfileContainer
+local TabBarStroke = Instance.new("UIStroke")
+TabBarStroke.Color = Accent()
+TabBarStroke.Thickness = 1
+TabBarStroke.Transparency = 0.5
+TabBarStroke.Parent = TabBar
 
 local ActiveTab = nil
 
-local function MakeTab(Text,Y)
+local function MakeTab(Text, X)
     local Button = Instance.new("TextButton")
-    Button.Size = UDim2.fromOffset(45,35)
-    Button.Position = UDim2.fromOffset(10,Y)
+    Button.Size = UDim2.fromOffset(52,28)
+    Button.Position = UDim2.fromOffset(X,4)
     Button.BackgroundColor3 = Color3.fromRGB(18,19,24)
     Button.Text = Text
     Button.TextColor3 = Color3.fromRGB(130,133,143)
-    Button.TextSize = 16
+    Button.TextSize = 14
     Button.Font = Enum.Font.GothamBold
     Button.AutoButtonColor = false
-    Button.Parent = Sidebar
+    Button.Parent = TabBar
 
     local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0,10)
+    Corner.CornerRadius = UDim.new(0,8)
     Corner.Parent = Button
 
     Button.MouseEnter:Connect(function()
@@ -527,39 +451,99 @@ local function MakeTab(Text,Y)
     return Button
 end
 
--- Abas reposicionadas (7 abas agora)
+-- Abas horizontais (7 abas bem espaçadas)
 local AimTab = MakeTab("◎",5)
-local VisualTab = MakeTab("◉",42)
-local PlayerTab = MakeTab("👤",79)
-local WorldTab = MakeTab("🌍",116)
-local CustomTab = MakeTab("🎨",153)
-local HUDTab = MakeTab("▣",190)
-local SettingsTab = MakeTab("⚙",227)
+local VisualTab = MakeTab("◉",60)
+local PlayerTab = MakeTab("👤",115)
+local WorldTab = MakeTab("🌍",170)
+local CustomTab = MakeTab("🎨",225)
+local HUDTab = MakeTab("▣",280)
+local SettingsTab = MakeTab("⚙",335)
 
 ------------------------------------------------------------
--- CONTENT
+-- PERFIL (CANTO INFERIOR ESQUERDO)
+------------------------------------------------------------
+
+local ProfileContainer = Instance.new("Frame")
+ProfileContainer.Size = UDim2.new(0,65,0,85)
+ProfileContainer.Position = UDim2.fromOffset(5,275)
+ProfileContainer.BackgroundColor3 = Color3.fromRGB(22,23,29)
+ProfileContainer.BorderSizePixel = 0
+ProfileContainer.Parent = Main
+
+local ProfileCorner = Instance.new("UICorner")
+ProfileCorner.CornerRadius = UDim.new(0,8)
+ProfileCorner.Parent = ProfileContainer
+
+local ProfileStroke = Instance.new("UIStroke")
+ProfileStroke.Color = Accent()
+ProfileStroke.Thickness = 1
+ProfileStroke.Transparency = 0.5
+ProfileStroke.Parent = ProfileContainer
+
+local UserNameLabel = Instance.new("TextLabel")
+UserNameLabel.Size = UDim2.new(1,-6,0,14)
+UserNameLabel.Position = UDim2.fromOffset(3,3)
+UserNameLabel.BackgroundTransparency = 1
+UserNameLabel.Text = LocalPlayer.DisplayName
+UserNameLabel.TextColor3 = Color3.new(1,1,1)
+UserNameLabel.TextSize = 6
+UserNameLabel.Font = Enum.Font.GothamBold
+UserNameLabel.TextXAlignment = Enum.TextXAlignment.Center
+UserNameLabel.TextScaled = true
+UserNameLabel.TextWrapped = true
+UserNameLabel.Parent = ProfileContainer
+
+local AvatarImage = Instance.new("ImageLabel")
+AvatarImage.Size = UDim2.fromOffset(40,40)
+AvatarImage.Position = UDim2.fromOffset(12,20)
+AvatarImage.BackgroundColor3 = Color3.fromRGB(30,31,39)
+AvatarImage.BorderSizePixel = 0
+AvatarImage.Parent = ProfileContainer
+
+local AvatarCorner = Instance.new("UICorner")
+AvatarCorner.CornerRadius = UDim.new(0,20)
+AvatarCorner.Parent = AvatarImage
+
+local UserId = LocalPlayer.UserId
+local AvatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId="..UserId.."&width=100&height=100&format=png"
+AvatarImage.Image = AvatarUrl
+
+local VersionLabel = Instance.new("TextLabel")
+VersionLabel.Size = UDim2.new(1,-6,0,12)
+VersionLabel.Position = UDim2.fromOffset(3,63)
+VersionLabel.BackgroundTransparency = 1
+VersionLabel.Text = "V4"
+VersionLabel.TextColor3 = Color3.fromRGB(110,113,125)
+VersionLabel.TextSize = 6
+VersionLabel.Font = Enum.Font.GothamBold
+VersionLabel.TextXAlignment = Enum.TextXAlignment.Center
+VersionLabel.Parent = ProfileContainer
+
+------------------------------------------------------------
+-- CONTENT (ABAIXO DAS ABAS)
 ------------------------------------------------------------
 
 local Content = Instance.new("Frame")
-Content.Size = UDim2.new(1,-65,1,-50)
-Content.Position = UDim2.fromOffset(65,50)
+Content.Size = UDim2.new(1,-90,1,-105)
+Content.Position = UDim2.fromOffset(75,95)
 Content.BackgroundTransparency = 1
 Content.Parent = Main
 
 local PageTitle = Instance.new("TextLabel")
-PageTitle.Size = UDim2.new(1,-20,0,25)
-PageTitle.Position = UDim2.fromOffset(14,8)
+PageTitle.Size = UDim2.new(1,-20,0,22)
+PageTitle.Position = UDim2.fromOffset(5,3)
 PageTitle.BackgroundTransparency = 1
 PageTitle.Text = "Aim Assist"
 PageTitle.TextColor3 = Color3.new(1,1,1)
-PageTitle.TextSize = 16
+PageTitle.TextSize = 14
 PageTitle.Font = Enum.Font.GothamBold
 PageTitle.TextXAlignment = Enum.TextXAlignment.Left
 PageTitle.Parent = Content
 
 local PageLine = Instance.new("Frame")
-PageLine.Size = UDim2.new(1,-28,0,3)
-PageLine.Position = UDim2.fromOffset(14,35)
+PageLine.Size = UDim2.new(1,-10,0,2)
+PageLine.Position = UDim2.fromOffset(5,28)
 PageLine.BackgroundColor3 = Accent()
 PageLine.BorderSizePixel = 0
 PageLine.Parent = Content
@@ -575,8 +559,8 @@ PageLineGlow.Transparency = 0.5
 PageLineGlow.Parent = PageLine
 
 local Scroll = Instance.new("ScrollingFrame")
-Scroll.Size = UDim2.new(1,-24,1,-50)
-Scroll.Position = UDim2.fromOffset(12,44)
+Scroll.Size = UDim2.new(1,-10,1,-38)
+Scroll.Position = UDim2.fromOffset(5,35)
 Scroll.BackgroundTransparency = 1
 Scroll.BorderSizePixel = 0
 Scroll.ScrollBarThickness = 3
@@ -586,7 +570,7 @@ Scroll.CanvasSize = UDim2.new()
 Scroll.Parent = Content
 
 local Layout = Instance.new("UIListLayout")
-Layout.Padding = UDim.new(0,7)
+Layout.Padding = UDim.new(0,6)
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 Layout.Parent = Scroll
 
@@ -669,8 +653,7 @@ end
 local function RefreshLinesAccent()
     HeaderLine.BackgroundColor3 = Accent()
     HeaderLineGlow.Color = Accent()
-    SidebarLine.BackgroundColor3 = Accent()
-    SidebarLineGlow.Color = Accent()
+    TabBarStroke.Color = Accent()
     PageLine.BackgroundColor3 = Accent()
     PageLineGlow.Color = Accent()
     MainStroke.Color = Accent()
@@ -1358,7 +1341,7 @@ AddAim(Toggle(Scroll, "Wall Check", "Ignore targets behind walls", Config.Aim.Wa
 end))
 
 ------------------------------------------------------------
--- PLAYER PAGE (NOVA ABA)
+-- PLAYER PAGE
 ------------------------------------------------------------
 
 local function AddPlayer(Row)
@@ -1397,7 +1380,6 @@ end))
 
 AddPlayer(Toggle(Scroll, "Fly Hack", "Enable flying", Config.Player.FlyHack, function(v)
     Config.Player.FlyHack = v
-    -- Fly implementation here
 end))
 
 AddPlayer(Slider(Scroll, "Fly Speed", 10, 100, Config.Player.FlySpeed, function(v)
@@ -1436,7 +1418,7 @@ AddPlayer(Toggle(Scroll, "Infinite Jump", "Jump infinitely", Config.Player.Infin
 end))
 
 ------------------------------------------------------------
--- WORLD PAGE (NOVA ABA)
+-- WORLD PAGE
 ------------------------------------------------------------
 
 local function AddWorld(Row)
@@ -1486,7 +1468,7 @@ end, function(v)
 end))
 
 ------------------------------------------------------------
--- CUSTOMIZATION PAGE (NOVA ABA)
+-- CUSTOMIZATION PAGE
 ------------------------------------------------------------
 
 local function AddCustom(Row)
@@ -1495,29 +1477,28 @@ end
 
 AddCustom(Dropdown(Scroll, "UI Theme", {"Dark", "Light", "Purple", "Red"}, Config.Customization.UITheme, function(v)
     Config.Customization.UITheme = v
-    -- Apply theme
     if v == "Dark" then
         Main.BackgroundColor3 = Color3.fromRGB(16,17,22)
         Header.BackgroundColor3 = Color3.fromRGB(20,21,27)
-        Sidebar.BackgroundColor3 = Color3.fromRGB(18,19,24)
+        TabBar.BackgroundColor3 = Color3.fromRGB(18,19,24)
     elseif v == "Light" then
         Main.BackgroundColor3 = Color3.fromRGB(240,240,245)
         Header.BackgroundColor3 = Color3.fromRGB(230,230,235)
-        Sidebar.BackgroundColor3 = Color3.fromRGB(235,235,240)
+        TabBar.BackgroundColor3 = Color3.fromRGB(235,235,240)
     elseif v == "Purple" then
         Main.BackgroundColor3 = Color3.fromRGB(20,15,30)
         Header.BackgroundColor3 = Color3.fromRGB(25,20,35)
-        Sidebar.BackgroundColor3 = Color3.fromRGB(22,18,32)
+        TabBar.BackgroundColor3 = Color3.fromRGB(22,18,32)
     elseif v == "Red" then
         Main.BackgroundColor3 = Color3.fromRGB(30,15,15)
         Header.BackgroundColor3 = Color3.fromRGB(35,20,20)
-        Sidebar.BackgroundColor3 = Color3.fromRGB(32,18,18)
+        TabBar.BackgroundColor3 = Color3.fromRGB(32,18,18)
     end
 end))
 
 AddCustom(Slider(Scroll, "UI Scale", 0.5, 2, Config.Customization.UIScale, function(v)
     Config.Customization.UIScale = v
-    Main.Size = UDim2.fromOffset(400 * v, 340 * v)
+    Main.Size = UDim2.fromOffset(420 * v, 360 * v)
 end, function(v)
     return string.format("%.1fx",v)
 end))
@@ -1533,7 +1514,6 @@ AddCustom(Toggle(Scroll, "Glow Effects", "Show glow effects", Config.UI.GlowEffe
     Config.UI.GlowEffects = v
     MainGlow.Enabled = v
     HeaderLineGlow.Enabled = v
-    SidebarLineGlow.Enabled = v
     PageLineGlow.Enabled = v
     LogoGlow.Enabled = v
 end))
@@ -1695,39 +1675,289 @@ AddSetting(ColorPicker(Scroll, "UI Accent", Config.UI.Accent, function(Color)
 end))
 
 ------------------------------------------------------------
--- RESET
+-- ESP (SKELETON CORRIGIDO)
 ------------------------------------------------------------
 
-local ResetButton = Instance.new("TextButton")
-ResetButton.Size = UDim2.new(1,-2,0,40)
-ResetButton.BackgroundColor3 = Color3.fromRGB(30,31,39)
-ResetButton.Text = "↻   Reset Settings"
-ResetButton.TextColor3 = Color3.fromRGB(220,221,227)
-ResetButton.TextSize = 9
-ResetButton.Font = Enum.Font.GothamBold
-ResetButton.AutoButtonColor = false
-ResetButton.Parent = Scroll
+local ESPData = {}
+local Skeletons = {}
 
-Instance.new("UICorner",ResetButton).CornerRadius = UDim.new(0,8)
+local function IsTeammate(Player)
+    return Config.Visual.TeamCheck and LocalPlayer.Team ~= nil and Player.Team == LocalPlayer.Team
+end
 
-AddSetting(ResetButton)
+local function RemoveESP(Player)
+    local Data = ESPData[Player]
+    if not Data then return end
+    for _,Object in pairs(Data) do
+        if typeof(Object) == "Instance" then
+            Object:Destroy()
+        end
+    end
+    ESPData[Player] = nil
+end
 
-ResetButton.MouseEnter:Connect(function()
-    PlayHoverSound()
-    Tween(ResetButton,{BackgroundColor3 = HoverColor()})
+local ESPGui = Instance.new("ScreenGui")
+ESPGui.Name = "NovaESP"
+ESPGui.ResetOnSpawn = false
+ESPGui.IgnoreGuiInset = true
+ESPGui.DisplayOrder = 80
+ESPGui.Parent = PlayerGui
+
+local R15Skeleton = {
+    {"Head","UpperTorso"},
+    {"UpperTorso","LowerTorso"},
+    {"UpperTorso","LeftUpperArm"},
+    {"LeftUpperArm","LeftLowerArm"},
+    {"LeftLowerArm","LeftHand"},
+    {"UpperTorso","RightUpperArm"},
+    {"RightUpperArm","RightLowerArm"},
+    {"RightLowerArm","RightHand"},
+    {"LowerTorso","LeftUpperLeg"},
+    {"LeftUpperLeg","LeftLowerLeg"},
+    {"LeftLowerLeg","LeftFoot"},
+    {"LowerTorso","RightUpperLeg"},
+    {"RightUpperLeg","RightLowerLeg"},
+    {"RightLowerLeg","RightFoot"}
+}
+
+local R6Skeleton = {
+    {"Head","Torso"},
+    {"Torso","Left Arm"},
+    {"Torso","Right Arm"},
+    {"Torso","Left Leg"},
+    {"Torso","Right Leg"}
+}
+
+local function CreateSkeletonLine(parent)
+    local line = Instance.new("Frame")
+    line.Name = "Bone"
+    line.AnchorPoint = Vector2.new(0.5, 0.5)
+    line.BackgroundColor3 = Config.Visual.Color
+    line.BorderSizePixel = 0
+    line.Size = UDim2.fromOffset(0, Config.Visual.SkeletonThickness)
+    line.Visible = false
+    line.Parent = parent
+    return line
+end
+
+local function CreateSkeleton(player)
+    if player == LocalPlayer then return end
+    if Skeletons[player] then
+        Skeletons[player].Folder:Destroy()
+        Skeletons[player] = nil
+    end
+    local character = player.Character
+    if not character then return end
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    local folder = Instance.new("Folder")
+    folder.Name = player.Name .. "_Skeleton"
+    folder.Parent = ESPGui
+    local connections
+    if humanoid.RigType == Enum.HumanoidRigType.R15 then
+        connections = R15Skeleton
+    else
+        connections = R6Skeleton
+    end
+    local bones = {}
+    for index, connection in ipairs(connections) do
+        local part1 = character:FindFirstChild(connection[1])
+        local part2 = character:FindFirstChild(connection[2])
+        if part1 and part2 then
+            local line = CreateSkeletonLine(folder)
+            bones[index] = {
+                Line = line,
+                Part1 = part1,
+                Part2 = part2,
+            }
+        end
+    end
+    Skeletons[player] = {
+        Character = character,
+        Folder = folder,
+        Bones = bones,
+    }
+end
+
+local function RemoveSkeleton(player)
+    local data = Skeletons[player]
+    if not data then return end
+    if data.Folder then
+        data.Folder:Destroy()
+    end
+    Skeletons[player] = nil
+end
+
+local function CreateESP(Player)
+    if Player == LocalPlayer then return end
+    RemoveESP(Player)
+    RemoveSkeleton(Player)
+    if not Config.Visual.ESP then return end
+    if IsTeammate(Player) then return end
+    local Character = Player.Character
+    if not Character then return end
+    local Root = Character:FindFirstChild("HumanoidRootPart")
+    local Head = Character:FindFirstChild("Head")
+    local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+    if not Root or not Head or not Humanoid then return end
+    local Data = {}
+    ESPData[Player] = Data
+    if Config.Visual.Highlight or Config.Visual.Chams then
+        local Highlight = Instance.new("Highlight")
+        Highlight.Name = "NovaESPHighlight"
+        Highlight.Adornee = Character
+        Highlight.FillColor = Config.Visual.Color
+        Highlight.OutlineColor = Config.Visual.Color
+        Highlight.FillTransparency = Config.Visual.Chams and .55 or 1
+        Highlight.OutlineTransparency = 0
+        Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        Highlight.Parent = Character
+        Data.Highlight = Highlight
+    end
+    if Config.Visual.Name or Config.Visual.Health or Config.Visual.Distance then
+        local Billboard = Instance.new("BillboardGui")
+        Billboard.Name = "NovaESPInfo"
+        Billboard.Adornee = Head
+        Billboard.Size = UDim2.fromOffset(180,70)
+        Billboard.StudsOffset = Vector3.new(0,3,0)
+        Billboard.AlwaysOnTop = true
+        Billboard.Parent = Head
+        local Text = Instance.new("TextLabel")
+        Text.Size = UDim2.fromScale(1,1)
+        Text.BackgroundTransparency = 1
+        Text.TextColor3 = Config.Visual.Color
+        Text.TextStrokeTransparency = .4
+        Text.TextSize = Config.Visual.TextSize
+        Text.Font = Enum.Font.GothamBold
+        Text.Parent = Billboard
+        Data.Billboard = Billboard
+        Data.InfoText = Text
+    end
+    if Config.Visual.Box then
+        local Box = Instance.new("Frame")
+        Box.Name = "NovaBox"
+        Box.AnchorPoint = Vector2.new(.5,.5)
+        Box.BackgroundTransparency = 1
+        Box.BorderSizePixel = 0
+        Box.Visible = false
+        Box.Parent = ESPGui
+        local Stroke = Instance.new("UIStroke")
+        Stroke.Color = Config.Visual.Color
+        Stroke.Thickness = Config.Visual.BoxThickness
+        Stroke.Parent = Box
+        Data.Box = Box
+        Data.BoxStroke = Stroke
+    end
+    if Config.Visual.Skeleton then
+        CreateSkeleton(Player)
+    end
+    if Config.Visual.Tracer then
+        local Tracer = Instance.new("Frame")
+        Tracer.Name = "NovaTracer"
+        Tracer.AnchorPoint = Vector2.new(.5,.5)
+        Tracer.BorderSizePixel = 0
+        Tracer.BackgroundColor3 = Config.Visual.Color
+        Tracer.Size = UDim2.fromOffset(0, Config.Visual.TracerThickness)
+        Tracer.Visible = false
+        Tracer.Parent = ESPGui
+        Data.Tracer = Tracer
+    end
+end
+
+local function RefreshESP()
+    for Player in pairs(ESPData) do
+        RemoveESP(Player)
+    end
+    for Player in pairs(Skeletons) do
+        RemoveSkeleton(Player)
+    end
+    if not Config.Visual.ESP then return end
+    for _,Player in ipairs(Players:GetPlayers()) do
+        if Player ~= LocalPlayer then
+            CreateESP(Player)
+        end
+    end
+end
+
+------------------------------------------------------------
+-- HUD
+------------------------------------------------------------
+
+local HUDFrame = Instance.new("Frame")
+HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, 50)
+HUDFrame.Position = Config.HUD.Position
+HUDFrame.BackgroundColor3 = Color3.fromRGB(20,21,27)
+HUDFrame.BackgroundTransparency = Config.HUD.Transparency
+HUDFrame.BorderSizePixel = 0
+HUDFrame.Visible = Config.HUD.Enabled
+HUDFrame.Parent = Gui
+
+Instance.new("UICorner",HUDFrame).CornerRadius = UDim.new(0,7)
+
+local HUDStroke = Instance.new("UIStroke")
+HUDStroke.Color = Accent()
+HUDStroke.Thickness = 1
+HUDStroke.Transparency = Config.HUD.Transparency
+HUDStroke.Parent = HUDFrame
+
+local HUDText = Instance.new("TextLabel")
+HUDText.Size = UDim2.new(1,-12,1,-8)
+HUDText.Position = UDim2.fromOffset(6,4)
+HUDText.BackgroundTransparency = 1
+HUDText.TextColor3 = Color3.fromRGB(220,221,227)
+HUDText.TextSize = 8
+HUDText.Font = Enum.Font.GothamMedium
+HUDText.TextXAlignment = Enum.TextXAlignment.Left
+HUDText.TextYAlignment = Enum.TextYAlignment.Top
+HUDText.Parent = HUDFrame
+
+local prevHUDSize = Config.HUD.Size
+
+local function UpdateHUDAppearance()
+    local newSize = math.floor(Config.HUD.Size)
+    HUDFrame.Size = UDim2.fromOffset(newSize, HUDFrame.Size.Y.Offset)
+    HUDFrame.BackgroundTransparency = Config.HUD.Transparency
+    HUDStroke.Transparency = Config.HUD.Transparency
+    HUDText.TextTransparency = Config.HUD.Transparency
+    local textSize = math.clamp(math.floor(newSize/13), 7, 32)
+    HUDText.TextSize = textSize
+    prevHUDSize = newSize
+end
+
+------------------------------------------------------------
+-- HUD DRAG
+------------------------------------------------------------
+
+local HUDDragging = false
+local HUDDragStart
+local HUDStartPosition
+
+HUDFrame.InputBegan:Connect(function(Input)
+    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+        HUDDragging = true
+        HUDDragStart = Input.Position
+        HUDStartPosition = HUDFrame.Position
+    end
 end)
-ResetButton.MouseLeave:Connect(function()
-    Tween(ResetButton,{BackgroundColor3 = Color3.fromRGB(30,31,39)})
+
+UserInputService.InputChanged:Connect(function(Input)
+    if not HUDDragging then return end
+    if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
+        local Delta = Input.Position-HUDDragStart
+        HUDFrame.Position = UDim2.new(
+            HUDStartPosition.X.Scale,
+            HUDStartPosition.X.Offset+Delta.X,
+            HUDStartPosition.Y.Scale,
+            HUDStartPosition.Y.Offset+Delta.Y
+        )
+    end
 end)
 
-ResetButton.MouseButton1Click:Connect(function()
-    PlayClickSound()
-    -- Reset all configs...
-    RefreshLinesAccent()
-    UpdateHUDAppearance()
-    RefreshESP()
-    UpdateFov()
-    RefreshToggleAccent()
+UserInputService.InputEnded:Connect(function(Input)
+    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+        HUDDragging = false
+        Config.HUD.Position = HUDFrame.Position
+    end
 end)
 
 ------------------------------------------------------------
@@ -1745,13 +1975,13 @@ local function HideAll()
 end
 
 local function AnimatePage()
-    Scroll.Position = UDim2.fromOffset(25,44)
-    Tween(Scroll, {Position = UDim2.fromOffset(12,44)}, TweenSmooth)
+    Scroll.Position = UDim2.fromOffset(15,35)
+    Tween(Scroll, {Position = UDim2.fromOffset(5,35)}, TweenSmooth)
 end
 
 local function SetActiveTab(Tab)
     ActiveTab = Tab
-    for _,Child in ipairs(Sidebar:GetChildren()) do
+    for _,Child in ipairs(TabBar:GetChildren()) do
         if Child:IsA("TextButton") then
             if Child == Tab then
                 Child.BackgroundColor3 = Accent()
@@ -1940,8 +2170,8 @@ local function MinimizeHub()
     Mini.AnchorPoint = Vector2.new(0.5, 0.5)
     Mini.Position = UDim2.new(0, 15, 0.5, -25)
     Tween(Mini, {Size = UDim2.fromOffset(50, 50)}, TweenBounce)
-    Main.Size = UDim2.fromOffset(400, 340)
-    Main.Position = UDim2.new(0.5, -200, 0.5, -170)
+    Main.Size = UDim2.fromOffset(420, 360)
+    Main.Position = UDim2.new(0.5, -210, 0.5, -180)
     Main.AnchorPoint = Vector2.new(0, 0)
 end
 
@@ -2110,15 +2340,15 @@ Mini.MouseButton1Click:Connect(function()
     Main.Size = UDim2.fromOffset(0, 0)
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
     Main.Position = UDim2.new(0.5, 0, 0.5, 0)
-    Tween(Main, {Size = UDim2.fromOffset(400, 340)}, TweenSpring)
+    Tween(Main, {Size = UDim2.fromOffset(420, 360)}, TweenSpring)
     task.delay(0.5, function()
-        Main.Position = UDim2.new(0.5, -200, 0.5, -170)
+        Main.Position = UDim2.new(0.5, -210, 0.5, -180)
         Main.AnchorPoint = Vector2.new(0, 0)
     end)
 end)
 
 ------------------------------------------------------------
--- FPS / HUD (COM HORA, SERVIDOR E TEMPO DE SESSÃO)
+-- FPS / HUD
 ------------------------------------------------------------
 
 local Frames = 0
@@ -2169,7 +2399,6 @@ RunService.RenderStepped:Connect(function(DT)
     end
     HUDText.Text = table.concat(Lines, "\n")
     
-    -- Ajustar altura do HUD baseado no número de linhas
     local numLines = #Lines
     local newHeight = math.max(30, 18 + numLines * 14)
     HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, newHeight)
@@ -2216,11 +2445,17 @@ end)
 LocalPlayer.CharacterAdded:Connect(function()
     task.wait(.5)
     Camera = workspace.CurrentCamera
-    -- Aplicar configurações do player
     if Config.Player.SpeedHack then
         local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
         if Humanoid then
             Humanoid.WalkSpeed = 16 * Config.Player.SpeedMultiplier
+        end
+    end
+    if Config.Player.NoClip then
+        for _,Part in ipairs(LocalPlayer.Character:GetDescendants()) do
+            if Part:IsA("BasePart") then
+                Part.CanCollide = false
+            end
         end
     end
 end)
