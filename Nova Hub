@@ -3,11 +3,8 @@
     LocalScript
     StarterPlayer > StarterPlayerScripts
 
-    LAYOUT HORIZONTAL:
-    • Abas no topo (horizontal)
-    • Perfil no canto inferior esquerdo
-    • Conteúdo organizado abaixo das abas
-    • HUD com hora, servidor e tempo de sessão
+    BASE: v3.0 (funcionando)
+    ADIÇÕES: Abas horizontais, Player, World, Customization
 ]]
 
 ------------------------------------------------------------
@@ -84,8 +81,7 @@ local Config = {
         Accent = Color3.fromRGB(105,108,145),
         ShowBypassIndicator = true,
         GlowEffects = true,
-        SoundEffects = true,
-        Theme = "Dark"
+        SoundEffects = true
     },
     Player = {
         SpeedHack = false,
@@ -195,8 +191,8 @@ end
 
 local Main = Instance.new("Frame")
 Main.Name = "Main"
-Main.Size = UDim2.fromOffset(420,360)
-Main.Position = UDim2.new(.5,-210,.5,-180)
+Main.Size = UDim2.fromOffset(420,370)
+Main.Position = UDim2.new(.5,-210,.5,-185)
 Main.BackgroundColor3 = DarkColor()
 Main.BorderSizePixel = 0
 Main.Parent = Gui
@@ -387,7 +383,7 @@ Minimize.MouseButton1Click:Connect(function()
 end)
 
 ------------------------------------------------------------
--- TAB BAR (HORIZONTAL)
+-- TAB BAR (HORIZONTAL NO TOPO)
 ------------------------------------------------------------
 
 local TabBar = Instance.new("Frame")
@@ -451,7 +447,6 @@ local function MakeTab(Text, X)
     return Button
 end
 
--- Abas horizontais (7 abas bem espaçadas)
 local AimTab = MakeTab("◎",5)
 local VisualTab = MakeTab("◉",60)
 local PlayerTab = MakeTab("👤",115)
@@ -466,7 +461,7 @@ local SettingsTab = MakeTab("⚙",335)
 
 local ProfileContainer = Instance.new("Frame")
 ProfileContainer.Size = UDim2.new(0,65,0,85)
-ProfileContainer.Position = UDim2.fromOffset(5,275)
+ProfileContainer.Position = UDim2.fromOffset(5,280)
 ProfileContainer.BackgroundColor3 = Color3.fromRGB(22,23,29)
 ProfileContainer.BorderSizePixel = 0
 ProfileContainer.Parent = Main
@@ -521,11 +516,11 @@ VersionLabel.TextXAlignment = Enum.TextXAlignment.Center
 VersionLabel.Parent = ProfileContainer
 
 ------------------------------------------------------------
--- CONTENT (ABAIXO DAS ABAS)
+-- CONTENT
 ------------------------------------------------------------
 
 local Content = Instance.new("Frame")
-Content.Size = UDim2.new(1,-90,1,-105)
+Content.Size = UDim2.new(1,-90,1,-100)
 Content.Position = UDim2.fromOffset(75,95)
 Content.BackgroundTransparency = 1
 Content.Parent = Main
@@ -1496,13 +1491,6 @@ AddCustom(Dropdown(Scroll, "UI Theme", {"Dark", "Light", "Purple", "Red"}, Confi
     end
 end))
 
-AddCustom(Slider(Scroll, "UI Scale", 0.5, 2, Config.Customization.UIScale, function(v)
-    Config.Customization.UIScale = v
-    Main.Size = UDim2.fromOffset(420 * v, 360 * v)
-end, function(v)
-    return string.format("%.1fx",v)
-end))
-
 AddCustom(ColorPicker(Scroll, "UI Accent", Config.UI.Accent, function(Color)
     Config.UI.Accent = Color
     RefreshLinesAccent()
@@ -1581,97 +1569,6 @@ table.insert(VisualRows, Slider(Scroll, "ESP Text Size", 8, 16, Config.Visual.Te
     RefreshESP()
 end, function(v)
     return string.format("%d",v)
-end))
-
-------------------------------------------------------------
--- HUD PAGE
-------------------------------------------------------------
-
-local function AddHUD(Row)
-    table.insert(HUDRows,Row)
-end
-
-AddHUD(Toggle(Scroll, "HUD", "Enable information panel", Config.HUD.Enabled, function(v)
-    Config.HUD.Enabled = v
-    HUDFrame.Visible = v
-end))
-
-AddHUD(Toggle(Scroll, "FPS Counter", "Show current FPS", Config.HUD.FPS, function(v)
-    Config.HUD.FPS = v
-end))
-
-AddHUD(Toggle(Scroll, "Ping Counter", "Show network ping", Config.HUD.Ping, function(v)
-    Config.HUD.Ping = v
-end))
-
-AddHUD(Toggle(Scroll, "Player Counter", "Show player count", Config.HUD.Players, function(v)
-    Config.HUD.Players = v
-end))
-
-AddHUD(Toggle(Scroll, "XYZ Position", "Show character coordinates", Config.HUD.XYZ, function(v)
-    Config.HUD.XYZ = v
-end))
-
-AddHUD(Toggle(Scroll, "Time", "Show current time", Config.HUD.ShowTime, function(v)
-    Config.HUD.ShowTime = v
-end))
-
-AddHUD(Toggle(Scroll, "Server ID", "Show server ID", Config.HUD.ShowServer, function(v)
-    Config.HUD.ShowServer = v
-end))
-
-AddHUD(Toggle(Scroll, "Session Time", "Show time since joined", Config.HUD.ShowSessionTime, function(v)
-    Config.HUD.ShowSessionTime = v
-end))
-
-AddHUD(Slider(Scroll, "HUD Size", 80, 250, Config.HUD.Size, function(v)
-    Config.HUD.Size = math.floor(v)
-    UpdateHUDAppearance()
-end, function(v)
-    return string.format("%d", v)
-end))
-
-AddHUD(Slider(Scroll, "HUD Transparency", 0, .9, Config.HUD.Transparency, function(v)
-    Config.HUD.Transparency = v
-    UpdateHUDAppearance()
-end, function(v)
-    return string.format("%d%%", math.floor(v*100))
-end))
-
-------------------------------------------------------------
--- SETTINGS
-------------------------------------------------------------
-
-local function AddSetting(Row)
-    table.insert(SettingsRows,Row)
-end
-
-AddSetting(Toggle(Scroll, "Animations", "Enable interface animations", Config.UI.Animations, function(v)
-    Config.UI.Animations = v
-end))
-
-AddSetting(Toggle(Scroll, "Sound Effects", "Enable click sounds", Config.UI.SoundEffects, function(v)
-    Config.UI.SoundEffects = v
-end))
-
-AddSetting(Toggle(Scroll, "Notifications", "Enable interface notifications", Config.UI.Notifications, function(v)
-    Config.UI.Notifications = v
-end))
-
-AddSetting(Toggle(Scroll, "Performance Mode", "Reduce visual update workload", Config.UI.Performance, function(v)
-    Config.UI.Performance = v
-end))
-
-AddSetting(Toggle(Scroll, "Bypass Indicator", "Show green bypass dot", Config.UI.ShowBypassIndicator, function(v)
-    Config.UI.ShowBypassIndicator = v
-    BypassContainer.Visible = v
-end))
-
-AddSetting(ColorPicker(Scroll, "UI Accent", Config.UI.Accent, function(Color)
-    Config.UI.Accent = Color
-    RefreshLinesAccent()
-    RefreshToggleAccent()
-    UpdateFov()
 end))
 
 ------------------------------------------------------------
@@ -1880,6 +1777,270 @@ local function RefreshESP()
 end
 
 ------------------------------------------------------------
+-- TARGET (AIM ASSIST FUNCIONANDO)
+------------------------------------------------------------
+
+local function IsValidTarget(Player)
+    if Player == LocalPlayer then return false end
+    if Config.Aim.TeamCheck and LocalPlayer.Team and Player.Team == LocalPlayer.Team then return false end
+    local Character = Player.Character
+    if not Character then return false end
+    local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+    local Root = Character:FindFirstChild("HumanoidRootPart")
+    if not Humanoid or Humanoid.Health <= 0 or not Root then return false end
+    return true
+end
+
+local function Visible(Part)
+    if not Config.Aim.WallCheck then return true end
+    local Origin = Camera.CFrame.Position
+    local Direction = Part.Position-Origin
+    local Params = RaycastParams.new()
+    Params.FilterType = Enum.RaycastFilterType.Exclude
+    Params.FilterDescendantsInstances = {LocalPlayer.Character}
+    Params.IgnoreWater = true
+    local Result = workspace:Raycast(Origin, Direction, Params)
+    if not Result then return true end
+    return Result.Instance:IsDescendantOf(Part.Parent)
+end
+
+local CurrentTarget
+
+local function GetTarget()
+    local Center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+    local BestPart
+    local BestScore = math.huge
+    for _,Player in ipairs(Players:GetPlayers()) do
+        if IsValidTarget(Player) then
+            local Character = Player.Character
+            local Part = Character:FindFirstChild(Config.Aim.TargetPart)
+            if Part and Visible(Part) then
+                local Screen,OnScreen = Camera:WorldToViewportPoint(Part.Position)
+                if OnScreen then
+                    local CrosshairDistance = (Vector2.new(Screen.X, Screen.Y)-Center).Magnitude
+                    if CrosshairDistance <= Config.Aim.FOV then
+                        local Score = CrosshairDistance
+                        if Config.Aim.TargetPriority and Config.Aim.PriorityMode == "Distance" then
+                            local MyCharacter = LocalPlayer.Character
+                            local MyRoot = MyCharacter and MyCharacter:FindFirstChild("HumanoidRootPart")
+                            local Root = Character:FindFirstChild("HumanoidRootPart")
+                            if MyRoot and Root then
+                                Score = (Root.Position-MyRoot.Position).Magnitude
+                            end
+                        end
+                        if Score < BestScore then
+                            BestScore = Score
+                            BestPart = Part
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return BestPart
+end
+
+local TargetHighlight = Instance.new("Highlight")
+TargetHighlight.Name = "NovaTargetHighlight"
+TargetHighlight.FillColor = Config.Aim.Color
+TargetHighlight.OutlineColor = Config.Aim.Color
+TargetHighlight.FillTransparency = .75
+TargetHighlight.OutlineTransparency = 0
+TargetHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+TargetHighlight.Enabled = false
+TargetHighlight.Parent = Gui
+
+local function UpdateTargetHighlight(Target)
+    if not Config.Aim.TargetHighlight or not Target then
+        TargetHighlight.Enabled = false
+        return
+    end
+    local Character = Target.Parent
+    if not Character then
+        TargetHighlight.Enabled = false
+        return
+    end
+    TargetHighlight.Adornee = Character
+    TargetHighlight.FillColor = Config.Aim.Color
+    TargetHighlight.OutlineColor = Config.Aim.Color
+    TargetHighlight.Enabled = true
+end
+
+RunService:BindToRenderStep("NovaAim", Enum.RenderPriority.Camera.Value+1, function()
+    local Target
+    if Config.Aim.Enabled then
+        Target = GetTarget()
+    end
+    CurrentTarget = Target
+    UpdateTargetHighlight(Target)
+    if not Target then return end
+    local Position = Target.Position
+    if Config.Aim.Prediction then
+        local Root = Target.Parent:FindFirstChild("HumanoidRootPart")
+        if Root then
+            Position += Root.AssemblyLinearVelocity * Config.Aim.PredictionStrength
+        end
+    end
+    local Desired = CFrame.lookAt(Camera.CFrame.Position, Position)
+    Camera.CFrame = Camera.CFrame:Lerp(Desired, Config.Aim.Smoothness)
+end)
+
+------------------------------------------------------------
+-- ESP RENDER
+------------------------------------------------------------
+
+RunService.RenderStepped:Connect(function()
+    Camera = workspace.CurrentCamera
+    if not Camera then return end
+
+    for player, data in pairs(Skeletons) do
+        if not player.Parent then
+            RemoveSkeleton(player)
+            continue
+        end
+        local character = data.Character
+        if not character or not character.Parent then
+            RemoveSkeleton(player)
+            continue
+        end
+        if not Config.Visual.ESP or not Config.Visual.Skeleton then
+            for _, bone in pairs(data.Bones) do
+                bone.Line.Visible = false
+            end
+            continue
+        end
+        if IsTeammate(player) then
+            for _, bone in pairs(data.Bones) do
+                bone.Line.Visible = false
+            end
+            continue
+        end
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if not humanoid or humanoid.Health <= 0 then
+            for _, bone in pairs(data.Bones) do
+                bone.Line.Visible = false
+            end
+            continue
+        end
+        local localCharacter = LocalPlayer.Character
+        if not localCharacter then continue end
+        local localRoot = localCharacter:FindFirstChild("HumanoidRootPart")
+        local targetRoot = character:FindFirstChild("HumanoidRootPart")
+        if not localRoot or not targetRoot then continue end
+        local distance = (targetRoot.Position - localRoot.Position).Magnitude
+        if distance > Config.Visual.MaxDistance then
+            for _, bone in pairs(data.Bones) do
+                bone.Line.Visible = false
+            end
+            continue
+        end
+        for _, bone in pairs(data.Bones) do
+            local part1 = bone.Part1
+            local part2 = bone.Part2
+            local line = bone.Line
+            if not part1 or not part2 or not part1.Parent or not part2.Parent then
+                line.Visible = false
+                continue
+            end
+            local position1, visible1 = Camera:WorldToViewportPoint(part1.Position)
+            local position2, visible2 = Camera:WorldToViewportPoint(part2.Position)
+            if not visible1 and not visible2 then
+                line.Visible = false
+                continue
+            end
+            local delta = Vector2.new(position2.X, position2.Y) - Vector2.new(position1.X, position1.Y)
+            local length = delta.Magnitude
+            if length <= 0 or length > 500 then
+                line.Visible = false
+                continue
+            end
+            local middle = (Vector2.new(position1.X, position1.Y) + Vector2.new(position2.X, position2.Y)) / 2
+            line.Position = UDim2.fromOffset(middle.X, middle.Y)
+            line.Size = UDim2.fromOffset(length, Config.Visual.SkeletonThickness)
+            line.Rotation = math.deg(math.atan2(delta.Y, delta.X))
+            line.BackgroundColor3 = Config.Visual.Color
+            line.Visible = true
+        end
+    end
+
+    for Player,Data in pairs(ESPData) do
+        local Character = Player.Character
+        local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+        local Head = Character and Character:FindFirstChild("Head")
+        local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+        if not Character or not Root or not Head or not Humanoid or Humanoid.Health <= 0 then
+            if Data.Box then Data.Box.Visible = false end
+            if Data.Tracer then Data.Tracer.Visible = false end
+            continue
+        end
+        local MyCharacter = LocalPlayer.Character
+        local MyRoot = MyCharacter and MyCharacter:FindFirstChild("HumanoidRootPart")
+        local Distance = math.huge
+        if MyRoot then
+            Distance = (Root.Position-MyRoot.Position).Magnitude
+        end
+        if Distance > Config.Visual.MaxDistance then
+            if Data.Box then Data.Box.Visible = false end
+            if Data.Tracer then Data.Tracer.Visible = false end
+            continue
+        end
+        if Data.InfoText then
+            local Lines = {}
+            if Config.Visual.Name then table.insert(Lines, Player.DisplayName) end
+            if Config.Visual.Health then table.insert(Lines, "HP: "..math.floor(Humanoid.Health)) end
+            if Config.Visual.Distance then table.insert(Lines, "Distance: "..math.floor(Distance)) end
+            Data.InfoText.Text = table.concat(Lines, "\n")
+            Data.InfoText.TextColor3 = Config.Visual.Color
+            Data.Billboard.Enabled = #Lines > 0
+        end
+        if Data.Highlight then
+            Data.Highlight.FillColor = Config.Visual.Color
+            Data.Highlight.OutlineColor = Config.Visual.Color
+            Data.Highlight.FillTransparency = Config.Visual.Chams and .55 or 1
+        end
+        if Data.Box then
+            local TopPoint = Camera:WorldToViewportPoint(Head.Position + Vector3.new(0,.5,0))
+            local BottomPoint = Camera:WorldToViewportPoint(Root.Position - Vector3.new(0,3,0))
+            if TopPoint.Z > 0 and BottomPoint.Z > 0 then
+                local Height = math.abs(BottomPoint.Y - TopPoint.Y)
+                local Width = Height*.55
+                if Height < 500 and Width < 500 then
+                    Data.Box.Position = UDim2.fromOffset((TopPoint.X+BottomPoint.X)/2, (TopPoint.Y+BottomPoint.Y)/2)
+                    Data.Box.Size = UDim2.fromOffset(Width, Height)
+                    Data.BoxStroke.Color = Config.Visual.Color
+                    Data.BoxStroke.Thickness = Config.Visual.BoxThickness
+                    Data.Box.Visible = true
+                else
+                    Data.Box.Visible = false
+                end
+            else
+                Data.Box.Visible = false
+            end
+        end
+        if Data.Tracer then
+            local Point,IsVisible = Camera:WorldToViewportPoint(Root.Position)
+            if IsVisible and Point.Z > 0 then
+                local Start = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y)
+                local End = Vector2.new(Point.X, Point.Y)
+                local TracerDistance = (End - Start).Magnitude
+                if TracerDistance < 1000 then
+                    Data.Tracer.BackgroundColor3 = Config.Visual.Color
+                    local Delta = End - Start
+                    Data.Tracer.Position = UDim2.fromOffset((Start.X+End.X)/2, (Start.Y+End.Y)/2)
+                    Data.Tracer.Size = UDim2.fromOffset(Delta.Magnitude, Config.Visual.TracerThickness)
+                    Data.Tracer.Rotation = math.deg(math.atan2(Delta.Y, Delta.X))
+                    Data.Tracer.Visible = true
+                else
+                    Data.Tracer.Visible = false
+                end
+            else
+                Data.Tracer.Visible = false
+            end
+        end
+    end
+end)
+
+------------------------------------------------------------
 -- HUD
 ------------------------------------------------------------
 
@@ -1959,6 +2120,97 @@ UserInputService.InputEnded:Connect(function(Input)
         Config.HUD.Position = HUDFrame.Position
     end
 end)
+
+------------------------------------------------------------
+-- HUD PAGE
+------------------------------------------------------------
+
+local function AddHUD(Row)
+    table.insert(HUDRows,Row)
+end
+
+AddHUD(Toggle(Scroll, "HUD", "Enable information panel", Config.HUD.Enabled, function(v)
+    Config.HUD.Enabled = v
+    HUDFrame.Visible = v
+end))
+
+AddHUD(Toggle(Scroll, "FPS Counter", "Show current FPS", Config.HUD.FPS, function(v)
+    Config.HUD.FPS = v
+end))
+
+AddHUD(Toggle(Scroll, "Ping Counter", "Show network ping", Config.HUD.Ping, function(v)
+    Config.HUD.Ping = v
+end))
+
+AddHUD(Toggle(Scroll, "Player Counter", "Show player count", Config.HUD.Players, function(v)
+    Config.HUD.Players = v
+end))
+
+AddHUD(Toggle(Scroll, "XYZ Position", "Show character coordinates", Config.HUD.XYZ, function(v)
+    Config.HUD.XYZ = v
+end))
+
+AddHUD(Toggle(Scroll, "Time", "Show current time", Config.HUD.ShowTime, function(v)
+    Config.HUD.ShowTime = v
+end))
+
+AddHUD(Toggle(Scroll, "Server ID", "Show server ID", Config.HUD.ShowServer, function(v)
+    Config.HUD.ShowServer = v
+end))
+
+AddHUD(Toggle(Scroll, "Session Time", "Show time since joined", Config.HUD.ShowSessionTime, function(v)
+    Config.HUD.ShowSessionTime = v
+end))
+
+AddHUD(Slider(Scroll, "HUD Size", 80, 250, Config.HUD.Size, function(v)
+    Config.HUD.Size = math.floor(v)
+    UpdateHUDAppearance()
+end, function(v)
+    return string.format("%d", v)
+end))
+
+AddHUD(Slider(Scroll, "HUD Transparency", 0, .9, Config.HUD.Transparency, function(v)
+    Config.HUD.Transparency = v
+    UpdateHUDAppearance()
+end, function(v)
+    return string.format("%d%%", math.floor(v*100))
+end))
+
+------------------------------------------------------------
+-- SETTINGS
+------------------------------------------------------------
+
+local function AddSetting(Row)
+    table.insert(SettingsRows,Row)
+end
+
+AddSetting(Toggle(Scroll, "Animations", "Enable interface animations", Config.UI.Animations, function(v)
+    Config.UI.Animations = v
+end))
+
+AddSetting(Toggle(Scroll, "Sound Effects", "Enable click sounds", Config.UI.SoundEffects, function(v)
+    Config.UI.SoundEffects = v
+end))
+
+AddSetting(Toggle(Scroll, "Notifications", "Enable interface notifications", Config.UI.Notifications, function(v)
+    Config.UI.Notifications = v
+end))
+
+AddSetting(Toggle(Scroll, "Performance Mode", "Reduce visual update workload", Config.UI.Performance, function(v)
+    Config.UI.Performance = v
+end))
+
+AddSetting(Toggle(Scroll, "Bypass Indicator", "Show green bypass dot", Config.UI.ShowBypassIndicator, function(v)
+    Config.UI.ShowBypassIndicator = v
+    BypassContainer.Visible = v
+end))
+
+AddSetting(ColorPicker(Scroll, "UI Accent", Config.UI.Accent, function(Color)
+    Config.UI.Accent = Color
+    RefreshLinesAccent()
+    RefreshToggleAccent()
+    UpdateFov()
+end))
 
 ------------------------------------------------------------
 -- PAGE SYSTEM
@@ -2170,8 +2422,8 @@ local function MinimizeHub()
     Mini.AnchorPoint = Vector2.new(0.5, 0.5)
     Mini.Position = UDim2.new(0, 15, 0.5, -25)
     Tween(Mini, {Size = UDim2.fromOffset(50, 50)}, TweenBounce)
-    Main.Size = UDim2.fromOffset(420, 360)
-    Main.Position = UDim2.new(0.5, -210, 0.5, -180)
+    Main.Size = UDim2.fromOffset(420, 370)
+    Main.Position = UDim2.new(0.5, -210, 0.5, -185)
     Main.AnchorPoint = Vector2.new(0, 0)
 end
 
@@ -2340,15 +2592,15 @@ Mini.MouseButton1Click:Connect(function()
     Main.Size = UDim2.fromOffset(0, 0)
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
     Main.Position = UDim2.new(0.5, 0, 0.5, 0)
-    Tween(Main, {Size = UDim2.fromOffset(420, 360)}, TweenSpring)
+    Tween(Main, {Size = UDim2.fromOffset(420, 370)}, TweenSpring)
     task.delay(0.5, function()
-        Main.Position = UDim2.new(0.5, -210, 0.5, -180)
+        Main.Position = UDim2.new(0.5, -210, 0.5, -185)
         Main.AnchorPoint = Vector2.new(0, 0)
     end)
 end)
 
 ------------------------------------------------------------
--- FPS / HUD
+-- FPS / HUD (COM HORA, SERVIDOR E TEMPO DE SESSÃO)
 ------------------------------------------------------------
 
 local Frames = 0
