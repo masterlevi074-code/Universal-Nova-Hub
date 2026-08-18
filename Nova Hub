@@ -9,7 +9,9 @@
     • Dropdown com bordas corrigidas
     • Botão de maximizar elegante
     • Linhas com bordas arredondadas (formato pílula)
-    • Animações suaves
+    • Listras decorativas no header
+    • Indicador BYPASS com bolinha verde
+    • Mais funções visuais nas configurações
 ]]
 
 ------------------------------------------------------------
@@ -59,7 +61,14 @@ local Config = {
         Chams = false,
         TeamCheck = false,
         Color = Color3.fromRGB(255,255,255),
-        MaxDistance = 1500
+        MaxDistance = 1500,
+        -- Novas opções visuais
+        BoxThickness = 1.5,
+        TracerThickness = 2,
+        SkeletonThickness = 2,
+        TextSize = 11,
+        ShowHealthBar = false,
+        ShowDistanceInMeters = true
     },
     HUD = {
         Enabled = true,
@@ -75,7 +84,12 @@ local Config = {
         Animations = true,
         Notifications = true,
         Performance = false,
-        Accent = Color3.fromRGB(105,108,145)
+        Accent = Color3.fromRGB(105,108,145),
+        -- Novas opções de UI
+        ShowBypassIndicator = true,
+        BypassColor = Color3.fromRGB(80,255,80),
+        HeaderStripes = true,
+        SidebarStripes = true
     }
 }
 
@@ -178,7 +192,23 @@ HeaderBottomFix.BackgroundColor3 = Color3.fromRGB(20,21,27)
 HeaderBottomFix.BorderSizePixel = 0
 HeaderBottomFix.Parent = Header
 
--- Linha separadora do header com bordas arredondadas (formato pílula)
+-- Listras decorativas no header
+if Config.UI.HeaderStripes then
+    for i = 1, 8 do
+        local Stripe = Instance.new("Frame")
+        Stripe.Size = UDim2.new(0,2,1,0)
+        Stripe.Position = UDim2.new(0,52 + (i-1)*35,0,0)
+        Stripe.BackgroundColor3 = Color3.fromRGB(30,31,38)
+        Stripe.BorderSizePixel = 0
+        Stripe.Parent = Header
+        
+        local StripeCorner = Instance.new("UICorner")
+        StripeCorner.CornerRadius = UDim.new(1,0)
+        StripeCorner.Parent = Stripe
+    end
+end
+
+-- Linha separadora do header
 local HeaderLine = Instance.new("Frame")
 HeaderLine.Size = UDim2.new(1,0,0,2)
 HeaderLine.Position = UDim2.new(0,0,1,-1)
@@ -231,6 +261,41 @@ HeaderSub.TextSize = 7
 HeaderSub.Font = Enum.Font.GothamMedium
 HeaderSub.TextXAlignment = Enum.TextXAlignment.Left
 HeaderSub.Parent = Header
+
+-- Indicador BYPASS com bolinha verde
+local BypassContainer = Instance.new("Frame")
+BypassContainer.Size = UDim2.fromOffset(55,16)
+BypassContainer.Position = UDim2.new(1,-135,0,17)
+BypassContainer.BackgroundTransparency = 1
+BypassContainer.Parent = Header
+
+local BypassDot = Instance.new("Frame")
+BypassDot.Size = UDim2.fromOffset(6,6)
+BypassDot.Position = UDim2.fromOffset(0,5)
+BypassDot.BackgroundColor3 = Config.UI.BypassColor
+BypassDot.BorderSizePixel = 0
+BypassDot.Parent = BypassContainer
+
+local BypassDotCorner = Instance.new("UICorner")
+BypassDotCorner.CornerRadius = UDim.new(1,0)
+BypassDotCorner.Parent = BypassDot
+
+local BypassDotGlow = Instance.new("UIStroke")
+BypassDotGlow.Color = Config.UI.BypassColor
+BypassDotGlow.Thickness = 2
+BypassDotGlow.Transparency = 0.5
+BypassDotGlow.Parent = BypassDot
+
+local BypassLabel = Instance.new("TextLabel")
+BypassLabel.Size = UDim2.new(1,-10,1,0)
+BypassLabel.Position = UDim2.fromOffset(10,0)
+BypassLabel.BackgroundTransparency = 1
+BypassLabel.Text = "BYPASS"
+BypassLabel.TextColor3 = Color3.fromRGB(120,180,120)
+BypassLabel.TextSize = 6
+BypassLabel.Font = Enum.Font.GothamBold
+BypassLabel.TextXAlignment = Enum.TextXAlignment.Left
+BypassLabel.Parent = BypassContainer
 
 local DragButton = Instance.new("TextButton")
 DragButton.Size = UDim2.new(1,-70,1,0)
@@ -296,7 +361,23 @@ SidebarTopFix.BackgroundColor3 = Color3.fromRGB(18,19,24)
 SidebarTopFix.BorderSizePixel = 0
 SidebarTopFix.Parent = Sidebar
 
--- Linha vertical do sidebar com bordas arredondadas
+-- Listras decorativas no sidebar
+if Config.UI.SidebarStripes then
+    for i = 1, 6 do
+        local Stripe = Instance.new("Frame")
+        Stripe.Size = UDim2.new(1,0,0,2)
+        Stripe.Position = UDim2.new(0,0,0,50 + (i-1)*45)
+        Stripe.BackgroundColor3 = Color3.fromRGB(25,26,32)
+        Stripe.BorderSizePixel = 0
+        Stripe.Parent = Sidebar
+        
+        local StripeCorner = Instance.new("UICorner")
+        StripeCorner.CornerRadius = UDim.new(1,0)
+        StripeCorner.Parent = Stripe
+    end
+end
+
+-- Linha vertical do sidebar
 local SidebarLine = Instance.new("Frame")
 SidebarLine.Size = UDim2.new(0,2,1,0)
 SidebarLine.Position = UDim2.new(1,-1,0,0)
@@ -373,7 +454,7 @@ PageTitle.Font = Enum.Font.GothamBold
 PageTitle.TextXAlignment = Enum.TextXAlignment.Left
 PageTitle.Parent = Content
 
--- Linha separadora com bordas arredondadas (formato pílula)
+-- Linha separadora com bordas arredondadas
 local PageLine = Instance.new("Frame")
 PageLine.Size = UDim2.new(1,-28,0,3)
 PageLine.Position = UDim2.fromOffset(14,35)
@@ -984,7 +1065,6 @@ local function ColorPicker(Parent, Title, Current, Callback)
         PopupTitle.ZIndex = 1000
         PopupTitle.Parent = Popup
 
-        -- Linha separadora do popup com bordas arredondadas
         local TitleLine = Instance.new("Frame")
         TitleLine.Size = UDim2.new(1,-30,0,2)
         TitleLine.Position = UDim2.fromOffset(15,40)
@@ -1317,7 +1397,7 @@ local function CreateESP(Player)
         Text.BackgroundTransparency = 1
         Text.TextColor3 = Config.Visual.Color
         Text.TextStrokeTransparency = .4
-        Text.TextSize = 11
+        Text.TextSize = Config.Visual.TextSize
         Text.Font = Enum.Font.GothamBold
         Text.Parent = Billboard
 
@@ -1336,7 +1416,7 @@ local function CreateESP(Player)
 
         local Stroke = Instance.new("UIStroke")
         Stroke.Color = Config.Visual.Color
-        Stroke.Thickness = 1.5
+        Stroke.Thickness = Config.Visual.BoxThickness
         Stroke.Parent = Box
 
         Data.Box = Box
@@ -1356,6 +1436,7 @@ local function CreateESP(Player)
         for Index,Connection in ipairs(Connections) do
             local Line = CreateLine(ESPGui)
             Line.Name = "NovaSkeleton_"..Index
+            Line.Size = UDim2.fromOffset(0, Config.Visual.SkeletonThickness)
             Skeleton[Index] = {
                 Line = Line,
                 A = Connection[1],
@@ -1369,6 +1450,7 @@ local function CreateESP(Player)
     if Config.Visual.Tracer then
         local Tracer = CreateLine(ESPGui)
         Tracer.Name = "NovaTracer"
+        Tracer.Size = UDim2.fromOffset(0, Config.Visual.TracerThickness)
         Data.Tracer = Tracer
     end
 end
@@ -1451,6 +1533,35 @@ VisualToggle("ESP Team Check", "Ignore teammates", "TeamCheck")
 table.insert(VisualRows, ColorPicker(Scroll, "ESP Color", Config.Visual.Color, function(Color)
     Config.Visual.Color = Color
     RefreshESP()
+end))
+
+-- Novos sliders para customização visual
+table.insert(VisualRows, Slider(Scroll, "Box Thickness", 1, 5, Config.Visual.BoxThickness, function(v)
+    Config.Visual.BoxThickness = v
+    RefreshESP()
+end, function(v)
+    return string.format("%.1f",v)
+end))
+
+table.insert(VisualRows, Slider(Scroll, "Tracer Thickness", 1, 5, Config.Visual.TracerThickness, function(v)
+    Config.Visual.TracerThickness = v
+    RefreshESP()
+end, function(v)
+    return string.format("%.1f",v)
+end))
+
+table.insert(VisualRows, Slider(Scroll, "Skeleton Thickness", 1, 5, Config.Visual.SkeletonThickness, function(v)
+    Config.Visual.SkeletonThickness = v
+    RefreshESP()
+end, function(v)
+    return string.format("%.1f",v)
+end))
+
+table.insert(VisualRows, Slider(Scroll, "ESP Text Size", 8, 16, Config.Visual.TextSize, function(v)
+    Config.Visual.TextSize = math.floor(v)
+    RefreshESP()
+end, function(v)
+    return string.format("%d",v)
 end))
 
 ------------------------------------------------------------
@@ -1731,6 +1842,7 @@ RunService.RenderStepped:Connect(function()
                     Data.Box.Position = UDim2.fromOffset((TopPoint.X+BottomPoint.X)/2, (TopPoint.Y+BottomPoint.Y)/2)
                     Data.Box.Size = UDim2.fromOffset(Width, Height)
                     Data.BoxStroke.Color = Config.Visual.Color
+                    Data.BoxStroke.Thickness = Config.Visual.BoxThickness
                     Data.Box.Visible = true
                 else
                     Data.Box.Visible = false
@@ -1766,7 +1878,7 @@ RunService.RenderStepped:Connect(function()
                                     Bone.Line.BackgroundColor3 = Config.Visual.Color
                                     local Delta = BP - AP
                                     Bone.Line.Position = UDim2.fromOffset((AP.X + BP.X) / 2, (AP.Y + BP.Y) / 2)
-                                    Bone.Line.Size = UDim2.fromOffset(Delta.Magnitude, 2)
+                                    Bone.Line.Size = UDim2.fromOffset(Delta.Magnitude, Config.Visual.SkeletonThickness)
                                     Bone.Line.Rotation = math.deg(math.atan2(Delta.Y, Delta.X))
                                     Bone.Line.Visible = true
                                 else
@@ -1795,6 +1907,7 @@ RunService.RenderStepped:Connect(function()
 
                 if TracerDistance < 1000 then
                     Data.Tracer.BackgroundColor3 = Config.Visual.Color
+                    Data.Tracer.Size = UDim2.fromOffset(0, Config.Visual.TracerThickness)
                     UpdateLine(Data.Tracer, Start, End)
                 else
                     Data.Tracer.Visible = false
@@ -1961,11 +2074,41 @@ AddSetting(Toggle(Scroll, "Performance Mode", "Reduce visual update workload", C
     Config.UI.Performance = v
 end))
 
+AddSetting(Toggle(Scroll, "Bypass Indicator", "Show green bypass dot", Config.UI.ShowBypassIndicator, function(v)
+    Config.UI.ShowBypassIndicator = v
+    BypassContainer.Visible = v
+end))
+
+AddSetting(Toggle(Scroll, "Header Stripes", "Show decorative stripes in header", Config.UI.HeaderStripes, function(v)
+    Config.UI.HeaderStripes = v
+    -- Recarrega a UI
+    for _,Child in ipairs(Header:GetChildren()) do
+        if Child:IsA("Frame") and Child.Size == UDim2.new(0,2,1,0) then
+            Child.Visible = v
+        end
+    end
+end))
+
+AddSetting(Toggle(Scroll, "Sidebar Stripes", "Show decorative stripes in sidebar", Config.UI.SidebarStripes, function(v)
+    Config.UI.SidebarStripes = v
+    for _,Child in ipairs(Sidebar:GetChildren()) do
+        if Child:IsA("Frame") and Child.Size == UDim2.new(1,0,0,2) then
+            Child.Visible = v
+        end
+    end
+end))
+
 AddSetting(ColorPicker(Scroll, "UI Accent", Config.UI.Accent, function(Color)
     Config.UI.Accent = Color
     Logo.BackgroundColor3 = Color
     RefreshToggleAccent()
     UpdateFov()
+end))
+
+AddSetting(ColorPicker(Scroll, "Bypass Color", Config.UI.BypassColor, function(Color)
+    Config.UI.BypassColor = Color
+    BypassDot.BackgroundColor3 = Color
+    BypassDotGlow.Color = Color
 end))
 
 ------------------------------------------------------------
@@ -2018,6 +2161,10 @@ ResetButton.MouseButton1Click:Connect(function()
     Config.Visual.Highlight = false
     Config.Visual.Chams = false
     Config.Visual.TeamCheck = false
+    Config.Visual.BoxThickness = 1.5
+    Config.Visual.TracerThickness = 2
+    Config.Visual.SkeletonThickness = 2
+    Config.Visual.TextSize = 11
 
     Config.HUD.Enabled = true
     Config.HUD.FPS = true
@@ -2029,6 +2176,14 @@ ResetButton.MouseButton1Click:Connect(function()
     Config.HUD.Position = UDim2.fromOffset(15,15)
 
     Config.UI.Accent = Color3.fromRGB(105,108,145)
+    Config.UI.ShowBypassIndicator = true
+    Config.UI.BypassColor = Color3.fromRGB(80,255,80)
+    Config.UI.HeaderStripes = true
+    Config.UI.SidebarStripes = true
+
+    BypassContainer.Visible = true
+    BypassDot.BackgroundColor3 = Color3.fromRGB(80,255,80)
+    BypassDotGlow.Color = Color3.fromRGB(80,255,80)
 
     UpdateHUDAppearance()
     RefreshESP()
