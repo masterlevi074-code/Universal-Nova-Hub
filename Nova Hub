@@ -136,6 +136,9 @@ Gui.Parent = PlayerGui
 
 -- Sons
 local function PlayClickSound()
+    if not Config or not Config.UI or not Config.UI.SoundEffects then
+        return
+    end
     if Config.UI.SoundEffects then
         local Sound = Instance.new("Sound")
         Sound.SoundId = "rbxassetid://12222203"
@@ -147,6 +150,9 @@ local function PlayClickSound()
 end
 
 local function PlayHoverSound()
+    if not Config or not Config.UI or not Config.UI.SoundEffects then
+        return
+    end
     if Config.UI.SoundEffects then
         local Sound = Instance.new("Sound")
         Sound.SoundId = "rbxassetid://12222203"
@@ -331,7 +337,6 @@ InfoButton.Parent = Header
 Instance.new("UICorner", InfoButton).CornerRadius = UDim.new(0, 5)
 
 InfoButton.MouseEnter:Connect(function()
-    PlayHoverSound()
     Tween(InfoButton, { BackgroundColor3 = HoverColor(), TextColor3 = Color3.new(1,1,1) })
 end)
 InfoButton.MouseLeave:Connect(function()
@@ -339,7 +344,6 @@ InfoButton.MouseLeave:Connect(function()
 end)
 
 InfoButton.MouseButton1Click:Connect(function()
-    PlayClickSound()
     ClosePopup()
 
     local Overlay = Instance.new("Frame")
@@ -1858,7 +1862,6 @@ local function CreateESP(Player)
     if not Root or not Head or not Humanoid then return false end
 
     local Data = {}
-    Data.Character = Character
     ESPData[Player] = Data
 
     if Config.Visual.Highlight or Config.Visual.Chams then
@@ -1868,9 +1871,8 @@ local function CreateESP(Player)
         Highlight.FillColor = Config.Visual.Color
         Highlight.OutlineColor = Config.Visual.Color
         Highlight.FillTransparency = Config.Visual.Chams and .55 or 1
-        Highlight.OutlineTransparency = Config.Visual.Highlight and 0 or 1
+        Highlight.OutlineTransparency = 0
         Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        Highlight.Enabled = true
         Highlight.Parent = Character
         Data.Highlight = Highlight
     end
@@ -2183,8 +2185,6 @@ RunService.RenderStepped:Connect(function()
             Data.Highlight.FillColor = Config.Visual.Color
             Data.Highlight.OutlineColor = Config.Visual.Color
             Data.Highlight.FillTransparency = Config.Visual.Chams and .55 or 1
-            Data.Highlight.OutlineTransparency = Config.Visual.Highlight and 0 or 1
-            Data.Highlight.Enabled = Config.Visual.Highlight or Config.Visual.Chams
         end
         if Data.Box then
             local TopPoint = Camera:WorldToViewportPoint(Head.Position + Vector3.new(0,.5,0))
@@ -2815,35 +2815,81 @@ RunService.RenderStepped:Connect(function(DT)
 end)
 
 -- PLAYER EVENTS
-local function SetupPlayer(Player)
-    if Player == LocalPlayer then return end
-    Player.CharacterAdded:Connect(function()
-        task.wait(.3)
-        if Config.Visual.ESP then
-            if not CreateESP(Player) then
-                task.spawn(function()
-                    for attempt = 1, 5 do
-                        task.wait(0.3)
-                        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChild("Head") and Player.Character:FindFirstChildOfClass("Humanoid") then
-                            if Config.Visual.ESP then
-                                CreateESP(Player)
-                            end
-                            break
-                        end
-                    end
-                end)
+local PlayerConnections = {}
+
+local function DisconnectPlayerESPEvents(Player)
+    local Connections = PlayerConnections[Player]
+    if Connections then
+        for _, Connection in ipairs(Connections) do
+            if Connection then
+                Connection:Disconnect()
             end
         end
-    end)
-    Player.CharacterRemoving:Connect(function()
-        RemoveSkeleton(Player)
+        PlayerConnections[Player] = nil
+    end
+end
+
+local function BuildESPImmediately(Player, Character)
+    if Player == LocalPlayer then return end
+    if not Config.Visual.ESP then return end
+    if not Character or Player.Character ~= Character then return end
+
+    -- First attempt is immediate: no task.wait and no artificial delay.
+    CreateESP(Player)
+
+    -- If Roblox is still assembling R6/R15, retry on Heartbeat.
+    if not ESPData[Player] then
+        task.spawn(function()
+            for _ = 1, 12 do
+                if not Config.Visual.ESP then return end
+                if Player.Character ~= Character then return end
+
+                RunService.Heartbeat:Wait()
+
+                if Character.Parent
+                    and Character:FindFirstChild("HumanoidRootPart")
+                    and Character:FindFirstChild("Head")
+                    and Character:FindFirstChildOfClass("Humanoid") then
+
+                    CreateESP(Player)
+                    if ESPData[Player] then
+                        return
+                    end
+                end
+            end
+        end)
+    end
+end
+
+local function SetupPlayer(Player)
+    if Player == LocalPlayer then return end
+
+    DisconnectPlayerESPEvents(Player)
+
+    local Connections = {}
+    PlayerConnections[Player] = Connections
+
+    table.insert(Connections, Player.CharacterAdded:Connect(function(Character)
         RemoveESP(Player)
-    end)
-    Player:GetPropertyChangedSignal("Team"):Connect(function()
+        BuildESPImmediately(Player, Character)
+    end))
+
+    table.insert(Connections, Player.CharacterRemoving:Connect(function()
+        RemoveESP(Player)
+    end))
+
+    table.insert(Connections, Player:GetPropertyChangedSignal("Team"):Connect(function()
         if Config.Visual.ESP then
-            RefreshESP()
+            CreateESP(Player)
+        else
+            RemoveESP(Player)
         end
-    end)
+    end))
+
+    -- Existing players are also handled immediately.
+    if Player.Character then
+        BuildESPImmediately(Player, Player.Character)
+    end
 end
 
 for _,Player in ipairs(Players:GetPlayers()) do
@@ -2852,6 +2898,7 @@ end
 
 Players.PlayerAdded:Connect(SetupPlayer)
 Players.PlayerRemoving:Connect(function(Player)
+    DisconnectPlayerESPEvents(Player)
     RemoveESP(Player)
     RemoveSkeleton(Player)
 end)
