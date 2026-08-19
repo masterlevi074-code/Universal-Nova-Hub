@@ -1930,27 +1930,52 @@ local function CreateESP(Player)
     return true
 end
 
+local ESPRefreshToken = 0
+
 local function RefreshESP()
+    ESPRefreshToken += 1
+    local MyToken = ESPRefreshToken
+
     for Player in pairs(ESPData) do
         RemoveESP(Player)
     end
     for Player in pairs(Skeletons) do
         RemoveSkeleton(Player)
     end
+
     if not Config.Visual.ESP then return end
 
-    for _,Player in ipairs(Players:GetPlayers()) do
+    for _, Player in ipairs(Players:GetPlayers()) do
         if Player ~= LocalPlayer then
-            if not CreateESP(Player) then
+            local Character = Player.Character
+
+            if Character
+                and Character:FindFirstChild("HumanoidRootPart")
+                and Character:FindFirstChild("Head")
+                and Character:FindFirstChildOfClass("Humanoid") then
+                CreateESP(Player)
+            else
                 task.spawn(function()
-                    for attempt = 1, 5 do
-                        task.wait(0.3)
-                        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChild("Head") and Player.Character:FindFirstChildOfClass("Humanoid") then
-                            if Config.Visual.ESP then
+                    if not Player.Parent then return end
+
+                    Character = Player.Character
+                    if not Character then
+                        Character = Player.CharacterAdded:Wait()
+                    end
+
+                    while Character and Character.Parent and Config.Visual.ESP and MyToken == ESPRefreshToken do
+                        local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+                        local Root = Character:FindFirstChild("HumanoidRootPart")
+                        local Head = Character:FindFirstChild("Head")
+
+                        if Humanoid and Root and Head then
+                            if Player.Character == Character and Config.Visual.ESP and MyToken == ESPRefreshToken then
                                 CreateESP(Player)
                             end
                             break
                         end
+
+                        task.wait()
                     end
                 end)
             end
@@ -2813,40 +2838,60 @@ end)
 -- PLAYER EVENTS
 local function SetupPlayer(Player)
     if Player == LocalPlayer then return end
-    Player.CharacterAdded:Connect(function()
-        task.wait(.3)
-        if Config.Visual.ESP then
-            if not CreateESP(Player) then
-                task.spawn(function()
-                    for attempt = 1, 5 do
-                        task.wait(0.3)
-                        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChild("Head") and Player.Character:FindFirstChildOfClass("Humanoid") then
-                            if Config.Visual.ESP then
-                                CreateESP(Player)
-                            end
-                            break
-                        end
+
+    Player.CharacterAdded:Connect(function(Character)
+        if not Config.Visual.ESP then return end
+
+        task.spawn(function()
+            while Character and Character.Parent and Config.Visual.ESP do
+                local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+                local Root = Character:FindFirstChild("HumanoidRootPart")
+                local Head = Character:FindFirstChild("Head")
+
+                if Humanoid and Root and Head then
+                    if Player.Character == Character and Config.Visual.ESP then
+                        CreateESP(Player)
                     end
-                end)
+                    break
+                end
+
+                task.wait()
             end
-        end
+        end)
     end)
+
     Player.CharacterRemoving:Connect(function()
         RemoveSkeleton(Player)
         RemoveESP(Player)
     end)
+
     Player:GetPropertyChangedSignal("Team"):Connect(function()
         if Config.Visual.ESP then
             RefreshESP()
         end
     end)
+
+    -- Se o jogador já estiver carregado quando SetupPlayer rodar.
+    if Config.Visual.ESP and Player.Character then
+        task.defer(function()
+            if Config.Visual.ESP and Player.Character then
+                CreateESP(Player)
+            end
+        end)
+    end
 end
 
-for _,Player in ipairs(Players:GetPlayers()) do
+for _, Player in ipairs(Players:GetPlayers()) do
     SetupPlayer(Player)
 end
 
-Players.PlayerAdded:Connect(SetupPlayer)
+Players.PlayerAdded:Connect(function(Player)
+    SetupPlayer(Player)
+    if Config.Visual.ESP then
+        task.defer(RefreshESP)
+    end
+end)
+
 Players.PlayerRemoving:Connect(function(Player)
     RemoveESP(Player)
     RemoveSkeleton(Player)
