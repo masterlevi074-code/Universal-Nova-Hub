@@ -451,7 +451,9 @@ end)
 
 -- Botões de minimizar e fechar
 local DragButton = Instance.new("TextButton")
-DragButton.Size = UDim2.new(1,-70,1,0)
+-- Keep the drag area to the left of INFO / minimize / close.
+-- The previous width (-70) covered the INFO button and intercepted its clicks.
+DragButton.Size = UDim2.new(1,-190,1,0)
 DragButton.BackgroundTransparency = 1
 DragButton.Text = ""
 DragButton.Parent = Header
@@ -1698,6 +1700,10 @@ AddCustom(Toggle(Scroll, "Animations", "Enable animations", Config.UI.Animations
 end))
 
 -- VISUAL PAGE
+-- Forward declaration: the callbacks below can run after the UI is
+-- created, while the real implementation is declared later in the ESP section.
+local RefreshESP
+
 local function VisualToggle(Title, Description, Key)
     local Row = Toggle(Scroll, Title, Description, Config.Visual[Key], function(v)
         Config.Visual[Key] = v
@@ -2007,7 +2013,7 @@ local function ScheduleESP(Player, Character)
     end)
 end
 
-local function RefreshESP()
+RefreshESP = function()
     for _, Player in ipairs(Players:GetPlayers()) do
         if Player ~= LocalPlayer then
             local Character = Player.Character
@@ -2546,13 +2552,13 @@ local function ShowSettings()
     SetActiveTab(SettingsTab)
 end
 
-AimTab.MouseButton1Click:Connect(function() PlayClickSound() ShowAim() end)
-VisualTab.MouseButton1Click:Connect(function() PlayClickSound() ShowVisual() end)
-PlayerTab.MouseButton1Click:Connect(function() PlayClickSound() ShowPlayer() end)
-WorldTab.MouseButton1Click:Connect(function() PlayClickSound() ShowWorld() end)
-CustomTab.MouseButton1Click:Connect(function() PlayClickSound() ShowCustom() end)
-HUDTab.MouseButton1Click:Connect(function() PlayClickSound() ShowHUD() end)
-SettingsTab.MouseButton1Click:Connect(function() PlayClickSound() ShowSettings() end)
+AimTab.MouseButton1Click:Connect(ShowAim)
+VisualTab.MouseButton1Click:Connect(ShowVisual)
+PlayerTab.MouseButton1Click:Connect(ShowPlayer)
+WorldTab.MouseButton1Click:Connect(ShowWorld)
+CustomTab.MouseButton1Click:Connect(ShowCustom)
+HUDTab.MouseButton1Click:Connect(ShowHUD)
+SettingsTab.MouseButton1Click:Connect(ShowSettings)
 
 -- MAIN DRAG
 local MainDragging = false
