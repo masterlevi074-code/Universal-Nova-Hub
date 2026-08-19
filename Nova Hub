@@ -3,11 +3,11 @@
     LocalScript
     StarterPlayer > StarterPlayerScripts
 
-    TELA DE CARREGAMENTO:
-    • Animação de 3 segundos
-    • Efeitos visuais elegantes
-    • Barra de progresso animada
-    • Glow effects
+    REVISADO E CORRIGIDO:
+    • Verificações de nil na câmera
+    • UI Scale aplicado corretamente
+    • Fechamento sem erros
+    • Tela de carregamento sincronizada
 ]]
 
 ------------------------------------------------------------
@@ -104,8 +104,6 @@ local Config = {
         JumpHeight = 50,
         LowGravity = false,
         GravityValue = 196.2,
-        WalkSpeedEnabled = false,
-        WalkSpeedValue = 16,
         CameraZoom = 15,
         FOV = 70,
         NoShadows = false,
@@ -180,7 +178,6 @@ LoadingScreen.BorderSizePixel = 0
 LoadingScreen.ZIndex = 1000
 LoadingScreen.Parent = Gui
 
--- Partículas decorativas
 local Particles = {}
 for i = 1, 15 do
     local Particle = Instance.new("Frame")
@@ -199,7 +196,6 @@ for i = 1, 15 do
     table.insert(Particles, Particle)
 end
 
--- Logo central
 local LoadingLogo = Instance.new("TextLabel")
 LoadingLogo.Size = UDim2.fromOffset(80,80)
 LoadingLogo.Position = UDim2.new(0.5,-40,0.4,-40)
@@ -222,7 +218,6 @@ LoadingLogoGlow.Transparency = 0.3
 LoadingLogoGlow.ZIndex = 1002
 LoadingLogoGlow.Parent = LoadingLogo
 
--- Título
 local LoadingTitle = Instance.new("TextLabel")
 LoadingTitle.Size = UDim2.new(0,300,0,30)
 LoadingTitle.Position = UDim2.new(0.5,-150,0.55,-15)
@@ -234,7 +229,6 @@ LoadingTitle.Font = Enum.Font.GothamBold
 LoadingTitle.ZIndex = 1002
 LoadingTitle.Parent = LoadingScreen
 
--- Subtítulo
 local LoadingSub = Instance.new("TextLabel")
 LoadingSub.Size = UDim2.new(0,300,0,20)
 LoadingSub.Position = UDim2.new(0.5,-150,0.60,-10)
@@ -246,7 +240,6 @@ LoadingSub.Font = Enum.Font.GothamMedium
 LoadingSub.ZIndex = 1002
 LoadingSub.Parent = LoadingScreen
 
--- Barra de progresso (fundo)
 local LoadingBarBg = Instance.new("Frame")
 LoadingBarBg.Size = UDim2.new(0,250,0,6)
 LoadingBarBg.Position = UDim2.new(0.5,-125,0.70,-3)
@@ -259,7 +252,6 @@ local LoadingBarBgCorner = Instance.new("UICorner")
 LoadingBarBgCorner.CornerRadius = UDim.new(1,0)
 LoadingBarBgCorner.Parent = LoadingBarBg
 
--- Barra de progresso (preenchimento)
 local LoadingBarFill = Instance.new("Frame")
 LoadingBarFill.Size = UDim2.new(0,0,1,0)
 LoadingBarFill.BackgroundColor3 = Accent()
@@ -278,7 +270,6 @@ LoadingBarGlow.Transparency = 0.5
 LoadingBarGlow.ZIndex = 1003
 LoadingBarGlow.Parent = LoadingBarFill
 
--- Texto de status
 local LoadingStatus = Instance.new("TextLabel")
 LoadingStatus.Size = UDim2.new(0,300,0,20)
 LoadingStatus.Position = UDim2.new(0.5,-150,0.75,-10)
@@ -290,52 +281,63 @@ LoadingStatus.Font = Enum.Font.GothamMedium
 LoadingStatus.ZIndex = 1002
 LoadingStatus.Parent = LoadingScreen
 
--- Animação da tela de carregamento
 task.spawn(function()
-    -- Animar partículas
     for _, Particle in ipairs(Particles) do
         task.spawn(function()
             while LoadingScreen.Parent do
-                local newX = math.random()
-                local newY = math.random()
-                local newTransparency = math.random(50, 90) / 100
-                
-                Tween(Particle, {
-                    Position = UDim2.new(newX, 0, newY, 0),
-                    BackgroundTransparency = newTransparency
-                }, TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut))
-                
+                pcall(function()
+                    local newX = math.random()
+                    local newY = math.random()
+                    local newTransparency = math.random(50, 90) / 100
+                    Tween(Particle, {
+                        Position = UDim2.new(newX, 0, newY, 0),
+                        BackgroundTransparency = newTransparency
+                    }, TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut))
+                end)
                 task.wait(2)
             end
         end)
     end
     
-    -- Animar logo (pulsar)
     task.spawn(function()
         while LoadingScreen.Parent do
-            Tween(LoadingLogo, {Size = UDim2.fromOffset(85,85)}, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut))
+            pcall(function()
+                Tween(LoadingLogo, {Size = UDim2.fromOffset(85,85)}, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut))
+            end)
             task.wait(0.5)
-            Tween(LoadingLogo, {Size = UDim2.fromOffset(80,80)}, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut))
+            pcall(function()
+                Tween(LoadingLogo, {Size = UDim2.fromOffset(80,80)}, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut))
+            end)
             task.wait(0.5)
         end
     end)
     
-    -- Status updates
     local Statuses = {"Carregando...", "Inicializando...", "Configurando...", "Quase pronto..."}
     for i = 1, 4 do
         LoadingStatus.Text = Statuses[i]
         task.wait(0.6)
     end
     
-    -- Animar barra de progresso
     Tween(LoadingBarFill, {Size = UDim2.new(1,0,1,0)}, TweenInfo.new(2.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out))
     
-    -- Esperar 3 segundos
     task.wait(3)
     
-    -- Fade out
     Tween(LoadingScreen, {BackgroundTransparency = 1}, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out))
-    task.wait(0.5)
+    
+    if Main then
+        Main.BackgroundTransparency = 1
+        Main.Visible = true
+        Main.Size = UDim2.fromOffset(0, 0)
+        Main.AnchorPoint = Vector2.new(0.5, 0.5)
+        Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+        Tween(Main, {
+            Size = UDim2.fromOffset(420, 370),
+            BackgroundTransparency = 0
+        }, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out))
+        task.wait(0.5)
+        Main.Position = UDim2.new(0.5, -210, 0.5, -185)
+        Main.AnchorPoint = Vector2.new(0, 0)
+    end
     
     LoadingScreen:Destroy()
 end)
@@ -379,7 +381,9 @@ Main.Name = "Main"
 Main.Size = UDim2.fromOffset(420,370)
 Main.Position = UDim2.new(.5,-210,.5,-185)
 Main.BackgroundColor3 = DarkColor()
+Main.BackgroundTransparency = 1
 Main.BorderSizePixel = 0
+Main.Visible = false
 Main.Parent = Gui
 
 local MainCorner = Instance.new("UICorner")
@@ -699,7 +703,6 @@ VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextXAlignment = Enum.TextXAlignment.Center
 VersionLabel.Parent = ProfileContainer
 
--- QuickInfo
 local QuickInfo = Instance.new("Frame")
 QuickInfo.Size = UDim2.new(0,65,0,80)
 QuickInfo.Position = UDim2.fromOffset(5,190)
@@ -935,7 +938,8 @@ local function Toggle(Parent, Title, Description, Initial, Callback)
 
     local Stroke = Instance.new("UIStroke")
     Stroke.Color = Color3.fromRGB(40,42,52)
-    Stroke.Thickness = 1    Stroke.Transparency = 0.5
+    Stroke.Thickness = 1
+    Stroke.Transparency = 0.5
     Stroke.Parent = Row
 
     local Name = Instance.new("TextLabel")
@@ -1764,36 +1768,6 @@ end, function(v)
     return string.format("%.0f",v)
 end))
 
-AddWorld(Toggle(Scroll, "Walk Speed", "Enable custom walk speed", Config.World.WalkSpeedEnabled, function(v)
-    Config.World.WalkSpeedEnabled = v
-    local Character = LocalPlayer.Character
-    if Character then
-        local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-        if Humanoid then
-            if v then
-                Humanoid.WalkSpeed = Config.World.WalkSpeedValue
-            else
-                Humanoid.WalkSpeed = 16
-            end
-        end
-    end
-end))
-
-AddWorld(Slider(Scroll, "Walk Speed Value", 16, 200, Config.World.WalkSpeedValue, function(v)
-    Config.World.WalkSpeedValue = v
-    if Config.World.WalkSpeedEnabled then
-        local Character = LocalPlayer.Character
-        if Character then
-            local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-            if Humanoid then
-                Humanoid.WalkSpeed = v
-            end
-        end
-    end
-end, function(v)
-    return string.format("%.0f",v)
-end))
-
 AddWorld(Slider(Scroll, "Camera Zoom", 5, 30, Config.World.CameraZoom, function(v)
     Config.World.CameraZoom = v
     local Character = LocalPlayer.Character
@@ -1877,7 +1851,46 @@ end))
 
 AddCustom(Slider(Scroll, "UI Scale", 0.5, 2, Config.Customization.UIScale, function(v)
     Config.Customization.UIScale = v
-    Main.Size = UDim2.fromOffset(420 * v, 370 * v)
+    local scale = v
+    Main.Size = UDim2.fromOffset(420 * scale, 370 * scale)
+    
+    -- Escalar elementos internos
+    Header.Size = UDim2.new(1,0,0,50 * scale)
+    TabBar.Size = UDim2.new(1,-20*scale,0,35 * scale)
+    TabBar.Position = UDim2.fromOffset(10 * scale, 55 * scale)
+    
+    local tabIndex = 0
+    for _,Child in ipairs(TabBar:GetChildren()) do
+        if Child:IsA("TextButton") then
+            Child.Size = UDim2.fromOffset(52 * scale, 28 * scale)
+            Child.Position = UDim2.fromOffset((5 + tabIndex * 55) * scale, 4 * scale)
+            Child.TextSize = 14 * scale
+            tabIndex = tabIndex + 1
+        end
+    end
+    
+    ProfileContainer.Size = UDim2.new(0,65 * scale,0,80 * scale)
+    ProfileContainer.Position = UDim2.fromOffset(5 * scale, 275 * scale)
+    QuickInfo.Size = UDim2.new(0,65 * scale,0,80 * scale)
+    QuickInfo.Position = UDim2.fromOffset(5 * scale, 190 * scale)
+    
+    Content.Size = UDim2.new(1,-90*scale,1,-100*scale)
+    Content.Position = UDim2.fromOffset(75 * scale, 95 * scale)
+    PageTitle.TextSize = 14 * scale
+    PageLine.Size = UDim2.new(1,-10*scale,0,2 * scale)
+    PageLine.Position = UDim2.fromOffset(5 * scale, 28 * scale)
+    Scroll.Size = UDim2.new(1,-10*scale,1,-38*scale)
+    Scroll.Position = UDim2.fromOffset(5 * scale, 35 * scale)
+    
+    UserNameLabel.TextSize = 6 * scale
+    AvatarImage.Size = UDim2.fromOffset(36 * scale, 36 * scale)
+    AvatarImage.Position = UDim2.fromOffset(14 * scale, 20 * scale)
+    VersionLabel.TextSize = 6 * scale
+    QuickInfoTitle.TextSize = 7 * scale
+    QuickFPS.TextSize = 6 * scale
+    QuickPing.TextSize = 6 * scale
+    QuickPlayers.TextSize = 6 * scale
+    QuickSession.TextSize = 6 * scale
 end, function(v)
     return string.format("%.1fx",v)
 end))
@@ -2184,6 +2197,7 @@ end
 
 local function Visible(Part)
     if not Config.Aim.WallCheck then return true end
+    if not Camera then return false end
     local Origin = Camera.CFrame.Position
     local Direction = Part.Position-Origin
     local Params = RaycastParams.new()
@@ -2198,6 +2212,7 @@ end
 local CurrentTarget
 
 local function GetTarget()
+    if not Camera then return nil end
     local Center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
     local BestPart
     local BestScore = math.huge
@@ -2258,17 +2273,23 @@ local function UpdateTargetHighlight(Target)
 end
 
 RunService:BindToRenderStep("NovaAim", Enum.RenderPriority.Camera.Value+1, function()
-    local Target
-    if Config.Aim.Enabled then
-        Target = GetTarget()
+    if not Config.Aim.Enabled then
+        CurrentTarget = nil
+        UpdateTargetHighlight(nil)
+        return
     end
+    if not Camera then
+        Camera = workspace.CurrentCamera
+        if not Camera then return end
+    end
+    local Target = GetTarget()
     CurrentTarget = Target
     UpdateTargetHighlight(Target)
-    if not Target then return end
+    if not Target or not Target.Parent then return end
     local Position = Target.Position
     if Config.Aim.Prediction then
         local Root = Target.Parent:FindFirstChild("HumanoidRootPart")
-        if Root then
+        if Root and Root.AssemblyLinearVelocity then
             Position += Root.AssemblyLinearVelocity * Config.Aim.PredictionStrength
         end
     end
@@ -2769,12 +2790,12 @@ end)
 ------------------------------------------------------------
 
 local Mini = Instance.new("TextButton")
-Mini.Size = UDim2.fromOffset(50,50)
+Mini.Size = UDim2.fromOffset(50 * Config.Customization.UIScale, 50 * Config.Customization.UIScale)
 Mini.Position = UDim2.new(0,15,.5,-25)
 Mini.BackgroundColor3 = Accent()
 Mini.Text = "N"
 Mini.TextColor3 = Color3.new(1,1,1)
-Mini.TextSize = 17
+Mini.TextSize = 17 * Config.Customization.UIScale
 Mini.Font = Enum.Font.GothamBold
 Mini.Visible = false
 Mini.AutoButtonColor = false
@@ -2805,9 +2826,9 @@ local function MinimizeHub()
     Mini.Size = UDim2.fromOffset(0,0)
     Mini.AnchorPoint = Vector2.new(0.5, 0.5)
     Mini.Position = UDim2.new(0, 15, 0.5, -25)
-    Tween(Mini, {Size = UDim2.fromOffset(50, 50)}, TweenBounce)
-    Main.Size = UDim2.fromOffset(420, 370)
-    Main.Position = UDim2.new(0.5, -210, 0.5, -185)
+    Tween(Mini, {Size = UDim2.fromOffset(50 * Config.Customization.UIScale, 50 * Config.Customization.UIScale)}, TweenBounce)
+    Main.Size = UDim2.fromOffset(420 * Config.Customization.UIScale, 370 * Config.Customization.UIScale)
+    Main.Position = UDim2.new(0.5, -210 * Config.Customization.UIScale, 0.5, -185 * Config.Customization.UIScale)
     Main.AnchorPoint = Vector2.new(0, 0)
 end
 
@@ -2836,43 +2857,59 @@ local function CloseAll()
     Config.World.RemoveFog = false
     Config.World.JumpPowerEnabled = false
     Config.World.LowGravity = false
-    Config.World.WalkSpeedEnabled = false
     Config.World.NoShadows = false
     Config.World.NoNeon = false
     
-    for Player in pairs(ESPData) do
-        RemoveESP(Player)
-    end
-    for Player in pairs(Skeletons) do
-        RemoveSkeleton(Player)
-    end
-    
-    Lighting.Brightness = 2
-    Lighting.ClockTime = 14
-    Lighting.FogEnd = 100000
-    Lighting.GlobalShadows = true
-    workspace.Gravity = 196.2
-    Camera.FieldOfView = 70
-    
-    local Character = LocalPlayer.Character
-    if Character then
-        local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-        if Humanoid then
-            Humanoid.JumpPower = 50
-            Humanoid.WalkSpeed = 16
-            Humanoid.CameraDistance = 15
+    pcall(function()
+        for Player in pairs(ESPData) do
+            RemoveESP(Player)
         end
-    end
+        for Player in pairs(Skeletons) do
+            RemoveSkeleton(Player)
+        end
+    end)
     
-    UpdateFov()
-    HUDFrame.Visible = false
-    Gui:Destroy()
-    FovGui:Destroy()
-    ESPGui:Destroy()
+    pcall(function()
+        Lighting.Brightness = 2
+        Lighting.ClockTime = 14
+        Lighting.FogEnd = 100000
+        Lighting.GlobalShadows = true
+        workspace.Gravity = 196.2
+        Camera.FieldOfView = 70
+    end)
+    
+    pcall(function()
+        local Character = LocalPlayer.Character
+        if Character then
+            local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+            if Humanoid then
+                Humanoid.JumpPower = 50
+                Humanoid.WalkSpeed = 16
+                Humanoid.CameraDistance = 15
+            end
+        end
+    end)
+    
+    pcall(function()
+        RunService:UnbindFromRenderStep("NovaAim")
+    end)
+    
+    pcall(function()
+        UpdateFov()
+        HUDFrame.Visible = false
+        Gui:Destroy()
+        FovGui:Destroy()
+        ESPGui:Destroy()
+    end)
 end
 
 Close.MouseButton1Click:Connect(function()
     PlayClickSound()
+    
+    if ActivePopup then
+        ClosePopup()
+    end
+    
     local ConfirmOverlay = Instance.new("Frame")
     ConfirmOverlay.Size = UDim2.fromScale(1,1)
     ConfirmOverlay.BackgroundColor3 = Color3.fromRGB(0,0,0)
@@ -2887,6 +2924,8 @@ Close.MouseButton1Click:Connect(function()
     ConfirmDialog.BorderSizePixel = 0
     ConfirmDialog.ZIndex = 999
     ConfirmDialog.Parent = PopupLayer
+    
+    ActivePopup = ConfirmDialog
 
     local DialogCorner = Instance.new("UICorner")
     DialogCorner.CornerRadius = UDim.new(0,12)
@@ -2960,6 +2999,7 @@ Close.MouseButton1Click:Connect(function()
     end)
     NoButton.MouseButton1Click:Connect(function()
         PlayClickSound()
+        ActivePopup = nil
         ConfirmDialog:Destroy()
         ConfirmOverlay:Destroy()
     end)
@@ -2973,17 +3013,20 @@ Close.MouseButton1Click:Connect(function()
     end)
     OkButton.MouseButton1Click:Connect(function()
         PlayClickSound()
+        ActivePopup = nil
+        ConfirmDialog:Destroy()
+        ConfirmOverlay:Destroy()
         CloseAll()
     end)
 end)
 
 Mini.MouseEnter:Connect(function()
     PlayHoverSound()
-    Tween(Mini,{Size = UDim2.fromOffset(55,55)})
+    Tween(Mini,{Size = UDim2.fromOffset(55 * Config.Customization.UIScale, 55 * Config.Customization.UIScale)})
 end)
 
 Mini.MouseLeave:Connect(function()
-    Tween(Mini,{Size = UDim2.fromOffset(50,50)})
+    Tween(Mini,{Size = UDim2.fromOffset(50 * Config.Customization.UIScale, 50 * Config.Customization.UIScale)})
 end)
 
 Mini.MouseButton1Click:Connect(function()
@@ -2993,9 +3036,9 @@ Mini.MouseButton1Click:Connect(function()
     Main.Size = UDim2.fromOffset(0, 0)
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
     Main.Position = UDim2.new(0.5, 0, 0.5, 0)
-    Tween(Main, {Size = UDim2.fromOffset(420, 370)}, TweenSpring)
+    Tween(Main, {Size = UDim2.fromOffset(420 * Config.Customization.UIScale, 370 * Config.Customization.UIScale)}, TweenSpring)
     task.delay(0.5, function()
-        Main.Position = UDim2.new(0.5, -210, 0.5, -185)
+        Main.Position = UDim2.new(0.5, -210 * Config.Customization.UIScale, 0.5, -185 * Config.Customization.UIScale)
         Main.AnchorPoint = Vector2.new(0, 0)
     end)
 end)
@@ -3118,9 +3161,6 @@ LocalPlayer.CharacterAdded:Connect(function()
         end
         if Config.World.JumpPowerEnabled then
             Humanoid.JumpPower = Config.World.JumpHeight
-        end
-        if Config.World.WalkSpeedEnabled then
-            Humanoid.WalkSpeed = Config.World.WalkSpeedValue
         end
         Humanoid.CameraDistance = Config.World.CameraZoom
     end
