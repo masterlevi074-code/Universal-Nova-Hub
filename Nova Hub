@@ -4,12 +4,10 @@
     StarterPlayer > StarterPlayerScripts
 
     CORRIGIDO:
-    • Aim Assist funcionando
-    • Sliders sem erro de nil
-    • Abas horizontais
-    • Player, World, Customization
-    • HUD com hora, servidor, sessão
-    • Skeleton ESP sem bugs
+    • SetActiveTab sem erro
+    • Apenas 1 UI Accent (na Customization)
+    • HUD sem espaços em branco
+    • UI Scale de volta
 ]]
 
 ------------------------------------------------------------
@@ -104,7 +102,8 @@ local Config = {
         TimeOfDay = 14
     },
     Customization = {
-        UITheme = "Dark"
+        UITheme = "Dark",
+        UIScale = 1
     }
 }
 
@@ -761,7 +760,7 @@ local function Toggle(Parent, Title, Description, Initial, Callback)
 end
 
 ------------------------------------------------------------
--- SLIDER (CORRIGIDO - SEM ERRO DE NIL)
+-- SLIDER
 ------------------------------------------------------------
 
 local function Slider(Parent, Title, Min, Max, Value, Callback, Format)
@@ -841,15 +840,12 @@ local function Slider(Parent, Title, Min, Max, Value, Callback, Format)
     local function Set(Input)
         local Percent = math.clamp((Input.Position.X - Bar.AbsolutePosition.X) / Bar.AbsoluteSize.X, 0, 1)
         local NewValue = Min + (Max-Min)*Percent
-
         Fill.Size = UDim2.fromScale(Percent,1)
-
         if Format and type(Format) == "function" then
             Number.Text = Format(NewValue)
         else
             Number.Text = string.format("%.2f",NewValue)
         end
-
         if Callback and type(Callback) == "function" then
             Callback(NewValue)
         end
@@ -878,7 +874,6 @@ local function Slider(Parent, Title, Min, Max, Value, Callback, Format)
 
     local Percent = math.clamp((Value-Min)/(Max-Min), 0, 1)
     Fill.Size = UDim2.fromScale(Percent,1)
-
     if Format and type(Format) == "function" then
         Number.Text = Format(Value)
     else
@@ -1461,7 +1456,7 @@ end, function(v)
 end))
 
 ------------------------------------------------------------
--- CUSTOMIZATION PAGE
+-- CUSTOMIZATION PAGE (APENAS 1 UI ACCENT AQUI)
 ------------------------------------------------------------
 
 local function AddCustom(Row)
@@ -1487,6 +1482,13 @@ AddCustom(Dropdown(Scroll, "UI Theme", {"Dark", "Light", "Purple", "Red"}, Confi
         Header.BackgroundColor3 = Color3.fromRGB(35,20,20)
         TabBar.BackgroundColor3 = Color3.fromRGB(32,18,18)
     end
+end))
+
+AddCustom(Slider(Scroll, "UI Scale", 0.5, 2, Config.Customization.UIScale, function(v)
+    Config.Customization.UIScale = v
+    Main.Size = UDim2.fromOffset(420 * v, 370 * v)
+end, function(v)
+    return string.format("%.1fx",v)
 end))
 
 AddCustom(ColorPicker(Scroll, "UI Accent", Config.UI.Accent, function(Color)
@@ -2175,7 +2177,7 @@ end, function(v)
 end))
 
 ------------------------------------------------------------
--- SETTINGS
+-- SETTINGS (SEM UI ACCENT AQUI - APENAS NA CUSTOMIZATION)
 ------------------------------------------------------------
 
 local function AddSetting(Row)
@@ -2201,13 +2203,6 @@ end))
 AddSetting(Toggle(Scroll, "Bypass Indicator", "Show green bypass dot", Config.UI.ShowBypassIndicator, function(v)
     Config.UI.ShowBypassIndicator = v
     BypassContainer.Visible = v
-end))
-
-AddSetting(ColorPicker(Scroll, "UI Accent", Config.UI.Accent, function(Color)
-    Config.UI.Accent = Color
-    RefreshLinesAccent()
-    RefreshToggleAccent()
-    UpdateFov()
 end))
 
 ------------------------------------------------------------
@@ -2420,7 +2415,7 @@ local function MinimizeHub()
     Mini.AnchorPoint = Vector2.new(0.5, 0.5)
     Mini.Position = UDim2.new(0, 15, 0.5, -25)
     Tween(Mini, {Size = UDim2.fromOffset(50, 50)}, TweenBounce)
-    Main.Size = UDim2.fromOffset(420, 370)
+    Main.Size = UDim2.fromOffset(420 * Config.Customization.UIScale, 370 * Config.Customization.UIScale)
     Main.Position = UDim2.new(0.5, -210, 0.5, -185)
     Main.AnchorPoint = Vector2.new(0, 0)
 end
@@ -2590,7 +2585,7 @@ Mini.MouseButton1Click:Connect(function()
     Main.Size = UDim2.fromOffset(0, 0)
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
     Main.Position = UDim2.new(0.5, 0, 0.5, 0)
-    Tween(Main, {Size = UDim2.fromOffset(420, 370)}, TweenSpring)
+    Tween(Main, {Size = UDim2.fromOffset(420 * Config.Customization.UIScale, 370 * Config.Customization.UIScale)}, TweenSpring)
     task.delay(0.5, function()
         Main.Position = UDim2.new(0.5, -210, 0.5, -185)
         Main.AnchorPoint = Vector2.new(0, 0)
@@ -2598,7 +2593,7 @@ Mini.MouseButton1Click:Connect(function()
 end)
 
 ------------------------------------------------------------
--- FPS / HUD
+-- FPS / HUD (SEM ESPAÇOS EM BRANCO)
 ------------------------------------------------------------
 
 local Frames = 0
@@ -2650,9 +2645,11 @@ RunService.RenderStepped:Connect(function(DT)
     HUDText.Text = table.concat(Lines, "\n")
     
     local numLines = #Lines
-    local newHeight = math.max(30, 18 + numLines * 14)
-    HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, newHeight)
-    HUDText.Size = UDim2.new(1,-12,1,-8)
+    if numLines > 0 then
+        local newHeight = 16 + numLines * 14
+        HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, newHeight)
+        HUDText.Size = UDim2.new(1,-12,1,-8)
+    end
 end)
 
 ------------------------------------------------------------
