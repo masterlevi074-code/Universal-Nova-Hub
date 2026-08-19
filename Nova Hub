@@ -2,8 +2,7 @@
     NOVA HUB - STUDIO EDITION v4.0
     LocalScript
     StarterPlayer > StarterPlayerScripts
-    ESP com detecção realmente imediata e atualização automática
-    Ao ativar, players já existentes são registrados sem reset e sem espera sequencial
+    ESP com retry imediato (sem precisar morrer)
     Botão INFO adicionado
 ]]
 
@@ -421,8 +420,7 @@ InfoButton.MouseButton1Click:Connect(function()
     InfoText.Position = UDim2.fromOffset(15,45)
     InfoText.BackgroundTransparency = 1
     InfoText.Text = [[
-• ESP com detecção realmente imediata e atualização automática
-    Ao ativar, players já existentes são registrados sem reset e sem espera sequencial
+• ESP com retry imediato (sem precisar morrer)
 • Tela de carregamento sincronizada
 • Botão de fechar com confirmação
 • HUD sem espaços em branco
@@ -445,137 +443,6 @@ InfoButton.MouseButton1Click:Connect(function()
 end)
 
 -- Botões de minimizar e fechar
-
-------------------------------------------------------------
--- INFO / UPDATES
-------------------------------------------------------------
-
-local InfoButton = Instance.new("TextButton")
-InfoButton.Name = "InfoButton"
-InfoButton.Size = UDim2.fromOffset(28,28)
-InfoButton.Position = UDim2.new(1,-97,0,9)
-InfoButton.BackgroundColor3 = Color3.fromRGB(29,30,38)
-InfoButton.Text = "i"
-InfoButton.TextColor3 = Color3.fromRGB(180,180,190)
-InfoButton.TextSize = 13
-InfoButton.Font = Enum.Font.GothamBold
-InfoButton.AutoButtonColor = false
-InfoButton.Parent = Header
-Instance.new("UICorner",InfoButton).CornerRadius = UDim.new(0,7)
-
-local UpdatesOverlay = Instance.new("Frame")
-UpdatesOverlay.Name = "UpdatesOverlay"
-UpdatesOverlay.Size = UDim2.fromOffset(310,245)
-UpdatesOverlay.Position = UDim2.new(.5,-155,.5,-122)
-UpdatesOverlay.BackgroundColor3 = Color3.fromRGB(20,21,27)
-UpdatesOverlay.BorderSizePixel = 0
-UpdatesOverlay.Visible = false
-UpdatesOverlay.ZIndex = 900
-UpdatesOverlay.Parent = Gui
-Instance.new("UICorner",UpdatesOverlay).CornerRadius = UDim.new(0,12)
-
-local UpdatesStroke = Instance.new("UIStroke")
-UpdatesStroke.Color = Accent()
-UpdatesStroke.Thickness = 1
-UpdatesStroke.Parent = UpdatesOverlay
-
-local UpdatesTitle = Instance.new("TextLabel")
-UpdatesTitle.Size = UDim2.new(1,-50,0,34)
-UpdatesTitle.Position = UDim2.fromOffset(15,10)
-UpdatesTitle.BackgroundTransparency = 1
-UpdatesTitle.Text = "NOVA HUB • ATUALIZAÇÕES"
-UpdatesTitle.TextColor3 = Color3.new(1,1,1)
-UpdatesTitle.TextSize = 12
-UpdatesTitle.Font = Enum.Font.GothamBold
-UpdatesTitle.TextXAlignment = Enum.TextXAlignment.Left
-UpdatesTitle.ZIndex = 901
-UpdatesTitle.Parent = UpdatesOverlay
-
-local UpdatesClose = Instance.new("TextButton")
-UpdatesClose.Size = UDim2.fromOffset(28,28)
-UpdatesClose.Position = UDim2.new(1,-38,0,10)
-UpdatesClose.BackgroundColor3 = Color3.fromRGB(29,30,38)
-UpdatesClose.Text = "×"
-UpdatesClose.TextColor3 = Color3.fromRGB(180,180,190)
-UpdatesClose.TextSize = 16
-UpdatesClose.Font = Enum.Font.GothamBold
-UpdatesClose.AutoButtonColor = false
-UpdatesClose.ZIndex = 902
-UpdatesClose.Parent = UpdatesOverlay
-Instance.new("UICorner",UpdatesClose).CornerRadius = UDim.new(0,7)
-
-local UpdatesScroll = Instance.new("ScrollingFrame")
-UpdatesScroll.Size = UDim2.new(1,-28,1,-58)
-UpdatesScroll.Position = UDim2.fromOffset(14,50)
-UpdatesScroll.BackgroundTransparency = 1
-UpdatesScroll.BorderSizePixel = 0
-UpdatesScroll.ScrollBarThickness = 2
-UpdatesScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-UpdatesScroll.CanvasSize = UDim2.new()
-UpdatesScroll.ZIndex = 901
-UpdatesScroll.Parent = UpdatesOverlay
-
-local UpdatesLayout = Instance.new("UIListLayout")
-UpdatesLayout.Padding = UDim.new(0,7)
-UpdatesLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UpdatesLayout.Parent = UpdatesScroll
-
-local function AddUpdate(Title,Description)
-    local Row = Instance.new("Frame")
-    Row.Size = UDim2.new(1,0,0,48)
-    Row.BackgroundColor3 = Color3.fromRGB(27,29,37)
-    Row.BorderSizePixel = 0
-    Row.ZIndex = 901
-    Row.Parent = UpdatesScroll
-    Instance.new("UICorner",Row).CornerRadius = UDim.new(0,8)
-
-    local T = Instance.new("TextLabel")
-    T.Size = UDim2.new(1,-16,0,17)
-    T.Position = UDim2.fromOffset(8,5)
-    T.BackgroundTransparency = 1
-    T.Text = Title
-    T.TextColor3 = Accent()
-    T.TextSize = 9
-    T.Font = Enum.Font.GothamBold
-    T.TextXAlignment = Enum.TextXAlignment.Left
-    T.ZIndex = 902
-    T.Parent = Row
-
-    local D = Instance.new("TextLabel")
-    D.Size = UDim2.new(1,-16,0,22)
-    D.Position = UDim2.fromOffset(8,22)
-    D.BackgroundTransparency = 1
-    D.Text = Description
-    D.TextColor3 = Color3.fromRGB(175,178,188)
-    D.TextSize = 7
-    D.Font = Enum.Font.GothamMedium
-    D.TextWrapped = true
-    D.TextXAlignment = Enum.TextXAlignment.Left
-    D.ZIndex = 902
-    D.Parent = Row
-end
-
-AddUpdate("ESP INSTANTÂNEO", "ESP detecta players já existentes e novos players imediatamente.")
-AddUpdate("ESP NO REVIVE", "ESP é recriado automaticamente quando o player morre e revive.")
-AddUpdate("R6 / R15", "Skeleton ESP continua compatível com os dois tipos de personagem.")
-AddUpdate("INTERFACE", "Guia de atualizações adicionada ao header do Nova Hub.")
-
-local function SetUpdatesVisible(Value)
-    UpdatesOverlay.Visible = Value
-    if Value then
-        UpdatesStroke.Color = Accent()
-        UpdatesScroll.CanvasPosition = Vector2.zero
-    end
-end
-
-InfoButton.MouseButton1Click:Connect(function()
-    SetUpdatesVisible(not UpdatesOverlay.Visible)
-end)
-
-UpdatesClose.MouseButton1Click:Connect(function()
-    SetUpdatesVisible(false)
-end)
-
 local DragButton = Instance.new("TextButton")
 DragButton.Size = UDim2.new(1,-70,1,0)
 DragButton.BackgroundTransparency = 1
@@ -1820,10 +1687,6 @@ AddCustom(Toggle(Scroll, "Animations", "Enable animations", Config.UI.Animations
     Config.UI.Animations = v
 end))
 
--- Forward declarations for functions used by callbacks created before their implementation.
-local RefreshESP
-local MinimizeHub
-
 -- VISUAL PAGE
 local function VisualToggle(Title, Description, Key)
     local Row = Toggle(Scroll, Title, Description, Config.Visual[Key], function(v)
@@ -1866,15 +1729,23 @@ table.insert(VisualRows, Slider(Scroll, "ESP Text Size", 8, 16, Config.Visual.Te
     RefreshESP()
 end, function(v) return string.format("%d",v) end))
 
--- ESP
--- Centralized ESP state. All creation/removal goes through these tables.
+-- ESP (com retry imediato)
 local ESPData = {}
 local Skeletons = {}
 
 local function IsTeammate(Player)
-    return Config.Visual.TeamCheck
-        and LocalPlayer.Team ~= nil
-        and Player.Team == LocalPlayer.Team
+    return Config.Visual.TeamCheck and LocalPlayer.Team ~= nil and Player.Team == LocalPlayer.Team
+end
+
+local function RemoveESP(Player)
+    local Data = ESPData[Player]
+    if not Data then return end
+    for _,Object in pairs(Data) do
+        if typeof(Object) == "Instance" then
+            Object:Destroy()
+        end
+    end
+    ESPData[Player] = nil
 end
 
 local ESPGui = Instance.new("ScreenGui")
@@ -1909,162 +1780,113 @@ local R6Skeleton = {
     {"Torso","Right Leg"}
 }
 
-local function CreateSkeletonLine(Parent)
-    local Line = Instance.new("Frame")
-    Line.Name = "Bone"
-    Line.AnchorPoint = Vector2.new(0.5, 0.5)
-    Line.BackgroundColor3 = Config.Visual.Color
-    Line.BorderSizePixel = 0
-    Line.Size = UDim2.fromOffset(0, Config.Visual.SkeletonThickness)
-    Line.Visible = false
-    Line.Parent = Parent
-    return Line
+local function CreateSkeletonLine(parent)
+    local line = Instance.new("Frame")
+    line.Name = "Bone"
+    line.AnchorPoint = Vector2.new(0.5, 0.5)
+    line.BackgroundColor3 = Config.Visual.Color
+    line.BorderSizePixel = 0
+    line.Size = UDim2.fromOffset(0, Config.Visual.SkeletonThickness)
+    line.Visible = false
+    line.Parent = parent
+    return line
 end
 
-local function RemoveSkeleton(Player)
-    local Data = Skeletons[Player]
-    if not Data then
-        return
+local function CreateSkeleton(player)
+    if player == LocalPlayer then return end
+    if Skeletons[player] then
+        Skeletons[player].Folder:Destroy()
+        Skeletons[player] = nil
     end
-
-    if Data.Folder then
-        Data.Folder:Destroy()
-    end
-
-    Skeletons[Player] = nil
-end
-
-local function CreateSkeleton(Player)
-    if Player == LocalPlayer then
-        return false
-    end
-
-    RemoveSkeleton(Player)
-
-    local Character = Player.Character
-    if not Character or not Character.Parent then
-        return false
-    end
-
-    local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-    if not Humanoid or Humanoid.Health <= 0 then
-        return false
-    end
-
-    local Folder = Instance.new("Folder")
-    Folder.Name = Player.Name .. "_Skeleton"
-    Folder.Parent = ESPGui
-
-    local Connections
-    if Humanoid.RigType == Enum.HumanoidRigType.R15 then
-        Connections = R15Skeleton
+    local character = player.Character
+    if not character then return false end
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return false end
+    local folder = Instance.new("Folder")
+    folder.Name = player.Name .. "_Skeleton"
+    folder.Parent = ESPGui
+    local connections
+    if humanoid.RigType == Enum.HumanoidRigType.R15 then
+        connections = R15Skeleton
     else
-        Connections = R6Skeleton
+        connections = R6Skeleton
     end
-
-    local Bones = {}
-
-    for Index, Connection in ipairs(Connections) do
-        local Part1 = Character:FindFirstChild(Connection[1])
-        local Part2 = Character:FindFirstChild(Connection[2])
-
-        if Part1 and Part2 then
-            Bones[Index] = {
-                Line = CreateSkeletonLine(Folder),
-                Part1 = Part1,
-                Part2 = Part2
+    local bones = {}
+    for index, connection in ipairs(connections) do
+        local part1 = character:FindFirstChild(connection[1])
+        local part2 = character:FindFirstChild(connection[2])
+        if part1 and part2 then
+            local line = CreateSkeletonLine(folder)
+            bones[index] = {
+                Line = line,
+                Part1 = part1,
+                Part2 = part2,
             }
         end
     end
-
-    -- Do not keep an empty skeleton object around.
-    if next(Bones) == nil then
-        Folder:Destroy()
-        return false
-    end
-
-    Skeletons[Player] = {
-        Character = Character,
-        Folder = Folder,
-        Bones = Bones
+    Skeletons[player] = {
+        Character = character,
+        Folder = folder,
+        Bones = bones,
     }
-
     return true
 end
 
-local function RemoveESP(Player)
-    local Data = ESPData[Player]
-    if not Data then
-        return
+local function RemoveSkeleton(player)
+    local data = Skeletons[player]
+    if not data then return end
+    if data.Folder then
+        data.Folder:Destroy()
     end
+    Skeletons[player] = nil
+end
 
-    for _, Object in pairs(Data) do
-        if typeof(Object) == "Instance" and Object.Parent then
-            Object:Destroy()
+-- Aguarda o novo Character terminar de montar. Isso evita o problema
+-- em que CharacterAdded dispara antes de Head/HumanoidRootPart existirem.
+local function GetReadyCharacter(Player, Character, Timeout)
+    if not Player or not Character then return nil end
+
+    local Started = os.clock()
+    local Limit = Timeout or 8
+
+    while Character.Parent and Player.Character == Character and (os.clock() - Started) < Limit do
+        local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+        local Root = Character:FindFirstChild("HumanoidRootPart")
+        local Head = Character:FindFirstChild("Head")
+
+        if Humanoid and Root and Head then
+            return Character, Humanoid, Root, Head
         end
+
+        task.wait(0.1)
     end
 
-    ESPData[Player] = nil
+    return nil
 end
 
-local function GetESPCharacter(Player)
-    if not Player or Player == LocalPlayer then
-        return nil
-    end
+local function CreateESP(Player, ExpectedCharacter)
+    if Player == LocalPlayer then return false end
+    if not Config.Visual.ESP then return false end
 
-    local Character = Player.Character
-    if not Character or not Character.Parent then
-        return nil
-    end
-
-    local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-    local Root = Character:FindFirstChild("HumanoidRootPart")
-    local Head = Character:FindFirstChild("Head")
-
-    if not Humanoid or not Root or not Head then
-        return nil
-    end
-
-    if Humanoid.Health <= 0 then
-        return nil
-    end
-
-    return Character
-end
-
-local function CreateESP(Player)
-    if Player == LocalPlayer then
+    -- Se foi chamado por um respawn, só aceita aquele Character específico.
+    local Character = ExpectedCharacter or Player.Character
+    if not Character or Player.Character ~= Character then return false end
+    if IsTeammate(Player) then
+        RemoveESP(Player)
+        RemoveSkeleton(Player)
         return false
     end
 
+    local ReadyCharacter, Humanoid, Root, Head = GetReadyCharacter(Player, Character, 8)
+    if not ReadyCharacter or Player.Character ~= Character or not Config.Visual.ESP then
+        return false
+    end
+
+    Character = ReadyCharacter
     RemoveESP(Player)
     RemoveSkeleton(Player)
 
-    if not Config.Visual.ESP then
-        return false
-    end
-
-    if IsTeammate(Player) then
-        return false
-    end
-
-    local Character = GetESPCharacter(Player)
-    if not Character then
-        return false
-    end
-
-    local Root = Character:FindFirstChild("HumanoidRootPart")
-    local Head = Character:FindFirstChild("Head")
-    local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-
-    if not Root or not Head or not Humanoid then
-        return false
-    end
-
-    local Data = {
-        Character = Character
-    }
-
+    local Data = {}
     ESPData[Player] = Data
 
     if Config.Visual.Highlight or Config.Visual.Chams then
@@ -2073,7 +1895,7 @@ local function CreateESP(Player)
         Highlight.Adornee = Character
         Highlight.FillColor = Config.Visual.Color
         Highlight.OutlineColor = Config.Visual.Color
-        Highlight.FillTransparency = Config.Visual.Chams and 0.55 or 1
+        Highlight.FillTransparency = Config.Visual.Chams and .55 or 1
         Highlight.OutlineTransparency = 0
         Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
         Highlight.Parent = Character
@@ -2084,182 +1906,76 @@ local function CreateESP(Player)
         local Billboard = Instance.new("BillboardGui")
         Billboard.Name = "NovaESPInfo"
         Billboard.Adornee = Head
-        Billboard.Size = UDim2.fromOffset(180, 70)
-        Billboard.StudsOffset = Vector3.new(0, 3, 0)
+        Billboard.Size = UDim2.fromOffset(180,70)
+        Billboard.StudsOffset = Vector3.new(0,3,0)
         Billboard.AlwaysOnTop = true
         Billboard.Parent = Head
-
-        local InfoText = Instance.new("TextLabel")
-        InfoText.Size = UDim2.fromScale(1, 1)
-        InfoText.BackgroundTransparency = 1
-        InfoText.TextColor3 = Config.Visual.Color
-        InfoText.TextStrokeTransparency = 0.4
-        InfoText.TextSize = Config.Visual.TextSize
-        InfoText.Font = Enum.Font.GothamBold
-        InfoText.TextXAlignment = Enum.TextXAlignment.Center
-        InfoText.TextYAlignment = Enum.TextYAlignment.Top
-        InfoText.Parent = Billboard
-
+        local Text = Instance.new("TextLabel")
+        Text.Size = UDim2.fromScale(1,1)
+        Text.BackgroundTransparency = 1
+        Text.TextColor3 = Config.Visual.Color
+        Text.TextStrokeTransparency = .4
+        Text.TextSize = Config.Visual.TextSize
+        Text.Font = Enum.Font.GothamBold
+        Text.Parent = Billboard
         Data.Billboard = Billboard
-        Data.InfoText = InfoText
+        Data.InfoText = Text
     end
 
     if Config.Visual.Box then
         local Box = Instance.new("Frame")
         Box.Name = "NovaBox"
-        Box.AnchorPoint = Vector2.new(0.5, 0.5)
+        Box.AnchorPoint = Vector2.new(.5,.5)
         Box.BackgroundTransparency = 1
         Box.BorderSizePixel = 0
         Box.Visible = false
         Box.Parent = ESPGui
-
-        local BoxStroke = Instance.new("UIStroke")
-        BoxStroke.Color = Config.Visual.Color
-        BoxStroke.Thickness = Config.Visual.BoxThickness
-        BoxStroke.Parent = Box
-
+        local Stroke = Instance.new("UIStroke")
+        Stroke.Color = Config.Visual.Color
+        Stroke.Thickness = Config.Visual.BoxThickness
+        Stroke.Parent = Box
         Data.Box = Box
-        Data.BoxStroke = BoxStroke
+        Data.BoxStroke = Stroke
+    end
+
+    if Config.Visual.Skeleton then
+        if not CreateSkeleton(Player) then
+            -- Skeleton falhou, mas ESP principal já foi criado
+        end
     end
 
     if Config.Visual.Tracer then
         local Tracer = Instance.new("Frame")
         Tracer.Name = "NovaTracer"
-        Tracer.AnchorPoint = Vector2.new(0.5, 0.5)
+        Tracer.AnchorPoint = Vector2.new(.5,.5)
         Tracer.BorderSizePixel = 0
         Tracer.BackgroundColor3 = Config.Visual.Color
         Tracer.Size = UDim2.fromOffset(0, Config.Visual.TracerThickness)
         Tracer.Visible = false
         Tracer.Parent = ESPGui
-
         Data.Tracer = Tracer
-    end
-
-    if Config.Visual.Skeleton then
-        CreateSkeleton(Player)
     end
 
     return true
 end
 
--- Generation token prevents an old waiting task from recreating stale ESP.
-local ESPRefreshToken = 0
-
-local function WaitForCharacterReady(Player, Character, Token)
-    if not Player or not Character then
-        return false
-    end
-
-    local Started = os.clock()
-
-    while Player.Parent
-        and Character.Parent
-        and Config.Visual.ESP
-        and (Token == nil or Token == ESPRefreshToken)
-        and Player.Character == Character
-        and os.clock() - Started < 10 do
-
-        local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-        local Root = Character:FindFirstChild("HumanoidRootPart")
-        local Head = Character:FindFirstChild("Head")
-
-        if Humanoid and Root and Head and Humanoid.Health > 0 then
-            return true
-        end
-
-        task.wait()
-    end
-
-    return false
-end
-
--- Tenta criar o ESP imediatamente. Se o personagem ainda estiver carregando,
--- acompanha os filhos e tenta novamente sem bloquear a ativação do ESP.
-local function WaitAndCreateESP(Player, Character, Token)
-    if Player == LocalPlayer
-        or not Player
-        or not Character
-        or not Config.Visual.ESP then
-        return
-    end
-
-    Token = Token or ESPRefreshToken
-
-    -- Primeiro tenta na mesma hora.
-    if WaitForCharacterReady(Player, Character, Token) then
-        if Config.Visual.ESP
-            and Token == ESPRefreshToken
-            and Player.Parent
-            and Player.Character == Character then
-            CreateESP(Player)
-        end
-        return
-    end
-end
-
--- Versão não bloqueante: não espera um jogador terminar de carregar para
--- começar o próximo. Cada player recebe sua própria tentativa em paralelo.
-local function StartESPRegistration(Player, Character, Token)
-    if Player == LocalPlayer
-        or not Player
-        or not Character
-        or not Config.Visual.ESP then
-        return
-    end
-
-    -- Criação instantânea quando o personagem já está pronto.
-    if GetESPCharacter(Player) then
-        CreateESP(Player)
-        return
-    end
-
-    task.spawn(function()
-        -- Espera curta e individual, sem travar o RefreshESP inteiro.
-        local Start = os.clock()
-
-        while os.clock() - Start < 10 do
-            if not Config.Visual.ESP
-                or Token ~= ESPRefreshToken
-                or not Player.Parent
-                or Player.Character ~= Character
-                or not Character.Parent then
-                return
-            end
-
-            if GetESPCharacter(Player) then
-                CreateESP(Player)
-                return
-            end
-
-            task.wait(0.05)
-        end
-    end)
-end
-
-RefreshESP = function()
-    ESPRefreshToken += 1
-    local Token = ESPRefreshToken
-
-    -- Limpa tudo antes de reconstruir.
+local function RefreshESP()
     for Player in pairs(ESPData) do
         RemoveESP(Player)
     end
-
     for Player in pairs(Skeletons) do
         RemoveSkeleton(Player)
     end
+    if not Config.Visual.ESP then return end
 
-    if not Config.Visual.ESP then
-        return
-    end
-
-    -- IMPORTANTE: registra TODOS os players imediatamente.
-    -- Não existe mais um WaitForCharacterReady bloqueando a lista inteira.
-    for _, Player in ipairs(Players:GetPlayers()) do
+    for _,Player in ipairs(Players:GetPlayers()) do
         if Player ~= LocalPlayer then
             local Character = Player.Character
             if Character then
-                StartESPRegistration(Player, Character, Token)
+                task.spawn(function()
+                    if not Config.Visual.ESP or Player.Character ~= Character then return end
+                    CreateESP(Player, Character)
+                end)
             end
         end
     end
@@ -2837,7 +2553,7 @@ MiniGlow.Thickness = 2
 MiniGlow.Transparency = 0.5
 MiniGlow.Parent = Mini
 
-MinimizeHub = function()
+local function MinimizeHub()
     ClosePopup()
     MainDragging = false
     HUDDragging = false
@@ -3118,117 +2834,43 @@ RunService.RenderStepped:Connect(function(DT)
 end)
 
 -- PLAYER EVENTS
-local PlayerConnections = {}
-
-local function DisconnectPlayerConnections(Player)
-    local Connections = PlayerConnections[Player]
-    if not Connections then
-        return
-    end
-
-    for _, Connection in ipairs(Connections) do
-        if Connection then
-            Connection:Disconnect()
-        end
-    end
-
-    PlayerConnections[Player] = nil
-end
-
 local function SetupPlayer(Player)
-    if Player == LocalPlayer then
-        return
-    end
+    if Player == LocalPlayer then return end
 
-    DisconnectPlayerConnections(Player)
-
-    local Connections = {}
-    PlayerConnections[Player] = Connections
-
-    table.insert(Connections, Player.CharacterAdded:Connect(function(Character)
-        -- O personagem antigo pode ter sido destruído, então limpamos apenas
-        -- os objetos ligados ao personagem anterior e iniciamos uma nova
-        -- tentativa para ESTE personagem. Não dependemos de resetar o ESP.
-        RemoveESP(Player)
+    Player.CharacterAdded:Connect(function(Character)
+        -- Remove imediatamente o ESP ligado ao Character antigo.
         RemoveSkeleton(Player)
+        RemoveESP(Player)
 
-        if not Config.Visual.ESP then
-            return
-        end
+        if not Config.Visual.ESP then return end
 
+        -- Usa o Character recebido pelo evento para nunca recriar ESP
+        -- acidentalmente no personagem antigo durante um respawn rápido.
         task.spawn(function()
-            local Started = os.clock()
-
-            -- O Roblox pode criar Character primeiro e adicionar Humanoid,
-            -- RootPart e Head alguns instantes depois. Acompanhamos esse
-            -- carregamento sem bloquear os outros players.
-            while Config.Visual.ESP
-                and Player.Parent
-                and Player.Character == Character
-                and Character.Parent
-                and os.clock() - Started < 15 do
-
-                if GetESPCharacter(Player) then
-                    CreateESP(Player)
-
-                    -- Garante que o ESP criado pertence ao personagem novo.
-                    if ESPData[Player] then
-                        ESPData[Player].Character = Character
-                    end
-
-                    return
-                end
-
-                task.wait(0.05)
-            end
+            if Player.Character ~= Character then return end
+            CreateESP(Player, Character)
         end)
-    end))
+    end)
 
-    table.insert(Connections, Player.CharacterRemoving:Connect(function(Character)
-        -- Só remove o ESP se ele ainda estiver apontando para o personagem
-        -- que está sendo removido. O CharacterAdded logo em seguida recria
-        -- tudo para o personagem novo.
-        local Data = ESPData[Player]
-        if not Data or Data.Character == Character then
-            RemoveESP(Player)
-        end
-
-        local Skeleton = Skeletons[Player]
-        if not Skeleton or Skeleton.Character == Character then
-            RemoveSkeleton(Player)
-        end
-    end))
-
-    table.insert(Connections, Player:GetPropertyChangedSignal("Team"):Connect(function()
+    Player.CharacterRemoving:Connect(function(Character)
+        -- Só remove o que pertence a este jogador; o CharacterAdded seguinte
+        -- será responsável por criar novamente o ESP no novo personagem.
+        RemoveSkeleton(Player)
+        RemoveESP(Player)
+    end)
+    Player:GetPropertyChangedSignal("Team"):Connect(function()
         if Config.Visual.ESP then
-            -- Rebuild somente este player, sem travar os demais.
-            if IsTeammate(Player) then
-                RemoveESP(Player)
-                RemoveSkeleton(Player)
-            elseif Player.Character then
-                RemoveESP(Player)
-                RemoveSkeleton(Player)
-                StartESPRegistration(Player, Player.Character, ESPRefreshToken)
-            end
+            RefreshESP()
         end
-    end))
-
-    -- Players que já estavam na partida também são registrados imediatamente.
-    if Config.Visual.ESP and Player.Character then
-        StartESPRegistration(Player, Player.Character, ESPRefreshToken)
-    end
+    end)
 end
 
-for _, Player in ipairs(Players:GetPlayers()) do
+for _,Player in ipairs(Players:GetPlayers()) do
     SetupPlayer(Player)
 end
 
-Players.PlayerAdded:Connect(function(Player)
-    SetupPlayer(Player)
-end)
-
+Players.PlayerAdded:Connect(SetupPlayer)
 Players.PlayerRemoving:Connect(function(Player)
-    DisconnectPlayerConnections(Player)
     RemoveESP(Player)
     RemoveSkeleton(Player)
 end)
