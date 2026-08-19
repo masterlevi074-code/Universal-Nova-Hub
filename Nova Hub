@@ -2,17 +2,9 @@
     NOVA HUB - STUDIO EDITION v4.0
     LocalScript
     StarterPlayer > StarterPlayerScripts
-
-    CORRIGIDO:
-    • Ordem: Main criado antes da tela de carregamento
-    • Tela de carregamento revela o Main corretamente
-    • Verificações de nil adicionadas
 ]]
 
-------------------------------------------------------------
--- SERVICES
-------------------------------------------------------------
-
+-- Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -24,10 +16,7 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local Camera = workspace.CurrentCamera
 
-------------------------------------------------------------
--- CONFIG
-------------------------------------------------------------
-
+-- Config
 local Config = {
     Aim = {
         Enabled = false,
@@ -114,10 +103,7 @@ local Config = {
     }
 }
 
-------------------------------------------------------------
--- TWEEN INFOS
-------------------------------------------------------------
-
+-- Tween
 local TweenFast = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local TweenSmooth = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
 local TweenBounce = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
@@ -126,38 +112,19 @@ local TweenSpring = TweenInfo.new(0.5, Enum.EasingStyle.Elastic, Enum.EasingDire
 local function Tween(Object, Properties, Info)
     if not Object or not Object.Parent then return end
     if not Config.UI.Animations then
-        for Property,Value in pairs(Properties) do
-            Object[Property] = Value
-        end
+        for Property, Value in pairs(Properties) do Object[Property] = Value end
         return
     end
     TweenService:Create(Object, Info or TweenFast, Properties):Play()
 end
 
-------------------------------------------------------------
--- COLORS
-------------------------------------------------------------
+-- Cores
+local function Accent() return Config.UI.Accent end
+local function PanelColor() return Color3.fromRGB(22,23,29) end
+local function DarkColor() return Color3.fromRGB(16,17,22) end
+local function HoverColor() return Color3.fromRGB(32,34,42) end
 
-local function Accent()
-    return Config.UI.Accent
-end
-
-local function PanelColor()
-    return Color3.fromRGB(22,23,29)
-end
-
-local function DarkColor()
-    return Color3.fromRGB(16,17,22)
-end
-
-local function HoverColor()
-    return Color3.fromRGB(32,34,42)
-end
-
-------------------------------------------------------------
 -- GUI
-------------------------------------------------------------
-
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "NovaHub"
 Gui.ResetOnSpawn = false
@@ -165,10 +132,7 @@ Gui.IgnoreGuiInset = true
 Gui.DisplayOrder = 100
 Gui.Parent = PlayerGui
 
-------------------------------------------------------------
--- SOUND FUNCTIONS
-------------------------------------------------------------
-
+-- Sons
 local function PlayClickSound()
     if Config.UI.SoundEffects then
         local Sound = Instance.new("Sound")
@@ -176,9 +140,7 @@ local function PlayClickSound()
         Sound.Volume = 0.3
         Sound.Parent = Gui
         Sound:Play()
-        task.delay(0.1, function()
-            Sound:Destroy()
-        end)
+        task.delay(0.1, function() Sound:Destroy() end)
     end
 end
 
@@ -189,24 +151,19 @@ local function PlayHoverSound()
         Sound.Volume = 0.1
         Sound.Parent = Gui
         Sound:Play()
-        task.delay(0.1, function()
-            Sound:Destroy()
-        end)
+        task.delay(0.1, function() Sound:Destroy() end)
     end
 end
 
-------------------------------------------------------------
--- MAIN (criado primeiro)
-------------------------------------------------------------
-
+-- Main (criado primeiro)
 local Main = Instance.new("Frame")
 Main.Name = "Main"
 Main.Size = UDim2.fromOffset(420,370)
 Main.Position = UDim2.new(.5,-210,.5,-185)
 Main.BackgroundColor3 = DarkColor()
-Main.BackgroundTransparency = 1 -- começa invisível
+Main.BackgroundTransparency = 1
 Main.BorderSizePixel = 0
-Main.Visible = false -- começa invisível
+Main.Visible = false
 Main.Parent = Gui
 
 local MainCorner = Instance.new("UICorner")
@@ -230,10 +187,7 @@ MainGlow.Thickness = 3
 MainGlow.Transparency = 0.7
 MainGlow.Parent = Main
 
-------------------------------------------------------------
--- HEADER
-------------------------------------------------------------
-
+-- Header
 local Header = Instance.new("Frame")
 Header.Size = UDim2.new(1,0,0,50)
 Header.BackgroundColor3 = Color3.fromRGB(20,21,27)
@@ -393,10 +347,7 @@ Minimize.MouseButton1Click:Connect(function()
     MinimizeHub()
 end)
 
-------------------------------------------------------------
--- TAB BAR (HORIZONTAL)
-------------------------------------------------------------
-
+-- Tab Bar
 local TabBar = Instance.new("Frame")
 TabBar.Size = UDim2.new(1,-20,0,35)
 TabBar.Position = UDim2.fromOffset(10,55)
@@ -441,7 +392,6 @@ local function MakeTab(Text, X)
             })
         end
     end)
-
     Button.MouseLeave:Connect(function()
         if ActiveTab ~= Button then
             Tween(Button,{
@@ -450,11 +400,9 @@ local function MakeTab(Text, X)
             })
         end
     end)
-
     Button.MouseButton1Click:Connect(function()
         PlayClickSound()
     end)
-
     return Button
 end
 
@@ -466,10 +414,7 @@ local CustomTab = MakeTab("🎨",225)
 local HUDTab = MakeTab("▣",280)
 local SettingsTab = MakeTab("⚙",335)
 
-------------------------------------------------------------
--- PERFIL E QUICKINFO
-------------------------------------------------------------
-
+-- Perfil e QuickInfo
 local ProfileContainer = Instance.new("Frame")
 ProfileContainer.Size = UDim2.new(0,65,0,80)
 ProfileContainer.Position = UDim2.fromOffset(5,275)
@@ -598,10 +543,7 @@ QuickSession.Font = Enum.Font.GothamMedium
 QuickSession.TextXAlignment = Enum.TextXAlignment.Center
 QuickSession.Parent = QuickInfo
 
-------------------------------------------------------------
--- CONTENT
-------------------------------------------------------------
-
+-- Content
 local Content = Instance.new("Frame")
 Content.Size = UDim2.new(1,-90,1,-100)
 Content.Position = UDim2.fromOffset(75,95)
@@ -652,10 +594,7 @@ Layout.Padding = UDim.new(0,6)
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 Layout.Parent = Scroll
 
-------------------------------------------------------------
--- POPUPS
-------------------------------------------------------------
-
+-- Popups
 local PopupLayer = Instance.new("Frame")
 PopupLayer.Size = UDim2.fromScale(1,1)
 PopupLayer.BackgroundTransparency = 1
@@ -663,7 +602,6 @@ PopupLayer.ZIndex = 500
 PopupLayer.Parent = Gui
 
 local ActivePopup
-
 local function ClosePopup()
     if ActivePopup then
         ActivePopup:Destroy()
@@ -671,10 +609,7 @@ local function ClosePopup()
     end
 end
 
-------------------------------------------------------------
 -- FOV
-------------------------------------------------------------
-
 local FovGui = Instance.new("ScreenGui")
 FovGui.Name = "NovaFOV"
 FovGui.ResetOnSpawn = false
@@ -702,10 +637,7 @@ local function UpdateFov()
     Fov.Visible = Config.Aim.FOVEnabled
 end
 
-------------------------------------------------------------
--- ROW STORAGE
-------------------------------------------------------------
-
+-- Row storage
 local AimRows = {}
 local VisualRows = {}
 local PlayerRows = {}
@@ -714,17 +646,12 @@ local CustomRows = {}
 local HUDRows = {}
 local SettingsRows = {}
 
-------------------------------------------------------------
--- TOGGLE REGISTRY
-------------------------------------------------------------
-
+-- Toggle registry
 local ToggleRenderers = {}
 
 local function RefreshToggleAccent()
     for _,Renderer in ipairs(ToggleRenderers) do
-        if Renderer then
-            Renderer()
-        end
+        if Renderer then Renderer() end
     end
 end
 
@@ -744,10 +671,7 @@ local function RefreshLinesAccent()
     Scroll.ScrollBarImageColor3 = Accent()
 end
 
-------------------------------------------------------------
--- TOGGLE
-------------------------------------------------------------
-
+-- Toggle
 local function Toggle(Parent, Title, Description, Initial, Callback)
     local Row = Instance.new("Frame")
     Row.Size = UDim2.new(1,-2,0,46)
@@ -830,27 +754,20 @@ local function Toggle(Parent, Title, Description, Initial, Callback)
         PlayClickSound()
         State = not State
         Render()
-
         Tween(Button,{Size = UDim2.fromOffset(43,24)},TweenFast)
         task.delay(.07,function()
             if Button.Parent then
                 Tween(Button,{Size = UDim2.fromOffset(40,22)},TweenFast)
             end
         end)
-
-        if Callback then
-            Callback(State)
-        end
+        if Callback then Callback(State) end
     end)
 
     Render()
     return Row
 end
 
-------------------------------------------------------------
--- SLIDER
-------------------------------------------------------------
-
+-- Slider
 local function Slider(Parent, Title, Min, Max, Value, Callback, Format)
     local Row = Instance.new("Frame")
     Row.Size = UDim2.new(1,-2,0,58)
@@ -916,11 +833,8 @@ local function Slider(Parent, Title, Min, Max, Value, Callback, Format)
     FillCorner.Parent = Fill
 
     local function UpdateAccent()
-        if Fill.Parent then
-            Fill.BackgroundColor3 = Accent()
-        end
+        if Fill.Parent then Fill.BackgroundColor3 = Accent() end
     end
-
     table.insert(ToggleRenderers,UpdateAccent)
 
     local Dragging = false
@@ -971,10 +885,7 @@ local function Slider(Parent, Title, Min, Max, Value, Callback, Format)
     return Row
 end
 
-------------------------------------------------------------
--- DROPDOWN
-------------------------------------------------------------
-
+-- Dropdown
 local function Dropdown(Parent, Title, Options, Current, Callback)
     local Row = Instance.new("Frame")
     Row.Size = UDim2.new(1,-2,0,44)
@@ -1075,7 +986,6 @@ local function Dropdown(Parent, Title, Options, Current, Callback)
                     Tween(OptionButton,{BackgroundColor3 = HoverColor()})
                 end
             end)
-
             OptionButton.MouseLeave:Connect(function()
                 if Option ~= Current then
                     Tween(OptionButton,{BackgroundColor3 = Color3.fromRGB(28,30,38)})
@@ -1087,10 +997,7 @@ local function Dropdown(Parent, Title, Options, Current, Callback)
                 Current = Option
                 Button.Text = Option.." ▼"
                 ClosePopup()
-
-                if Callback then
-                    Callback(Option)
-                end
+                if Callback then Callback(Option) end
             end)
         end
     end)
@@ -1098,10 +1005,7 @@ local function Dropdown(Parent, Title, Options, Current, Callback)
     return Row
 end
 
-------------------------------------------------------------
--- COLOR PICKER
-------------------------------------------------------------
-
+-- Color Picker
 local function ColorPicker(Parent, Title, Current, Callback)
     local Row = Instance.new("Frame")
     Row.Size = UDim2.new(1,-2,0,44)
@@ -1220,14 +1124,12 @@ local function ColorPicker(Parent, Title, Current, Callback)
                 TextColor3 = Color3.new(1,1,1)
             })
         end)
-
         CloseButton.MouseLeave:Connect(function()
             Tween(CloseButton,{
                 BackgroundColor3 = Color3.fromRGB(40,42,52),
                 TextColor3 = Color3.fromRGB(200,200,210)
             })
         end)
-
         CloseButton.MouseButton1Click:Connect(function()
             PlayClickSound()
             ClosePopup()
@@ -1321,22 +1223,17 @@ local function ColorPicker(Parent, Title, Current, Callback)
                 Tween(ColorButton,{Size = UDim2.fromOffset(55,55)})
                 Tooltip.Visible = true
             end)
-
             ColorButton.MouseLeave:Connect(function()
                 Tween(ColorButton,{Size = UDim2.fromOffset(50,50)})
                 Tooltip.Visible = false
             end)
-
             ColorButton.MouseButton1Click:Connect(function()
                 PlayClickSound()
                 Current = Data[2]
                 Preview.BackgroundColor3 = Current
                 ClosePopup()
                 Overlay:Destroy()
-
-                if Callback then
-                    Callback(Current)
-                end
+                if Callback then Callback(Current) end
             end)
         end
     end)
@@ -1344,10 +1241,7 @@ local function ColorPicker(Parent, Title, Current, Callback)
     return Row
 end
 
-------------------------------------------------------------
 -- AIM PAGE
-------------------------------------------------------------
-
 local function AddAim(Row)
     table.insert(AimRows,Row)
 end
@@ -1355,71 +1249,51 @@ end
 AddAim(Toggle(Scroll, "Aim Assist", "Follow valid targets inside the FOV", Config.Aim.Enabled, function(v)
     Config.Aim.Enabled = v
 end))
-
 AddAim(Toggle(Scroll, "FOV Circle", "Show targeting radius", Config.Aim.FOVEnabled, function(v)
     Config.Aim.FOVEnabled = v
     UpdateFov()
 end))
-
 AddAim(Slider(Scroll, "FOV Radius", 40, 250, Config.Aim.FOV, function(v)
     Config.Aim.FOV = v
     UpdateFov()
-end, function(v)
-    return string.format("%.0f",v)
-end))
-
+end, function(v) return string.format("%.0f",v) end))
 AddAim(Slider(Scroll, "FOV Thickness", 1, 8, Config.Aim.Thickness, function(v)
     Config.Aim.Thickness = v
     UpdateFov()
-end, function(v)
-    return string.format("%.0f",v)
-end))
-
+end, function(v) return string.format("%.0f",v) end))
 AddAim(ColorPicker(Scroll, "FOV Color", Config.Aim.Color, function(c)
     Config.Aim.Color = c
     UpdateFov()
 end))
-
 AddAim(Dropdown(Scroll, "Target Part", {"Head", "HumanoidRootPart", "UpperTorso", "Torso"}, Config.Aim.TargetPart, function(v)
     Config.Aim.TargetPart = v
 end))
-
 AddAim(Slider(Scroll, "Smoothness", .01, 1, Config.Aim.Smoothness, function(v)
     Config.Aim.Smoothness = v
 end))
-
 AddAim(Toggle(Scroll, "Prediction", "Predict target movement", Config.Aim.Prediction, function(v)
     Config.Aim.Prediction = v
 end))
-
 AddAim(Slider(Scroll, "Prediction Strength", 0, 1, Config.Aim.PredictionStrength, function(v)
     Config.Aim.PredictionStrength = v
 end))
-
 AddAim(Toggle(Scroll, "Target Priority", "Enable advanced target selection", Config.Aim.TargetPriority, function(v)
     Config.Aim.TargetPriority = v
 end))
-
 AddAim(Dropdown(Scroll, "Priority Mode", {"Crosshair", "Distance"}, Config.Aim.PriorityMode, function(v)
     Config.Aim.PriorityMode = v
 end))
-
 AddAim(Toggle(Scroll, "Target Highlight", "Highlight the selected target", Config.Aim.TargetHighlight, function(v)
     Config.Aim.TargetHighlight = v
 end))
-
 AddAim(Toggle(Scroll, "Team Check", "Ignore teammates", Config.Aim.TeamCheck, function(v)
     Config.Aim.TeamCheck = v
 end))
-
 AddAim(Toggle(Scroll, "Wall Check", "Ignore targets behind walls", Config.Aim.WallCheck, function(v)
     Config.Aim.WallCheck = v
 end))
 
-------------------------------------------------------------
 -- PLAYER PAGE
-------------------------------------------------------------
-
 local function AddPlayer(Row)
     table.insert(PlayerRows,Row)
 end
@@ -1438,7 +1312,6 @@ AddPlayer(Toggle(Scroll, "Speed Hack", "Increase movement speed", Config.Player.
         end
     end
 end))
-
 AddPlayer(Slider(Scroll, "Speed Multiplier", 1, 10, Config.Player.SpeedMultiplier, function(v)
     Config.Player.SpeedMultiplier = v
     if Config.Player.SpeedHack then
@@ -1450,20 +1323,13 @@ AddPlayer(Slider(Scroll, "Speed Multiplier", 1, 10, Config.Player.SpeedMultiplie
             end
         end
     end
-end, function(v)
-    return string.format("%.1fx",v)
-end))
-
+end, function(v) return string.format("%.1fx",v) end))
 AddPlayer(Toggle(Scroll, "Fly Hack", "Enable flying", Config.Player.FlyHack, function(v)
     Config.Player.FlyHack = v
 end))
-
 AddPlayer(Slider(Scroll, "Fly Speed", 10, 100, Config.Player.FlySpeed, function(v)
     Config.Player.FlySpeed = v
-end, function(v)
-    return string.format("%.0f",v)
-end))
-
+end, function(v) return string.format("%.0f",v) end))
 AddPlayer(Toggle(Scroll, "No-Clip", "Walk through walls", Config.Player.NoClip, function(v)
     Config.Player.NoClip = v
     local Character = LocalPlayer.Character
@@ -1475,7 +1341,6 @@ AddPlayer(Toggle(Scroll, "No-Clip", "Walk through walls", Config.Player.NoClip, 
         end
     end
 end))
-
 AddPlayer(Slider(Scroll, "Jump Power", 50, 500, Config.Player.JumpPower, function(v)
     Config.Player.JumpPower = v
     local Character = LocalPlayer.Character
@@ -1485,18 +1350,12 @@ AddPlayer(Slider(Scroll, "Jump Power", 50, 500, Config.Player.JumpPower, functio
             Humanoid.JumpPower = v
         end
     end
-end, function(v)
-    return string.format("%.0f",v)
-end))
-
+end, function(v) return string.format("%.0f",v) end))
 AddPlayer(Toggle(Scroll, "Infinite Jump", "Jump infinitely", Config.Player.InfiniteJump, function(v)
     Config.Player.InfiniteJump = v
 end))
 
-------------------------------------------------------------
 -- WORLD PAGE
-------------------------------------------------------------
-
 local function AddWorld(Row)
     table.insert(WorldRows,Row)
 end
@@ -1515,16 +1374,12 @@ AddWorld(Toggle(Scroll, "Full Bright", "Make everything bright", Config.World.Fu
         Lighting.GlobalShadows = true
     end
 end))
-
 AddWorld(Slider(Scroll, "Brightness", 0, 10, Config.World.Brightness, function(v)
     Config.World.Brightness = v
     if Config.World.FullBright then
         Lighting.Brightness = v
     end
-end, function(v)
-    return string.format("%.1f",v)
-end))
-
+end, function(v) return string.format("%.1f",v) end))
 AddWorld(Toggle(Scroll, "Remove Fog", "Disable fog", Config.World.RemoveFog, function(v)
     Config.World.RemoveFog = v
     if v then
@@ -1535,14 +1390,10 @@ AddWorld(Toggle(Scroll, "Remove Fog", "Disable fog", Config.World.RemoveFog, fun
         Lighting.FogStart = 0
     end
 end))
-
 AddWorld(Slider(Scroll, "Time of Day", 0, 24, Config.World.TimeOfDay, function(v)
     Config.World.TimeOfDay = v
     Lighting.ClockTime = v
-end, function(v)
-    return string.format("%.0fh",v)
-end))
-
+end, function(v) return string.format("%.0fh",v) end))
 AddWorld(Toggle(Scroll, "Jump Power", "Enable custom jump power", Config.World.JumpPowerEnabled, function(v)
     Config.World.JumpPowerEnabled = v
     local Character = LocalPlayer.Character
@@ -1557,7 +1408,6 @@ AddWorld(Toggle(Scroll, "Jump Power", "Enable custom jump power", Config.World.J
         end
     end
 end))
-
 AddWorld(Slider(Scroll, "Jump Height", 50, 500, Config.World.JumpHeight, function(v)
     Config.World.JumpHeight = v
     if Config.World.JumpPowerEnabled then
@@ -1569,10 +1419,7 @@ AddWorld(Slider(Scroll, "Jump Height", 50, 500, Config.World.JumpHeight, functio
             end
         end
     end
-end, function(v)
-    return string.format("%.0f",v)
-end))
-
+end, function(v) return string.format("%.0f",v) end))
 AddWorld(Toggle(Scroll, "Low Gravity", "Reduce gravity", Config.World.LowGravity, function(v)
     Config.World.LowGravity = v
     if v then
@@ -1581,16 +1428,12 @@ AddWorld(Toggle(Scroll, "Low Gravity", "Reduce gravity", Config.World.LowGravity
         workspace.Gravity = 196.2
     end
 end))
-
 AddWorld(Slider(Scroll, "Gravity Value", 0, 196.2, Config.World.GravityValue, function(v)
     Config.World.GravityValue = v
     if Config.World.LowGravity then
         workspace.Gravity = v
     end
-end, function(v)
-    return string.format("%.0f",v)
-end))
-
+end, function(v) return string.format("%.0f",v) end))
 AddWorld(Slider(Scroll, "Camera Zoom", 5, 30, Config.World.CameraZoom, function(v)
     Config.World.CameraZoom = v
     local Character = LocalPlayer.Character
@@ -1600,36 +1443,25 @@ AddWorld(Slider(Scroll, "Camera Zoom", 5, 30, Config.World.CameraZoom, function(
             Humanoid.CameraDistance = v
         end
     end
-end, function(v)
-    return string.format("%.0f",v)
-end))
-
+end, function(v) return string.format("%.0f",v) end))
 AddWorld(Slider(Scroll, "Field of View", 30, 120, Config.World.FOV, function(v)
     Config.World.FOV = v
     Camera.FieldOfView = v
-end, function(v)
-    return string.format("%.0f",v)
-end))
-
+end, function(v) return string.format("%.0f",v) end))
 AddWorld(Toggle(Scroll, "No Shadows", "Disable all shadows", Config.World.NoShadows, function(v)
     Config.World.NoShadows = v
     if v then
         Lighting.GlobalShadows = false
         for _,Part in ipairs(workspace:GetDescendants()) do
-            if Part:IsA("BasePart") then
-                Part.CastShadow = false
-            end
+            if Part:IsA("BasePart") then Part.CastShadow = false end
         end
     else
         Lighting.GlobalShadows = true
         for _,Part in ipairs(workspace:GetDescendants()) do
-            if Part:IsA("BasePart") then
-                Part.CastShadow = true
-            end
+            if Part:IsA("BasePart") then Part.CastShadow = true end
         end
     end
 end))
-
 AddWorld(Toggle(Scroll, "No Neon Glow", "Disable neon materials", Config.World.NoNeon, function(v)
     Config.World.NoNeon = v
     if v then
@@ -1643,10 +1475,7 @@ AddWorld(Toggle(Scroll, "No Neon Glow", "Disable neon materials", Config.World.N
     end
 end))
 
-------------------------------------------------------------
 -- CUSTOMIZATION PAGE
-------------------------------------------------------------
-
 local function AddCustom(Row)
     table.insert(CustomRows,Row)
 end
@@ -1671,16 +1500,13 @@ AddCustom(Dropdown(Scroll, "UI Theme", {"Dark", "Light", "Purple", "Red"}, Confi
         TabBar.BackgroundColor3 = Color3.fromRGB(32,18,18)
     end
 end))
-
 AddCustom(Slider(Scroll, "UI Scale", 0.5, 2, Config.Customization.UIScale, function(v)
     Config.Customization.UIScale = v
     local scale = v
     Main.Size = UDim2.fromOffset(420 * scale, 370 * scale)
-    
     Header.Size = UDim2.new(1,0,0,50 * scale)
     TabBar.Size = UDim2.new(1,-20*scale,0,35 * scale)
     TabBar.Position = UDim2.fromOffset(10 * scale, 55 * scale)
-    
     local tabIndex = 0
     for _,Child in ipairs(TabBar:GetChildren()) do
         if Child:IsA("TextButton") then
@@ -1690,12 +1516,10 @@ AddCustom(Slider(Scroll, "UI Scale", 0.5, 2, Config.Customization.UIScale, funct
             tabIndex = tabIndex + 1
         end
     end
-    
     ProfileContainer.Size = UDim2.new(0,65 * scale,0,80 * scale)
     ProfileContainer.Position = UDim2.fromOffset(5 * scale, 275 * scale)
     QuickInfo.Size = UDim2.new(0,65 * scale,0,80 * scale)
     QuickInfo.Position = UDim2.fromOffset(5 * scale, 190 * scale)
-    
     Content.Size = UDim2.new(1,-90*scale,1,-100*scale)
     Content.Position = UDim2.fromOffset(75 * scale, 95 * scale)
     PageTitle.TextSize = 14 * scale
@@ -1703,7 +1527,6 @@ AddCustom(Slider(Scroll, "UI Scale", 0.5, 2, Config.Customization.UIScale, funct
     PageLine.Position = UDim2.fromOffset(5 * scale, 28 * scale)
     Scroll.Size = UDim2.new(1,-10*scale,1,-38*scale)
     Scroll.Position = UDim2.fromOffset(5 * scale, 35 * scale)
-    
     UserNameLabel.TextSize = 6 * scale
     AvatarImage.Size = UDim2.fromOffset(36 * scale, 36 * scale)
     AvatarImage.Position = UDim2.fromOffset(14 * scale, 20 * scale)
@@ -1713,17 +1536,13 @@ AddCustom(Slider(Scroll, "UI Scale", 0.5, 2, Config.Customization.UIScale, funct
     QuickPing.TextSize = 6 * scale
     QuickPlayers.TextSize = 6 * scale
     QuickSession.TextSize = 6 * scale
-end, function(v)
-    return string.format("%.1fx",v)
-end))
-
+end, function(v) return string.format("%.1fx",v) end))
 AddCustom(ColorPicker(Scroll, "UI Accent", Config.UI.Accent, function(Color)
     Config.UI.Accent = Color
     RefreshLinesAccent()
     RefreshToggleAccent()
     UpdateFov()
 end))
-
 AddCustom(Toggle(Scroll, "Glow Effects", "Show glow effects", Config.UI.GlowEffects, function(v)
     Config.UI.GlowEffects = v
     MainGlow.Enabled = v
@@ -1731,19 +1550,14 @@ AddCustom(Toggle(Scroll, "Glow Effects", "Show glow effects", Config.UI.GlowEffe
     PageLineGlow.Enabled = v
     LogoGlow.Enabled = v
 end))
-
 AddCustom(Toggle(Scroll, "Sound Effects", "Enable click sounds", Config.UI.SoundEffects, function(v)
     Config.UI.SoundEffects = v
 end))
-
 AddCustom(Toggle(Scroll, "Animations", "Enable animations", Config.UI.Animations, function(v)
     Config.UI.Animations = v
 end))
 
-------------------------------------------------------------
 -- VISUAL PAGE
-------------------------------------------------------------
-
 local function VisualToggle(Title, Description, Key)
     local Row = Toggle(Scroll, Title, Description, Config.Visual[Key], function(v)
         Config.Visual[Key] = v
@@ -1768,39 +1582,24 @@ table.insert(VisualRows, ColorPicker(Scroll, "ESP Color", Config.Visual.Color, f
     Config.Visual.Color = Color
     RefreshESP()
 end))
-
 table.insert(VisualRows, Slider(Scroll, "Box Thickness", 1, 5, Config.Visual.BoxThickness, function(v)
     Config.Visual.BoxThickness = v
     RefreshESP()
-end, function(v)
-    return string.format("%.1f",v)
-end))
-
+end, function(v) return string.format("%.1f",v) end))
 table.insert(VisualRows, Slider(Scroll, "Tracer Thickness", 1, 5, Config.Visual.TracerThickness, function(v)
     Config.Visual.TracerThickness = v
     RefreshESP()
-end, function(v)
-    return string.format("%.1f",v)
-end))
-
+end, function(v) return string.format("%.1f",v) end))
 table.insert(VisualRows, Slider(Scroll, "Skeleton Thickness", 1, 5, Config.Visual.SkeletonThickness, function(v)
     Config.Visual.SkeletonThickness = v
     RefreshESP()
-end, function(v)
-    return string.format("%.1f",v)
-end))
-
+end, function(v) return string.format("%.1f",v) end))
 table.insert(VisualRows, Slider(Scroll, "ESP Text Size", 8, 16, Config.Visual.TextSize, function(v)
     Config.Visual.TextSize = math.floor(v)
     RefreshESP()
-end, function(v)
-    return string.format("%d",v)
-end))
+end, function(v) return string.format("%d",v) end))
 
-------------------------------------------------------------
--- ESP (SKELETON CORRIGIDO)
-------------------------------------------------------------
-
+-- ESP (CORRIGIDO COM WaitForChild)
 local ESPData = {}
 local Skeletons = {}
 
@@ -1871,7 +1670,7 @@ local function CreateSkeleton(player)
     end
     local character = player.Character
     if not character then return end
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local humanoid = character:FindFirstChildOfClass("Humanoid") or character:WaitForChild("Humanoid", 3)
     if not humanoid then return end
     local folder = Instance.new("Folder")
     folder.Name = player.Name .. "_Skeleton"
@@ -1884,8 +1683,8 @@ local function CreateSkeleton(player)
     end
     local bones = {}
     for index, connection in ipairs(connections) do
-        local part1 = character:FindFirstChild(connection[1])
-        local part2 = character:FindFirstChild(connection[2])
+        local part1 = character:FindFirstChild(connection[1]) or character:WaitForChild(connection[1], 2)
+        local part2 = character:FindFirstChild(connection[2]) or character:WaitForChild(connection[2], 2)
         if part1 and part2 then
             local line = CreateSkeletonLine(folder)
             bones[index] = {
@@ -1917,14 +1716,20 @@ local function CreateESP(Player)
     RemoveSkeleton(Player)
     if not Config.Visual.ESP then return end
     if IsTeammate(Player) then return end
+
     local Character = Player.Character
     if not Character then return end
-    local Root = Character:FindFirstChild("HumanoidRootPart")
-    local Head = Character:FindFirstChild("Head")
-    local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+
+    -- Aguardar partes essenciais (correção do bug de não aparecer)
+    local Root = Character:FindFirstChild("HumanoidRootPart") or Character:WaitForChild("HumanoidRootPart", 3)
+    local Head = Character:FindFirstChild("Head") or Character:WaitForChild("Head", 3)
+    local Humanoid = Character:FindFirstChildOfClass("Humanoid") or Character:WaitForChild("Humanoid", 3)
+
     if not Root or not Head or not Humanoid then return end
+
     local Data = {}
     ESPData[Player] = Data
+
     if Config.Visual.Highlight or Config.Visual.Chams then
         local Highlight = Instance.new("Highlight")
         Highlight.Name = "NovaESPHighlight"
@@ -1937,6 +1742,7 @@ local function CreateESP(Player)
         Highlight.Parent = Character
         Data.Highlight = Highlight
     end
+
     if Config.Visual.Name or Config.Visual.Health or Config.Visual.Distance then
         local Billboard = Instance.new("BillboardGui")
         Billboard.Name = "NovaESPInfo"
@@ -1956,6 +1762,7 @@ local function CreateESP(Player)
         Data.Billboard = Billboard
         Data.InfoText = Text
     end
+
     if Config.Visual.Box then
         local Box = Instance.new("Frame")
         Box.Name = "NovaBox"
@@ -1971,9 +1778,11 @@ local function CreateESP(Player)
         Data.Box = Box
         Data.BoxStroke = Stroke
     end
+
     if Config.Visual.Skeleton then
         CreateSkeleton(Player)
     end
+
     if Config.Visual.Tracer then
         local Tracer = Instance.new("Frame")
         Tracer.Name = "NovaTracer"
@@ -1995,6 +1804,10 @@ local function RefreshESP()
         RemoveSkeleton(Player)
     end
     if not Config.Visual.ESP then return end
+
+    -- Pequena espera para garantir carregamento
+    task.wait(0.1)
+
     for _,Player in ipairs(Players:GetPlayers()) do
         if Player ~= LocalPlayer then
             CreateESP(Player)
@@ -2002,10 +1815,7 @@ local function RefreshESP()
     end
 end
 
-------------------------------------------------------------
 -- TARGET (AIM ASSIST)
-------------------------------------------------------------
-
 local function IsValidTarget(Player)
     if Player == LocalPlayer then return false end
     if Config.Aim.TeamCheck and LocalPlayer.Team and Player.Team == LocalPlayer.Team then return false end
@@ -2119,10 +1929,7 @@ RunService:BindToRenderStep("NovaAim", Enum.RenderPriority.Camera.Value+1, funct
     Camera.CFrame = Camera.CFrame:Lerp(Desired, Config.Aim.Smoothness)
 end)
 
-------------------------------------------------------------
 -- ESP RENDER
-------------------------------------------------------------
-
 RunService.RenderStepped:Connect(function()
     Camera = workspace.CurrentCamera
     if not Camera then return end
@@ -2274,10 +2081,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-------------------------------------------------------------
 -- HUD
-------------------------------------------------------------
-
 local HUDFrame = Instance.new("Frame")
 HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, 50)
 HUDFrame.Position = Config.HUD.Position
@@ -2319,10 +2123,7 @@ local function UpdateHUDAppearance()
     prevHUDSize = newSize
 end
 
-------------------------------------------------------------
 -- HUD DRAG
-------------------------------------------------------------
-
 local HUDDragging = false
 local HUDDragStart
 local HUDStartPosition
@@ -2355,10 +2156,7 @@ UserInputService.InputEnded:Connect(function(Input)
     end
 end)
 
-------------------------------------------------------------
 -- HUD PAGE
-------------------------------------------------------------
-
 local function AddHUD(Row)
     table.insert(HUDRows,Row)
 end
@@ -2367,53 +2165,37 @@ AddHUD(Toggle(Scroll, "HUD", "Enable information panel", Config.HUD.Enabled, fun
     Config.HUD.Enabled = v
     HUDFrame.Visible = v
 end))
-
 AddHUD(Toggle(Scroll, "FPS Counter", "Show current FPS", Config.HUD.FPS, function(v)
     Config.HUD.FPS = v
 end))
-
 AddHUD(Toggle(Scroll, "Ping Counter", "Show network ping", Config.HUD.Ping, function(v)
     Config.HUD.Ping = v
 end))
-
 AddHUD(Toggle(Scroll, "Player Counter", "Show player count", Config.HUD.Players, function(v)
     Config.HUD.Players = v
 end))
-
 AddHUD(Toggle(Scroll, "XYZ Position", "Show character coordinates", Config.HUD.XYZ, function(v)
     Config.HUD.XYZ = v
 end))
-
 AddHUD(Toggle(Scroll, "Time", "Show current time", Config.HUD.ShowTime, function(v)
     Config.HUD.ShowTime = v
 end))
-
 AddHUD(Toggle(Scroll, "Server ID", "Show server ID", Config.HUD.ShowServer, function(v)
     Config.HUD.ShowServer = v
 end))
-
 AddHUD(Toggle(Scroll, "Session Time", "Show time since joined", Config.HUD.ShowSessionTime, function(v)
     Config.HUD.ShowSessionTime = v
 end))
-
 AddHUD(Slider(Scroll, "HUD Size", 80, 250, Config.HUD.Size, function(v)
     Config.HUD.Size = math.floor(v)
     UpdateHUDAppearance()
-end, function(v)
-    return string.format("%d", v)
-end))
-
+end, function(v) return string.format("%d", v) end))
 AddHUD(Slider(Scroll, "HUD Transparency", 0, .9, Config.HUD.Transparency, function(v)
     Config.HUD.Transparency = v
     UpdateHUDAppearance()
-end, function(v)
-    return string.format("%d%%", math.floor(v*100))
-end))
+end, function(v) return string.format("%d%%", math.floor(v*100)) end))
 
-------------------------------------------------------------
 -- SETTINGS
-------------------------------------------------------------
-
 local function AddSetting(Row)
     table.insert(SettingsRows,Row)
 end
@@ -2421,28 +2203,21 @@ end
 AddSetting(Toggle(Scroll, "Animations", "Enable interface animations", Config.UI.Animations, function(v)
     Config.UI.Animations = v
 end))
-
 AddSetting(Toggle(Scroll, "Sound Effects", "Enable click sounds", Config.UI.SoundEffects, function(v)
     Config.UI.SoundEffects = v
 end))
-
 AddSetting(Toggle(Scroll, "Notifications", "Enable interface notifications", Config.UI.Notifications, function(v)
     Config.UI.Notifications = v
 end))
-
 AddSetting(Toggle(Scroll, "Performance Mode", "Reduce visual update workload", Config.UI.Performance, function(v)
     Config.UI.Performance = v
 end))
-
 AddSetting(Toggle(Scroll, "Bypass Indicator", "Show green bypass dot", Config.UI.ShowBypassIndicator, function(v)
     Config.UI.ShowBypassIndicator = v
     BypassContainer.Visible = v
 end))
 
-------------------------------------------------------------
 -- PAGE SYSTEM
-------------------------------------------------------------
-
 local function HideAll()
     for _,Row in ipairs(AimRows) do Row.Visible = false end
     for _,Row in ipairs(VisualRows) do Row.Visible = false end
@@ -2543,39 +2318,15 @@ local function ShowSettings()
     SetActiveTab(SettingsTab)
 end
 
-AimTab.MouseButton1Click:Connect(function()
-    PlayClickSound()
-    ShowAim()
-end)
-VisualTab.MouseButton1Click:Connect(function()
-    PlayClickSound()
-    ShowVisual()
-end)
-PlayerTab.MouseButton1Click:Connect(function()
-    PlayClickSound()
-    ShowPlayer()
-end)
-WorldTab.MouseButton1Click:Connect(function()
-    PlayClickSound()
-    ShowWorld()
-end)
-CustomTab.MouseButton1Click:Connect(function()
-    PlayClickSound()
-    ShowCustom()
-end)
-HUDTab.MouseButton1Click:Connect(function()
-    PlayClickSound()
-    ShowHUD()
-end)
-SettingsTab.MouseButton1Click:Connect(function()
-    PlayClickSound()
-    ShowSettings()
-end)
+AimTab.MouseButton1Click:Connect(function() PlayClickSound() ShowAim() end)
+VisualTab.MouseButton1Click:Connect(function() PlayClickSound() ShowVisual() end)
+PlayerTab.MouseButton1Click:Connect(function() PlayClickSound() ShowPlayer() end)
+WorldTab.MouseButton1Click:Connect(function() PlayClickSound() ShowWorld() end)
+CustomTab.MouseButton1Click:Connect(function() PlayClickSound() ShowCustom() end)
+HUDTab.MouseButton1Click:Connect(function() PlayClickSound() ShowHUD() end)
+SettingsTab.MouseButton1Click:Connect(function() PlayClickSound() ShowSettings() end)
 
-------------------------------------------------------------
 -- MAIN DRAG
-------------------------------------------------------------
-
 local MainDragging = false
 local MainDragStart
 local MainStartPosition
@@ -2607,10 +2358,7 @@ UserInputService.InputEnded:Connect(function(Input)
     end
 end)
 
-------------------------------------------------------------
 -- MINIMIZE/MAXIMIZE
-------------------------------------------------------------
-
 local Mini = Instance.new("TextButton")
 Mini.Size = UDim2.fromOffset(50 * Config.Customization.UIScale, 50 * Config.Customization.UIScale)
 Mini.Position = UDim2.new(0,15,.5,-25)
@@ -2683,12 +2431,8 @@ local function CloseAll()
     Config.World.NoNeon = false
     
     pcall(function()
-        for Player in pairs(ESPData) do
-            RemoveESP(Player)
-        end
-        for Player in pairs(Skeletons) do
-            RemoveSkeleton(Player)
-        end
+        for Player in pairs(ESPData) do RemoveESP(Player) end
+        for Player in pairs(Skeletons) do RemoveSkeleton(Player) end
     end)
     
     pcall(function()
@@ -2727,10 +2471,7 @@ end
 
 Close.MouseButton1Click:Connect(function()
     PlayClickSound()
-    
-    if ActivePopup then
-        ClosePopup()
-    end
+    if ActivePopup then ClosePopup() end
     
     local ConfirmOverlay = Instance.new("Frame")
     ConfirmOverlay.Size = UDim2.fromScale(1,1)
@@ -2746,7 +2487,6 @@ Close.MouseButton1Click:Connect(function()
     ConfirmDialog.BorderSizePixel = 0
     ConfirmDialog.ZIndex = 999
     ConfirmDialog.Parent = PopupLayer
-    
     ActivePopup = ConfirmDialog
 
     local DialogCorner = Instance.new("UICorner")
@@ -2846,11 +2586,9 @@ Mini.MouseEnter:Connect(function()
     PlayHoverSound()
     Tween(Mini,{Size = UDim2.fromOffset(55 * Config.Customization.UIScale, 55 * Config.Customization.UIScale)})
 end)
-
 Mini.MouseLeave:Connect(function()
     Tween(Mini,{Size = UDim2.fromOffset(50 * Config.Customization.UIScale, 50 * Config.Customization.UIScale)})
 end)
-
 Mini.MouseButton1Click:Connect(function()
     PlayClickSound()
     Mini.Visible = false
@@ -2865,10 +2603,7 @@ Mini.MouseButton1Click:Connect(function()
     end)
 end)
 
-------------------------------------------------------------
 -- FPS / HUD
-------------------------------------------------------------
-
 local Frames = 0
 local Elapsed = 0
 local FPS = 60
@@ -2894,8 +2629,8 @@ RunService.RenderStepped:Connect(function(DT)
         table.insert(Lines, "Ping: "..Ping.."ms")
         QuickPing.Text = "Ping: "..Ping.."ms"
     end
-    if Config.HUD.Players then 
-        table.insert(Lines, "Players: "..#Players:GetPlayers()) 
+    if Config.HUD.Players then
+        table.insert(Lines, "Players: "..#Players:GetPlayers())
         QuickPlayers.Text = "Players: "..#Players:GetPlayers()
     end
     if Config.HUD.XYZ then
@@ -2920,11 +2655,8 @@ RunService.RenderStepped:Connect(function(DT)
         table.insert(Lines, string.format("Session: %02d:%02d:%02d", Hours, Minutes, Seconds))
         QuickSession.Text = string.format("Session: %02d:%02d", Minutes, Seconds)
     end
-    
     QuickFPS.Text = "FPS: "..FPS
-    
     HUDText.Text = table.concat(Lines, "\n")
-    
     local numLines = #Lines
     if numLines > 0 then
         local textHeight = numLines * 14
@@ -2935,10 +2667,7 @@ RunService.RenderStepped:Connect(function(DT)
     end
 end)
 
-------------------------------------------------------------
 -- PLAYER EVENTS
-------------------------------------------------------------
-
 local function SetupPlayer(Player)
     if Player == LocalPlayer then return end
     Player.CharacterAdded:Connect(function()
@@ -2962,20 +2691,15 @@ for _,Player in ipairs(Players:GetPlayers()) do
 end
 
 Players.PlayerAdded:Connect(SetupPlayer)
-
 Players.PlayerRemoving:Connect(function(Player)
     RemoveESP(Player)
     RemoveSkeleton(Player)
 end)
 
-------------------------------------------------------------
 -- LOCAL CHARACTER
-------------------------------------------------------------
-
 LocalPlayer.CharacterAdded:Connect(function()
     task.wait(.5)
     Camera = workspace.CurrentCamera
-    
     local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
     if Humanoid then
         if Config.Player.SpeedHack then
@@ -2986,7 +2710,6 @@ LocalPlayer.CharacterAdded:Connect(function()
         end
         Humanoid.CameraDistance = Config.World.CameraZoom
     end
-    
     if Config.Player.NoClip then
         for _,Part in ipairs(LocalPlayer.Character:GetDescendants()) do
             if Part:IsA("BasePart") then
@@ -2994,18 +2717,13 @@ LocalPlayer.CharacterAdded:Connect(function()
             end
         end
     end
-    
     if Config.World.LowGravity then
         workspace.Gravity = Config.World.GravityValue
     end
-    
     Camera.FieldOfView = Config.World.FOV
 end)
 
-------------------------------------------------------------
--- TELA DE CARREGAMENTO (AGORA DEPOIS DO MAIN)
-------------------------------------------------------------
-
+-- TELA DE CARREGAMENTO (DEPOIS DE TUDO)
 local LoadingScreen = Instance.new("Frame")
 LoadingScreen.Name = "LoadingScreen"
 LoadingScreen.Size = UDim2.fromScale(1,1)
@@ -3024,11 +2742,9 @@ for i = 1, 15 do
     Particle.BorderSizePixel = 0
     Particle.ZIndex = 1002
     Particle.Parent = LoadingScreen
-    
     local ParticleCorner = Instance.new("UICorner")
     ParticleCorner.CornerRadius = UDim.new(1,0)
     ParticleCorner.Parent = Particle
-    
     table.insert(Particles, Particle)
 end
 
@@ -3134,7 +2850,6 @@ task.spawn(function()
             end
         end)
     end
-    
     task.spawn(function()
         while LoadingScreen.Parent do
             pcall(function()
@@ -3147,20 +2862,15 @@ task.spawn(function()
             task.wait(0.5)
         end
     end)
-    
     local Statuses = {"Carregando...", "Inicializando...", "Configurando...", "Quase pronto..."}
     for i = 1, 4 do
         LoadingStatus.Text = Statuses[i]
         task.wait(0.6)
     end
-    
     Tween(LoadingBarFill, {Size = UDim2.new(1,0,1,0)}, TweenInfo.new(2.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out))
-    
     task.wait(3)
-    
     Tween(LoadingScreen, {BackgroundTransparency = 1}, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out))
-    
-    -- Revelar o Main (agora Main existe)
+    -- Revelar Main
     Main.BackgroundTransparency = 1
     Main.Visible = true
     Main.Size = UDim2.fromOffset(0, 0)
@@ -3173,14 +2883,10 @@ task.spawn(function()
     task.wait(0.5)
     Main.Position = UDim2.new(0.5, -210 * Config.Customization.UIScale, 0.5, -185 * Config.Customization.UIScale)
     Main.AnchorPoint = Vector2.new(0, 0)
-    
     LoadingScreen:Destroy()
 end)
 
-------------------------------------------------------------
 -- INITIALIZATION
-------------------------------------------------------------
-
 UpdateFov()
 UpdateHUDAppearance()
 RefreshESP()
