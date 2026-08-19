@@ -125,7 +125,6 @@ local TweenFast = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirectio
 local TweenSmooth = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
 local TweenBounce = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local TweenSpring = TweenInfo.new(0.5, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out)
-local TweenLoadBar = TweenInfo.new(2.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 local function Tween(Object, Properties, Info)
     if not Object or not Object.Parent then return end
@@ -181,15 +180,7 @@ LoadingScreen.BorderSizePixel = 0
 LoadingScreen.ZIndex = 1000
 LoadingScreen.Parent = Gui
 
--- Overlay com gradiente
-local LoadingOverlay = Instance.new("Frame")
-LoadingOverlay.Size = UDim2.fromScale(1,1)
-LoadingOverlay.BackgroundColor3 = Color3.fromRGB(15,15,22)
-LoadingOverlay.BorderSizePixel = 0
-LoadingOverlay.ZIndex = 1001
-LoadingOverlay.Parent = LoadingScreen
-
--- Efeito de partículas (círculos decorativos)
+-- Partículas decorativas
 local Particles = {}
 for i = 1, 15 do
     local Particle = Instance.new("Frame")
@@ -224,7 +215,6 @@ local LoadingLogoCorner = Instance.new("UICorner")
 LoadingLogoCorner.CornerRadius = UDim.new(0,20)
 LoadingLogoCorner.Parent = LoadingLogo
 
--- Glow no logo
 local LoadingLogoGlow = Instance.new("UIStroke")
 LoadingLogoGlow.Color = Accent()
 LoadingLogoGlow.Thickness = 4
@@ -281,7 +271,6 @@ local LoadingBarFillCorner = Instance.new("UICorner")
 LoadingBarFillCorner.CornerRadius = UDim.new(1,0)
 LoadingBarFillCorner.Parent = LoadingBarFill
 
--- Glow na barra
 local LoadingBarGlow = Instance.new("UIStroke")
 LoadingBarGlow.Color = Accent()
 LoadingBarGlow.Thickness = 2
@@ -304,7 +293,7 @@ LoadingStatus.Parent = LoadingScreen
 -- Animação da tela de carregamento
 task.spawn(function()
     -- Animar partículas
-    for i, Particle in ipairs(Particles) do
+    for _, Particle in ipairs(Particles) do
         task.spawn(function()
             while LoadingScreen.Parent do
                 local newX = math.random()
@@ -339,16 +328,15 @@ task.spawn(function()
     end
     
     -- Animar barra de progresso
-    Tween(LoadingBarFill, {Size = UDim2.new(1,0,1,0)}, TweenLoadBar)
+    Tween(LoadingBarFill, {Size = UDim2.new(1,0,1,0)}, TweenInfo.new(2.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out))
     
     -- Esperar 3 segundos
     task.wait(3)
     
-    -- Fade out da tela de carregamento
+    -- Fade out
     Tween(LoadingScreen, {BackgroundTransparency = 1}, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out))
     task.wait(0.5)
     
-    -- Destruir tela de carregamento
     LoadingScreen:Destroy()
 end)
 
@@ -571,6 +559,11 @@ Close.MouseEnter:Connect(function()
 end)
 Close.MouseLeave:Connect(function()
     Tween(Close,{BackgroundColor3 = Color3.fromRGB(30,31,39), TextColor3 = Color3.fromRGB(180,180,190)})
+end)
+
+Minimize.MouseButton1Click:Connect(function()
+    PlayClickSound()
+    MinimizeHub()
 end)
 
 ------------------------------------------------------------
@@ -942,8 +935,7 @@ local function Toggle(Parent, Title, Description, Initial, Callback)
 
     local Stroke = Instance.new("UIStroke")
     Stroke.Color = Color3.fromRGB(40,42,52)
-    Stroke.Thickness = 1
-    Stroke.Transparency = 0.5
+    Stroke.Thickness = 1    Stroke.Transparency = 0.5
     Stroke.Parent = Row
 
     local Name = Instance.new("TextLabel")
