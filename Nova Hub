@@ -445,6 +445,137 @@ InfoButton.MouseButton1Click:Connect(function()
 end)
 
 -- Botões de minimizar e fechar
+
+------------------------------------------------------------
+-- INFO / UPDATES
+------------------------------------------------------------
+
+local InfoButton = Instance.new("TextButton")
+InfoButton.Name = "InfoButton"
+InfoButton.Size = UDim2.fromOffset(28,28)
+InfoButton.Position = UDim2.new(1,-97,0,9)
+InfoButton.BackgroundColor3 = Color3.fromRGB(29,30,38)
+InfoButton.Text = "i"
+InfoButton.TextColor3 = Color3.fromRGB(180,180,190)
+InfoButton.TextSize = 13
+InfoButton.Font = Enum.Font.GothamBold
+InfoButton.AutoButtonColor = false
+InfoButton.Parent = Header
+Instance.new("UICorner",InfoButton).CornerRadius = UDim.new(0,7)
+
+local UpdatesOverlay = Instance.new("Frame")
+UpdatesOverlay.Name = "UpdatesOverlay"
+UpdatesOverlay.Size = UDim2.fromOffset(310,245)
+UpdatesOverlay.Position = UDim2.new(.5,-155,.5,-122)
+UpdatesOverlay.BackgroundColor3 = Color3.fromRGB(20,21,27)
+UpdatesOverlay.BorderSizePixel = 0
+UpdatesOverlay.Visible = false
+UpdatesOverlay.ZIndex = 900
+UpdatesOverlay.Parent = Gui
+Instance.new("UICorner",UpdatesOverlay).CornerRadius = UDim.new(0,12)
+
+local UpdatesStroke = Instance.new("UIStroke")
+UpdatesStroke.Color = Accent()
+UpdatesStroke.Thickness = 1
+UpdatesStroke.Parent = UpdatesOverlay
+
+local UpdatesTitle = Instance.new("TextLabel")
+UpdatesTitle.Size = UDim2.new(1,-50,0,34)
+UpdatesTitle.Position = UDim2.fromOffset(15,10)
+UpdatesTitle.BackgroundTransparency = 1
+UpdatesTitle.Text = "NOVA HUB • ATUALIZAÇÕES"
+UpdatesTitle.TextColor3 = Color3.new(1,1,1)
+UpdatesTitle.TextSize = 12
+UpdatesTitle.Font = Enum.Font.GothamBold
+UpdatesTitle.TextXAlignment = Enum.TextXAlignment.Left
+UpdatesTitle.ZIndex = 901
+UpdatesTitle.Parent = UpdatesOverlay
+
+local UpdatesClose = Instance.new("TextButton")
+UpdatesClose.Size = UDim2.fromOffset(28,28)
+UpdatesClose.Position = UDim2.new(1,-38,0,10)
+UpdatesClose.BackgroundColor3 = Color3.fromRGB(29,30,38)
+UpdatesClose.Text = "×"
+UpdatesClose.TextColor3 = Color3.fromRGB(180,180,190)
+UpdatesClose.TextSize = 16
+UpdatesClose.Font = Enum.Font.GothamBold
+UpdatesClose.AutoButtonColor = false
+UpdatesClose.ZIndex = 902
+UpdatesClose.Parent = UpdatesOverlay
+Instance.new("UICorner",UpdatesClose).CornerRadius = UDim.new(0,7)
+
+local UpdatesScroll = Instance.new("ScrollingFrame")
+UpdatesScroll.Size = UDim2.new(1,-28,1,-58)
+UpdatesScroll.Position = UDim2.fromOffset(14,50)
+UpdatesScroll.BackgroundTransparency = 1
+UpdatesScroll.BorderSizePixel = 0
+UpdatesScroll.ScrollBarThickness = 2
+UpdatesScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+UpdatesScroll.CanvasSize = UDim2.new()
+UpdatesScroll.ZIndex = 901
+UpdatesScroll.Parent = UpdatesOverlay
+
+local UpdatesLayout = Instance.new("UIListLayout")
+UpdatesLayout.Padding = UDim.new(0,7)
+UpdatesLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UpdatesLayout.Parent = UpdatesScroll
+
+local function AddUpdate(Title,Description)
+    local Row = Instance.new("Frame")
+    Row.Size = UDim2.new(1,0,0,48)
+    Row.BackgroundColor3 = Color3.fromRGB(27,29,37)
+    Row.BorderSizePixel = 0
+    Row.ZIndex = 901
+    Row.Parent = UpdatesScroll
+    Instance.new("UICorner",Row).CornerRadius = UDim.new(0,8)
+
+    local T = Instance.new("TextLabel")
+    T.Size = UDim2.new(1,-16,0,17)
+    T.Position = UDim2.fromOffset(8,5)
+    T.BackgroundTransparency = 1
+    T.Text = Title
+    T.TextColor3 = Accent()
+    T.TextSize = 9
+    T.Font = Enum.Font.GothamBold
+    T.TextXAlignment = Enum.TextXAlignment.Left
+    T.ZIndex = 902
+    T.Parent = Row
+
+    local D = Instance.new("TextLabel")
+    D.Size = UDim2.new(1,-16,0,22)
+    D.Position = UDim2.fromOffset(8,22)
+    D.BackgroundTransparency = 1
+    D.Text = Description
+    D.TextColor3 = Color3.fromRGB(175,178,188)
+    D.TextSize = 7
+    D.Font = Enum.Font.GothamMedium
+    D.TextWrapped = true
+    D.TextXAlignment = Enum.TextXAlignment.Left
+    D.ZIndex = 902
+    D.Parent = Row
+end
+
+AddUpdate("ESP INSTANTÂNEO", "ESP detecta players já existentes e novos players imediatamente.")
+AddUpdate("ESP NO REVIVE", "ESP é recriado automaticamente quando o player morre e revive.")
+AddUpdate("R6 / R15", "Skeleton ESP continua compatível com os dois tipos de personagem.")
+AddUpdate("INTERFACE", "Guia de atualizações adicionada ao header do Nova Hub.")
+
+local function SetUpdatesVisible(Value)
+    UpdatesOverlay.Visible = Value
+    if Value then
+        UpdatesStroke.Color = Accent()
+        UpdatesScroll.CanvasPosition = Vector2.zero
+    end
+end
+
+InfoButton.MouseButton1Click:Connect(function()
+    SetUpdatesVisible(not UpdatesOverlay.Visible)
+end)
+
+UpdatesClose.MouseButton1Click:Connect(function()
+    SetUpdatesVisible(false)
+end)
+
 local DragButton = Instance.new("TextButton")
 DragButton.Size = UDim2.new(1,-70,1,0)
 DragButton.BackgroundTransparency = 1
@@ -3015,6 +3146,9 @@ local function SetupPlayer(Player)
     PlayerConnections[Player] = Connections
 
     table.insert(Connections, Player.CharacterAdded:Connect(function(Character)
+        -- O personagem antigo pode ter sido destruído, então limpamos apenas
+        -- os objetos ligados ao personagem anterior e iniciamos uma nova
+        -- tentativa para ESTE personagem. Não dependemos de resetar o ESP.
         RemoveESP(Player)
         RemoveSkeleton(Player)
 
@@ -3022,13 +3156,47 @@ local function SetupPlayer(Player)
             return
         end
 
-        -- Novo personagem: tenta imediatamente e acompanha o carregamento.
-        StartESPRegistration(Player, Character, ESPRefreshToken)
+        task.spawn(function()
+            local Started = os.clock()
+
+            -- O Roblox pode criar Character primeiro e adicionar Humanoid,
+            -- RootPart e Head alguns instantes depois. Acompanhamos esse
+            -- carregamento sem bloquear os outros players.
+            while Config.Visual.ESP
+                and Player.Parent
+                and Player.Character == Character
+                and Character.Parent
+                and os.clock() - Started < 15 do
+
+                if GetESPCharacter(Player) then
+                    CreateESP(Player)
+
+                    -- Garante que o ESP criado pertence ao personagem novo.
+                    if ESPData[Player] then
+                        ESPData[Player].Character = Character
+                    end
+
+                    return
+                end
+
+                task.wait(0.05)
+            end
+        end)
     end))
 
-    table.insert(Connections, Player.CharacterRemoving:Connect(function()
-        RemoveESP(Player)
-        RemoveSkeleton(Player)
+    table.insert(Connections, Player.CharacterRemoving:Connect(function(Character)
+        -- Só remove o ESP se ele ainda estiver apontando para o personagem
+        -- que está sendo removido. O CharacterAdded logo em seguida recria
+        -- tudo para o personagem novo.
+        local Data = ESPData[Player]
+        if not Data or Data.Character == Character then
+            RemoveESP(Player)
+        end
+
+        local Skeleton = Skeletons[Player]
+        if not Skeleton or Skeleton.Character == Character then
+            RemoveSkeleton(Player)
+        end
     end))
 
     table.insert(Connections, Player:GetPropertyChangedSignal("Team"):Connect(function()
