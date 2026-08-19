@@ -3,6 +3,7 @@
     LocalScript
     StarterPlayer > StarterPlayerScripts
     ESP com retry imediato (sem precisar morrer)
+    Botão INFO adicionado
 ]]
 
 -- Services
@@ -156,6 +157,21 @@ local function PlayHoverSound()
     end
 end
 
+-- PopupLayer (movido para cima para ser usado no Header)
+local PopupLayer = Instance.new("Frame")
+PopupLayer.Size = UDim2.fromScale(1,1)
+PopupLayer.BackgroundTransparency = 1
+PopupLayer.ZIndex = 500
+PopupLayer.Parent = Gui
+
+local ActivePopup
+local function ClosePopup()
+    if ActivePopup then
+        ActivePopup:Destroy()
+        ActivePopup = nil
+    end
+end
+
 -- Main (criado primeiro)
 local Main = Instance.new("Frame")
 Main.Name = "Main"
@@ -265,6 +281,7 @@ HeaderSub.Font = Enum.Font.GothamMedium
 HeaderSub.TextXAlignment = Enum.TextXAlignment.Left
 HeaderSub.Parent = Header
 
+-- Indicador BYPASS
 local BypassContainer = Instance.new("Frame")
 BypassContainer.Size = UDim2.fromOffset(55,16)
 BypassContainer.Position = UDim2.new(1,-135,0,17)
@@ -299,6 +316,133 @@ BypassLabel.Font = Enum.Font.GothamBold
 BypassLabel.TextXAlignment = Enum.TextXAlignment.Left
 BypassLabel.Parent = BypassContainer
 
+-- Botão INFO
+local InfoButton = Instance.new("TextButton")
+InfoButton.Size = UDim2.fromOffset(40,16)
+InfoButton.Position = UDim2.new(1,-180,0,17)
+InfoButton.BackgroundColor3 = Color3.fromRGB(30,31,39)
+InfoButton.Text = "INFO"
+InfoButton.TextColor3 = Color3.fromRGB(180,180,190)
+InfoButton.TextSize = 6
+InfoButton.Font = Enum.Font.GothamBold
+InfoButton.AutoButtonColor = false
+InfoButton.Parent = Header
+
+Instance.new("UICorner", InfoButton).CornerRadius = UDim.new(0, 5)
+
+InfoButton.MouseEnter:Connect(function()
+    PlayHoverSound()
+    Tween(InfoButton, { BackgroundColor3 = HoverColor(), TextColor3 = Color3.new(1,1,1) })
+end)
+InfoButton.MouseLeave:Connect(function()
+    Tween(InfoButton, { BackgroundColor3 = Color3.fromRGB(30,31,39), TextColor3 = Color3.fromRGB(180,180,190) })
+end)
+
+InfoButton.MouseButton1Click:Connect(function()
+    PlayClickSound()
+    ClosePopup()
+
+    local Overlay = Instance.new("Frame")
+    Overlay.Size = UDim2.fromScale(1,1)
+    Overlay.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    Overlay.BackgroundTransparency = 0.5
+    Overlay.ZIndex = 998
+    Overlay.Parent = PopupLayer
+
+    local InfoPopup = Instance.new("Frame")
+    InfoPopup.Size = UDim2.fromOffset(280, 200)
+    InfoPopup.Position = UDim2.new(0.5, -140, 0.5, -100)
+    InfoPopup.BackgroundColor3 = Color3.fromRGB(28,30,38)
+    InfoPopup.BorderSizePixel = 0
+    InfoPopup.ZIndex = 999
+    InfoPopup.Parent = PopupLayer
+    ActivePopup = InfoPopup
+
+    local PopupCorner = Instance.new("UICorner")
+    PopupCorner.CornerRadius = UDim.new(0,12)
+    PopupCorner.Parent = InfoPopup
+
+    local PopupStroke = Instance.new("UIStroke")
+    PopupStroke.Color = Accent()
+    PopupStroke.Thickness = 2
+    PopupStroke.Parent = InfoPopup
+
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(1,-40,0,25)
+    Title.Position = UDim2.fromOffset(20,8)
+    Title.BackgroundTransparency = 1
+    Title.Text = "📌 Atualizações e Correções"
+    Title.TextColor3 = Color3.new(1,1,1)
+    Title.TextSize = 12
+    Title.Font = Enum.Font.GothamBold
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.ZIndex = 1000
+    Title.Parent = InfoPopup
+
+    local CloseInfoBtn = Instance.new("TextButton")
+    CloseInfoBtn.Size = UDim2.fromOffset(25,25)
+    CloseInfoBtn.Position = UDim2.new(1,-30,0,5)
+    CloseInfoBtn.BackgroundColor3 = Color3.fromRGB(40,42,52)
+    CloseInfoBtn.Text = "×"
+    CloseInfoBtn.TextColor3 = Color3.fromRGB(200,200,210)
+    CloseInfoBtn.TextSize = 14
+    CloseInfoBtn.Font = Enum.Font.GothamBold
+    CloseInfoBtn.AutoButtonColor = false
+    CloseInfoBtn.ZIndex = 1000
+    CloseInfoBtn.Parent = InfoPopup
+
+    Instance.new("UICorner", CloseInfoBtn).CornerRadius = UDim.new(0,7)
+
+    CloseInfoBtn.MouseEnter:Connect(function()
+        Tween(CloseInfoBtn, { BackgroundColor3 = Color3.fromRGB(200,60,60), TextColor3 = Color3.new(1,1,1) })
+    end)
+    CloseInfoBtn.MouseLeave:Connect(function()
+        Tween(CloseInfoBtn, { BackgroundColor3 = Color3.fromRGB(40,42,52), TextColor3 = Color3.fromRGB(200,200,210) })
+    end)
+    CloseInfoBtn.MouseButton1Click:Connect(function()
+        PlayClickSound()
+        ClosePopup()
+        Overlay:Destroy()
+    end)
+
+    local Line = Instance.new("Frame")
+    Line.Size = UDim2.new(1,-30,0,2)
+    Line.Position = UDim2.fromOffset(15,35)
+    Line.BackgroundColor3 = Accent()
+    Line.BorderSizePixel = 0
+    Line.ZIndex = 1000
+    Line.Parent = InfoPopup
+
+    Instance.new("UICorner", Line).CornerRadius = UDim.new(1,0)
+
+    local InfoText = Instance.new("TextLabel")
+    InfoText.Size = UDim2.new(1,-30,0,140)
+    InfoText.Position = UDim2.fromOffset(15,45)
+    InfoText.BackgroundTransparency = 1
+    InfoText.Text = [[
+• ESP com retry imediato (sem precisar morrer)
+• Tela de carregamento sincronizada
+• Botão de fechar com confirmação
+• HUD sem espaços em branco
+• Abas horizontais (Aim, Visual, Player, World, Custom, HUD, Settings)
+• UI Scale escalona todos os elementos
+• Som de clique com ativação/desativação
+• Perfil do usuário e QuickInfo
+• World: Full Bright, Gravity, Jump Power, etc.
+• Player: Speed, Fly, NoClip, Jump
+• Skeleton ESP corrigido
+]]
+    InfoText.TextColor3 = Color3.fromRGB(200,202,210)
+    InfoText.TextSize = 8
+    InfoText.Font = Enum.Font.GothamMedium
+    InfoText.TextXAlignment = Enum.TextXAlignment.Left
+    InfoText.TextYAlignment = Enum.TextYAlignment.Top
+    InfoText.TextWrapped = true
+    InfoText.ZIndex = 1000
+    InfoText.Parent = InfoPopup
+end)
+
+-- Botões de minimizar e fechar
 local DragButton = Instance.new("TextButton")
 DragButton.Size = UDim2.new(1,-70,1,0)
 DragButton.BackgroundTransparency = 1
@@ -348,7 +492,7 @@ Minimize.MouseButton1Click:Connect(function()
     MinimizeHub()
 end)
 
--- Tab Bar
+-- TAB BAR
 local TabBar = Instance.new("Frame")
 TabBar.Size = UDim2.new(1,-20,0,35)
 TabBar.Position = UDim2.fromOffset(10,55)
@@ -594,21 +738,6 @@ local Layout = Instance.new("UIListLayout")
 Layout.Padding = UDim.new(0,6)
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 Layout.Parent = Scroll
-
--- Popups
-local PopupLayer = Instance.new("Frame")
-PopupLayer.Size = UDim2.fromScale(1,1)
-PopupLayer.BackgroundTransparency = 1
-PopupLayer.ZIndex = 500
-PopupLayer.Parent = Gui
-
-local ActivePopup
-local function ClosePopup()
-    if ActivePopup then
-        ActivePopup:Destroy()
-        ActivePopup = nil
-    end
-end
 
 -- FOV
 local FovGui = Instance.new("ScreenGui")
@@ -1600,7 +1729,7 @@ table.insert(VisualRows, Slider(Scroll, "ESP Text Size", 8, 16, Config.Visual.Te
     RefreshESP()
 end, function(v) return string.format("%d",v) end))
 
--- ESP (Lógica da versão antiga + retry)
+-- ESP (com retry imediato)
 local ESPData = {}
 local Skeletons = {}
 
@@ -1722,7 +1851,6 @@ local function CreateESP(Player)
     local Character = Player.Character
     if not Character then return false end
 
-    -- Usar FindFirstChild como na versão antiga
     local Root = Character:FindFirstChild("HumanoidRootPart")
     local Head = Character:FindFirstChild("Head")
     local Humanoid = Character:FindFirstChildOfClass("Humanoid")
@@ -1783,8 +1911,7 @@ local function CreateESP(Player)
 
     if Config.Visual.Skeleton then
         if not CreateSkeleton(Player) then
-            -- Se skeleton falhar, remover Data parcial? mas manter Data para outras coisas
-            -- Não faz nada, o retry tentará de novo
+            -- Skeleton falhou, mas ESP principal já foi criado
         end
     end
 
@@ -1812,11 +1939,9 @@ local function RefreshESP()
     end
     if not Config.Visual.ESP then return end
 
-    -- Criar ESP imediatamente, e agendar retry para quem falhar
     for _,Player in ipairs(Players:GetPlayers()) do
         if Player ~= LocalPlayer then
             if not CreateESP(Player) then
-                -- Se falhar, tenta novamente em 0.3s (máx 5 tentativas)
                 task.spawn(function()
                     for attempt = 1, 5 do
                         task.wait(0.3)
@@ -1833,7 +1958,7 @@ local function RefreshESP()
     end
 end
 
--- TARGET (AIM ASSIST) - mantido igual
+-- TARGET (AIM ASSIST)
 local function IsValidTarget(Player)
     if Player == LocalPlayer then return false end
     if Config.Aim.TeamCheck and LocalPlayer.Team and Player.Team == LocalPlayer.Team then return false end
@@ -1947,7 +2072,7 @@ RunService:BindToRenderStep("NovaAim", Enum.RenderPriority.Camera.Value+1, funct
     Camera.CFrame = Camera.CFrame:Lerp(Desired, Config.Aim.Smoothness)
 end)
 
--- ESP RENDER (mantido)
+-- ESP RENDER
 RunService.RenderStepped:Connect(function()
     Camera = workspace.CurrentCamera
     if not Camera then return end
@@ -2099,7 +2224,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- HUD (mantido)
+-- HUD
 local HUDFrame = Instance.new("Frame")
 HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, 50)
 HUDFrame.Position = Config.HUD.Position
@@ -2691,7 +2816,6 @@ local function SetupPlayer(Player)
     Player.CharacterAdded:Connect(function()
         task.wait(.3)
         if Config.Visual.ESP then
-            -- Usar retry também no respawn
             if not CreateESP(Player) then
                 task.spawn(function()
                     for attempt = 1, 5 do
@@ -2709,7 +2833,7 @@ local function SetupPlayer(Player)
     end)
     Player.CharacterRemoving:Connect(function()
         RemoveSkeleton(Player)
-        RemoveESP(Player) -- remover ESP ao remover personagem? talvez não, mas para limpar
+        RemoveESP(Player)
     end)
     Player:GetPropertyChangedSignal("Team"):Connect(function()
         if Config.Visual.ESP then
