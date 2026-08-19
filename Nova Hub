@@ -514,9 +514,13 @@ Close.MouseLeave:Connect(function()
     Tween(Close,{BackgroundColor3 = Color3.fromRGB(30,31,39), TextColor3 = Color3.fromRGB(180,180,190)})
 end)
 
+-- Declaração antecipada para evitar nil
+local MinimizeHub
+local CloseAll
+
 Minimize.MouseButton1Click:Connect(function()
     PlayClickSound()
-    MinimizeHub()
+    if MinimizeHub then MinimizeHub() end
 end)
 
 -- TAB BAR
@@ -1597,7 +1601,7 @@ AddWorld(Slider(Scroll, "Camera Zoom", 5, 30, Config.World.CameraZoom, function(
     if Character then
         local Humanoid = Character:FindFirstChildOfClass("Humanoid")
         if Humanoid then
-            Humanoid.CameraDistance = v
+            Humanoid.CameraMaxZoomDistance = v  -- CORRIGIDO
         end
     end
 end, function(v) return string.format("%.0f",v) end))
@@ -1726,6 +1730,10 @@ end
 local function RemoveESP(Player)
     local Data = ESPData[Player]
     if not Data then return end
+    -- Desativa Highlight antes de destruir (evita ESP deslocado após morte)
+    if Data.Highlight then
+        Data.Highlight.Enabled = false
+    end
     for _,Object in pairs(Data) do
         if typeof(Object) == "Instance" then
             Object:Destroy()
@@ -1844,6 +1852,7 @@ local function CreateESP(Player)
     local Humanoid = Character:FindFirstChildOfClass("Humanoid")
 
     if not Root or not Head or not Humanoid then return false end
+    if Humanoid.Health <= 0 then return false end  -- não criar ESP para mortos
 
     local Data = {}
     ESPData[Player] = Data
@@ -2186,6 +2195,8 @@ RunService.RenderStepped:Connect(function()
         if not Character or not Root or not Head or not Humanoid or Humanoid.Health <= 0 then
             if Data.Box then Data.Box.Visible = false end
             if Data.Tracer then Data.Tracer.Visible = false end
+            if Data.Highlight then Data.Highlight.Enabled = false end      -- corrigido
+            if Data.Billboard then Data.Billboard.Enabled = false end     -- corrigido
             continue
         end
         local MyCharacter = LocalPlayer.Character
@@ -2197,8 +2208,13 @@ RunService.RenderStepped:Connect(function()
         if Distance > Config.Visual.MaxDistance then
             if Data.Box then Data.Box.Visible = false end
             if Data.Tracer then Data.Tracer.Visible = false end
+            if Data.Highlight then Data.Highlight.Enabled = false end      -- esconder se longe
+            if Data.Billboard then Data.Billboard.Enabled = false end
             continue
         end
+        -- Reativar Highlight quando válido
+        if Data.Highlight then Data.Highlight.Enabled = true end
+
         if Data.InfoText then
             local Lines = {}
             if Config.Visual.Name then table.insert(Lines, Player.DisplayName) end
@@ -2561,7 +2577,8 @@ MiniGlow.Thickness = 2
 MiniGlow.Transparency = 0.5
 MiniGlow.Parent = Mini
 
-local function MinimizeHub()
+-- Definir MinimizeHub (agora global)
+function MinimizeHub()
     ClosePopup()
     MainDragging = false
     HUDDragging = false
@@ -2576,12 +2593,8 @@ local function MinimizeHub()
     Main.AnchorPoint = Vector2.new(0, 0)
 end
 
-Minimize.MouseButton1Click:Connect(function()
-    PlayClickSound()
-    MinimizeHub()
-end)
-
-local function CloseAll()
+-- Definir CloseAll (agora global)
+function CloseAll()
     Config.Aim.Enabled = false
     Config.Aim.FOVEnabled = false
     Config.Visual.ESP = false
@@ -2625,7 +2638,7 @@ local function CloseAll()
             if Humanoid then
                 Humanoid.JumpPower = 50
                 Humanoid.WalkSpeed = 16
-                Humanoid.CameraDistance = 15
+                Humanoid.CameraMaxZoomDistance = 15  -- corrigido
             end
         end
     end)
@@ -2944,7 +2957,7 @@ LocalPlayer.CharacterAdded:Connect(function()
         if Config.World.JumpPowerEnabled then
             Humanoid.JumpPower = Config.World.JumpHeight
         end
-        Humanoid.CameraDistance = Config.World.CameraZoom
+        Humanoid.CameraMaxZoomDistance = Config.World.CameraZoom  -- corrigido
     end
     if Config.Player.NoClip then
         for _,Part in ipairs(LocalPlayer.Character:GetDescendants()) do
@@ -3134,15 +3147,10 @@ print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
 -- ============================================================
 -- NOVA HUB - REVISÃO FINAL ESTÁTICA
 -- ============================================================
--- Arquivo revisado: Nova_Hub_COMPLETO_CORRIGIDO_V2.txt
--- Linhas após correções: 3132
+-- Arquivo revisado: Nova_Hub_COMPLETO_CORRIGIDO_V3.txt
 -- Correções aplicadas:
--- 1. Página Visual movida para depois da declaração de RefreshESP.
--- 2. Limpeza centralizada do popup INFO + overlay.
--- 3. INFO agora toca o som de clique.
--- 4. Sistema de som usa SoundService, Ended + timeout de segurança.
--- 5. Skeleton é removido no CharacterRemoving.
--- 6. Skeleton antigo é removido antes de reconstruir o ESP no respawn.
--- 7. CreateESP recebeu validações defensivas.
--- 8. ESP continua com tentativa imediata + retry por Heartbeat.
+-- 1. CameraDistance -> CameraMaxZoomDistance (todas as ocorrências)
+-- 2. Declaração antecipada de MinimizeHub e CloseAll (evita nil)
+-- 3. ESP/Chams: destiva Highlight ao morrer, reativa ao vivo, e não cria ESP para mortos.
+-- 4. Remoção segura do Highlight antes de destruir.
 -- ============================================================
