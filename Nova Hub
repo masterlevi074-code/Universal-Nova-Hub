@@ -170,13 +170,6 @@ local function ClosePopup()
         ActivePopup:Destroy()
         ActivePopup = nil
     end
-
-    -- Remove any modal overlay left behind by Info/ColorPicker/Confirm dialogs.
-    for _,Child in ipairs(PopupLayer:GetChildren()) do
-        if Child:IsA("Frame") and Child.BackgroundColor3 == Color3.fromRGB(0,0,0) then
-            Child:Destroy()
-        end
-    end
 end
 
 -- Main (criado primeiro)
@@ -451,9 +444,7 @@ end)
 
 -- Botões de minimizar e fechar
 local DragButton = Instance.new("TextButton")
--- Keep the drag area to the left of INFO / minimize / close.
--- The previous width (-70) covered the INFO button and intercepted its clicks.
-DragButton.Size = UDim2.new(1,-190,1,0)
+DragButton.Size = UDim2.new(1,-70,1,0)
 DragButton.BackgroundTransparency = 1
 DragButton.Text = ""
 DragButton.Parent = Header
@@ -467,8 +458,6 @@ Minimize.TextColor3 = Color3.fromRGB(180,180,190)
 Minimize.TextSize = 12
 Minimize.Font = Enum.Font.GothamBold
 Minimize.Parent = Header
-
-local MinimizeHub
 
 local Close = Instance.new("TextButton")
 Close.Size = UDim2.fromOffset(30,30)
@@ -1581,8 +1570,7 @@ AddWorld(Slider(Scroll, "Camera Zoom", 5, 30, Config.World.CameraZoom, function(
     if Character then
         local Humanoid = Character:FindFirstChildOfClass("Humanoid")
         if Humanoid then
-            LocalPlayer.CameraMinZoomDistance = math.min(v, LocalPlayer.CameraMaxZoomDistance)
-            LocalPlayer.CameraMaxZoomDistance = math.max(v, LocalPlayer.CameraMinZoomDistance)
+            Humanoid.CameraDistance = v
         end
     end
 end, function(v) return string.format("%.0f",v) end))
@@ -1700,10 +1688,6 @@ AddCustom(Toggle(Scroll, "Animations", "Enable animations", Config.UI.Animations
 end))
 
 -- VISUAL PAGE
--- Forward declaration: the callbacks below can run after the UI is
--- created, while the real implementation is declared later in the ESP section.
-local RefreshESP
-
 local function VisualToggle(Title, Description, Key)
     local Row = Toggle(Scroll, Title, Description, Config.Visual[Key], function(v)
         Config.Visual[Key] = v
@@ -1857,74 +1841,24 @@ local function RemoveSkeleton(player)
     Skeletons[player] = nil
 end
 
--- Aguarda o novo Character terminar de montar. Isso evita o problema
--- em que CharacterAdded dispara antes de Head/HumanoidRootPart existirem.
-local ESPGeneration = {}
-local ESPConnections = {}
-
-local function BumpESPGeneration(Player)
-    local Next = (ESPGeneration[Player] or 0) + 1
-    ESPGeneration[Player] = Next
-    return Next
-end
-
-local function IsCurrentESPGeneration(Player, Generation, Character)
-    return Config.Visual.ESP
-        and Player.Parent == Players
-        and ESPGeneration[Player] == Generation
-        and Player.Character == Character
-end
-
-local function GetReadyCharacter(Player, Character, Timeout)
-    if not Player or not Character then return nil end
-
-    local Started = os.clock()
-    local Limit = Timeout or 8
-
-    while Character.Parent and Player.Character == Character and (os.clock() - Started) < Limit do
-        local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-        local Root = Character:FindFirstChild("HumanoidRootPart")
-        local Head = Character:FindFirstChild("Head")
-
-        if Humanoid and Root and Head then
-            return Character, Humanoid, Root, Head
-        end
-
-        task.wait(0.1)
-    end
-
-    return nil
-end
-
-local function CreateESP(Player, ExpectedCharacter, Generation)
-    if Player == LocalPlayer then return false end
-    if not Config.Visual.ESP then return false end
-
-    local Character = ExpectedCharacter or Player.Character
-    if not Character or Player.Character ~= Character then return false end
-
-    if Generation and not IsCurrentESPGeneration(Player, Generation, Character) then
-        return false
-    end
-
-    if IsTeammate(Player) then
-        RemoveESP(Player)
-        RemoveSkeleton(Player)
-        return false
-    end
-
-    local ReadyCharacter, Humanoid, Root, Head = GetReadyCharacter(Player, Character, 8)
-    if not ReadyCharacter then return false end
-    Character = ReadyCharacter
-
-    if Generation and not IsCurrentESPGeneration(Player, Generation, Character) then
-        return false
-    end
-
+local function CreateESP(Player)
+    if Player == LocalPlayer then return end
     RemoveESP(Player)
     RemoveSkeleton(Player)
+    if not Config.Visual.ESP then return end
+    if IsTeammate(Player) then return end
 
-    local Data = { Character = Character }
+    local Character = Player.Character
+    if not Character then return false end
+
+    local Root = Character:FindFirstChild("HumanoidRootPart")
+    local Head = Character:FindFirstChild("Head")
+    local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+
+    if not Root or not Head or not Humanoid then return false end
+
+    local Data = {}
+    Data.Character = Character
     ESPData[Player] = Data
 
     if Config.Visual.Highlight or Config.Visual.Chams then
@@ -1934,8 +1868,9 @@ local function CreateESP(Player, ExpectedCharacter, Generation)
         Highlight.FillColor = Config.Visual.Color
         Highlight.OutlineColor = Config.Visual.Color
         Highlight.FillTransparency = Config.Visual.Chams and .55 or 1
-        Highlight.OutlineTransparency = 0
+        Highlight.OutlineTransparency = Config.Visual.Highlight and 0 or 1
         Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        Highlight.Enabled = true
         Highlight.Parent = Character
         Data.Highlight = Highlight
     end
@@ -1948,7 +1883,6 @@ local function CreateESP(Player, ExpectedCharacter, Generation)
         Billboard.StudsOffset = Vector3.new(0,3,0)
         Billboard.AlwaysOnTop = true
         Billboard.Parent = Head
-
         local Text = Instance.new("TextLabel")
         Text.Size = UDim2.fromScale(1,1)
         Text.BackgroundTransparency = 1
@@ -1957,7 +1891,6 @@ local function CreateESP(Player, ExpectedCharacter, Generation)
         Text.TextSize = Config.Visual.TextSize
         Text.Font = Enum.Font.GothamBold
         Text.Parent = Billboard
-
         Data.Billboard = Billboard
         Data.InfoText = Text
     end
@@ -1970,18 +1903,18 @@ local function CreateESP(Player, ExpectedCharacter, Generation)
         Box.BorderSizePixel = 0
         Box.Visible = false
         Box.Parent = ESPGui
-
         local Stroke = Instance.new("UIStroke")
         Stroke.Color = Config.Visual.Color
         Stroke.Thickness = Config.Visual.BoxThickness
         Stroke.Parent = Box
-
         Data.Box = Box
         Data.BoxStroke = Stroke
     end
 
     if Config.Visual.Skeleton then
-        CreateSkeleton(Player)
+        if not CreateSkeleton(Player) then
+            -- Skeleton falhou, mas ESP principal já foi criado
+        end
     end
 
     if Config.Visual.Tracer then
@@ -1999,40 +1932,30 @@ local function CreateESP(Player, ExpectedCharacter, Generation)
     return true
 end
 
-local function ScheduleESP(Player, Character)
-    local Generation = BumpESPGeneration(Player)
-    RemoveESP(Player)
-    RemoveSkeleton(Player)
-
-    if not Config.Visual.ESP or not Character then
-        return
+local function RefreshESP()
+    for Player in pairs(ESPData) do
+        RemoveESP(Player)
     end
+    for Player in pairs(Skeletons) do
+        RemoveSkeleton(Player)
+    end
+    if not Config.Visual.ESP then return end
 
-    task.spawn(function()
-        CreateESP(Player, Character, Generation)
-    end)
-end
-
-RefreshESP = function()
-    for _, Player in ipairs(Players:GetPlayers()) do
+    for _,Player in ipairs(Players:GetPlayers()) do
         if Player ~= LocalPlayer then
-            local Character = Player.Character
-            if Character then
-                ScheduleESP(Player, Character)
-            else
-                BumpESPGeneration(Player)
-                RemoveESP(Player)
-                RemoveSkeleton(Player)
+            if not CreateESP(Player) then
+                task.spawn(function()
+                    for attempt = 1, 5 do
+                        task.wait(0.3)
+                        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChild("Head") and Player.Character:FindFirstChildOfClass("Humanoid") then
+                            if Config.Visual.ESP then
+                                CreateESP(Player)
+                            end
+                            break
+                        end
+                    end
+                end)
             end
-        end
-    end
-
-    if not Config.Visual.ESP then
-        for Player in pairs(ESPData) do
-            RemoveESP(Player)
-        end
-        for Player in pairs(Skeletons) do
-            RemoveSkeleton(Player)
         end
     end
 end
@@ -2260,6 +2183,8 @@ RunService.RenderStepped:Connect(function()
             Data.Highlight.FillColor = Config.Visual.Color
             Data.Highlight.OutlineColor = Config.Visual.Color
             Data.Highlight.FillTransparency = Config.Visual.Chams and .55 or 1
+            Data.Highlight.OutlineTransparency = Config.Visual.Highlight and 0 or 1
+            Data.Highlight.Enabled = Config.Visual.Highlight or Config.Visual.Chams
         end
         if Data.Box then
             local TopPoint = Camera:WorldToViewportPoint(Head.Position + Vector3.new(0,.5,0))
@@ -2335,26 +2260,14 @@ HUDText.Parent = HUDFrame
 local prevHUDSize = Config.HUD.Size
 
 local function UpdateHUDAppearance()
-    local NewSize = math.floor(Config.HUD.Size)
-    local OldSize = prevHUDSize or NewSize
-    local Delta = NewSize - OldSize
-
-    local Pos = HUDFrame.Position
-    HUDFrame.Position = UDim2.new(
-        Pos.X.Scale,
-        Pos.X.Offset - math.floor(Delta/2),
-        Pos.Y.Scale,
-        Pos.Y.Offset
-    )
-
-    HUDFrame.Size = UDim2.fromOffset(NewSize, HUDFrame.Size.Y.Offset)
+    local newSize = math.floor(Config.HUD.Size)
+    HUDFrame.Size = UDim2.fromOffset(newSize, HUDFrame.Size.Y.Offset)
     HUDFrame.BackgroundTransparency = Config.HUD.Transparency
     HUDStroke.Transparency = Config.HUD.Transparency
     HUDText.TextTransparency = Config.HUD.Transparency
-    HUDText.TextSize = math.clamp(math.floor(NewSize/13), 7, 32)
-
-    Config.HUD.Position = HUDFrame.Position
-    prevHUDSize = NewSize
+    local textSize = math.clamp(math.floor(newSize/13), 7, 32)
+    HUDText.TextSize = textSize
+    prevHUDSize = newSize
 end
 
 -- HUD DRAG
@@ -2552,13 +2465,13 @@ local function ShowSettings()
     SetActiveTab(SettingsTab)
 end
 
-AimTab.MouseButton1Click:Connect(ShowAim)
-VisualTab.MouseButton1Click:Connect(ShowVisual)
-PlayerTab.MouseButton1Click:Connect(ShowPlayer)
-WorldTab.MouseButton1Click:Connect(ShowWorld)
-CustomTab.MouseButton1Click:Connect(ShowCustom)
-HUDTab.MouseButton1Click:Connect(ShowHUD)
-SettingsTab.MouseButton1Click:Connect(ShowSettings)
+AimTab.MouseButton1Click:Connect(function() PlayClickSound() ShowAim() end)
+VisualTab.MouseButton1Click:Connect(function() PlayClickSound() ShowVisual() end)
+PlayerTab.MouseButton1Click:Connect(function() PlayClickSound() ShowPlayer() end)
+WorldTab.MouseButton1Click:Connect(function() PlayClickSound() ShowWorld() end)
+CustomTab.MouseButton1Click:Connect(function() PlayClickSound() ShowCustom() end)
+HUDTab.MouseButton1Click:Connect(function() PlayClickSound() ShowHUD() end)
+SettingsTab.MouseButton1Click:Connect(function() PlayClickSound() ShowSettings() end)
 
 -- MAIN DRAG
 local MainDragging = false
@@ -2621,7 +2534,7 @@ MiniGlow.Thickness = 2
 MiniGlow.Transparency = 0.5
 MiniGlow.Parent = Mini
 
-MinimizeHub = function()
+local function MinimizeHub()
     ClosePopup()
     MainDragging = false
     HUDDragging = false
@@ -2665,11 +2578,6 @@ local function CloseAll()
     Config.World.NoNeon = false
     
     pcall(function()
-        for _,Player in ipairs(Players:GetPlayers()) do
-            if Player ~= LocalPlayer then
-                BumpESPGeneration(Player)
-            end
-        end
         for Player in pairs(ESPData) do RemoveESP(Player) end
         for Player in pairs(Skeletons) do RemoveSkeleton(Player) end
     end)
@@ -2690,8 +2598,7 @@ local function CloseAll()
             if Humanoid then
                 Humanoid.JumpPower = 50
                 Humanoid.WalkSpeed = 16
-                LocalPlayer.CameraMinZoomDistance = 15
-                LocalPlayer.CameraMaxZoomDistance = 15
+                Humanoid.CameraDistance = 15
             end
         end
     end)
@@ -2908,47 +2815,35 @@ RunService.RenderStepped:Connect(function(DT)
 end)
 
 -- PLAYER EVENTS
-local function DisconnectPlayerConnections(Player)
-    local Connections = ESPConnections[Player]
-    if Connections then
-        for _,Connection in ipairs(Connections) do
-            pcall(function() Connection:Disconnect() end)
-        end
-    end
-    ESPConnections[Player] = nil
-end
-
 local function SetupPlayer(Player)
     if Player == LocalPlayer then return end
-
-    DisconnectPlayerConnections(Player)
-    ESPConnections[Player] = {}
-
-    table.insert(ESPConnections[Player], Player.CharacterAdded:Connect(function(Character)
-        ScheduleESP(Player, Character)
-    end))
-
-    table.insert(ESPConnections[Player], Player.CharacterRemoving:Connect(function(Character)
-        BumpESPGeneration(Player)
-        local Data = ESPData[Player]
-        if Data and Data.Character == Character then
-            RemoveESP(Player)
-        end
-        local Skeleton = Skeletons[Player]
-        if Skeleton and Skeleton.Character == Character then
-            RemoveSkeleton(Player)
-        end
-    end))
-
-    table.insert(ESPConnections[Player], Player:GetPropertyChangedSignal("Team"):Connect(function()
+    Player.CharacterAdded:Connect(function()
+        task.wait(.3)
         if Config.Visual.ESP then
-            ScheduleESP(Player, Player.Character)
+            if not CreateESP(Player) then
+                task.spawn(function()
+                    for attempt = 1, 5 do
+                        task.wait(0.3)
+                        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChild("Head") and Player.Character:FindFirstChildOfClass("Humanoid") then
+                            if Config.Visual.ESP then
+                                CreateESP(Player)
+                            end
+                            break
+                        end
+                    end
+                end)
+            end
         end
-    end))
-
-    if Config.Visual.ESP and Player.Character then
-        ScheduleESP(Player, Player.Character)
-    end
+    end)
+    Player.CharacterRemoving:Connect(function()
+        RemoveSkeleton(Player)
+        RemoveESP(Player)
+    end)
+    Player:GetPropertyChangedSignal("Team"):Connect(function()
+        if Config.Visual.ESP then
+            RefreshESP()
+        end
+    end)
 end
 
 for _,Player in ipairs(Players:GetPlayers()) do
@@ -2957,8 +2852,6 @@ end
 
 Players.PlayerAdded:Connect(SetupPlayer)
 Players.PlayerRemoving:Connect(function(Player)
-    BumpESPGeneration(Player)
-    DisconnectPlayerConnections(Player)
     RemoveESP(Player)
     RemoveSkeleton(Player)
 end)
@@ -2967,20 +2860,18 @@ end)
 LocalPlayer.CharacterAdded:Connect(function()
     task.wait(.5)
     Camera = workspace.CurrentCamera
-    local Character = LocalPlayer.Character
-    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-    if Character and Humanoid then
+    local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if Humanoid then
         if Config.Player.SpeedHack then
             Humanoid.WalkSpeed = 16 * Config.Player.SpeedMultiplier
         end
         if Config.World.JumpPowerEnabled then
             Humanoid.JumpPower = Config.World.JumpHeight
         end
-        LocalPlayer.CameraMinZoomDistance = math.min(Config.World.CameraZoom, LocalPlayer.CameraMaxZoomDistance)
-        LocalPlayer.CameraMaxZoomDistance = math.max(Config.World.CameraZoom, LocalPlayer.CameraMinZoomDistance)
+        Humanoid.CameraDistance = Config.World.CameraZoom
     end
     if Config.Player.NoClip then
-        for _,Part in ipairs(Character:GetDescendants()) do
+        for _,Part in ipairs(LocalPlayer.Character:GetDescendants()) do
             if Part:IsA("BasePart") then
                 Part.CanCollide = false
             end
