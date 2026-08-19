@@ -135,32 +135,43 @@ Gui.DisplayOrder = 100
 Gui.Parent = PlayerGui
 
 -- Sons
-local function PlayClickSound()
+local SoundService = game:GetService("SoundService")
+
+local CLICK_SOUND_ID = "rbxasset://sounds/electronicpingshort.wav"
+
+local function PlayUISound(volume)
     if not Config or not Config.UI or not Config.UI.SoundEffects then
         return
     end
-    if Config.UI.SoundEffects then
-        local Sound = Instance.new("Sound")
-        Sound.SoundId = "rbxassetid://12222203"
-        Sound.Volume = 0.3
-        Sound.Parent = Gui
-        Sound:Play()
-        task.delay(0.1, function() Sound:Destroy() end)
+
+    local Sound = Instance.new("Sound")
+    Sound.Name = "NovaUISound"
+    Sound.SoundId = CLICK_SOUND_ID
+    Sound.Volume = volume or 0.3
+    Sound.Parent = SoundService
+
+    local cleaned = false
+    local function Cleanup()
+        if cleaned then return end
+        cleaned = true
+        if Sound and Sound.Parent then
+            Sound:Destroy()
+        end
     end
+
+    Sound.Ended:Connect(Cleanup)
+    Sound:Play()
+
+    -- Failsafe if the asset cannot report Ended.
+    task.delay(2, Cleanup)
+end
+
+local function PlayClickSound()
+    PlayUISound(0.3)
 end
 
 local function PlayHoverSound()
-    if not Config or not Config.UI or not Config.UI.SoundEffects then
-        return
-    end
-    if Config.UI.SoundEffects then
-        local Sound = Instance.new("Sound")
-        Sound.SoundId = "rbxassetid://12222203"
-        Sound.Volume = 0.1
-        Sound.Parent = Gui
-        Sound:Play()
-        task.delay(0.1, function() Sound:Destroy() end)
-    end
+    PlayUISound(0.1)
 end
 
 -- PopupLayer (movido para cima para ser usado no Header)
@@ -171,10 +182,21 @@ PopupLayer.ZIndex = 500
 PopupLayer.Parent = Gui
 
 local ActivePopup
+local ActiveOverlay
+
 local function ClosePopup()
     if ActivePopup then
-        ActivePopup:Destroy()
+        pcall(function()
+            ActivePopup:Destroy()
+        end)
         ActivePopup = nil
+    end
+
+    if ActiveOverlay then
+        pcall(function()
+            ActiveOverlay:Destroy()
+        end)
+        ActiveOverlay = nil
     end
 end
 
@@ -344,6 +366,7 @@ InfoButton.MouseLeave:Connect(function()
 end)
 
 InfoButton.MouseButton1Click:Connect(function()
+    PlayClickSound()
     ClosePopup()
 
     local Overlay = Instance.new("Frame")
@@ -352,6 +375,7 @@ InfoButton.MouseButton1Click:Connect(function()
     Overlay.BackgroundTransparency = 0.5
     Overlay.ZIndex = 998
     Overlay.Parent = PopupLayer
+    ActiveOverlay = Overlay
 
     local InfoPopup = Instance.new("Frame")
     InfoPopup.Size = UDim2.fromOffset(280, 200)
@@ -406,7 +430,6 @@ InfoButton.MouseButton1Click:Connect(function()
     CloseInfoBtn.MouseButton1Click:Connect(function()
         PlayClickSound()
         ClosePopup()
-        Overlay:Destroy()
     end)
 
     local Line = Instance.new("Frame")
@@ -1691,47 +1714,6 @@ AddCustom(Toggle(Scroll, "Animations", "Enable animations", Config.UI.Animations
     Config.UI.Animations = v
 end))
 
--- VISUAL PAGE
-local function VisualToggle(Title, Description, Key)
-    local Row = Toggle(Scroll, Title, Description, Config.Visual[Key], function(v)
-        Config.Visual[Key] = v
-        RefreshESP()
-    end)
-    table.insert(VisualRows, Row)
-    return Row
-end
-
-VisualToggle("ESP", "Enable player visualization", "ESP")
-VisualToggle("Box ESP", "Display player boxes", "Box")
-VisualToggle("Skeleton ESP", "Display character skeleton", "Skeleton")
-VisualToggle("Name ESP", "Display player names", "Name")
-VisualToggle("Health ESP", "Display health", "Health")
-VisualToggle("Distance ESP", "Display distance", "Distance")
-VisualToggle("Tracer ESP", "Draw tracers to players", "Tracer")
-VisualToggle("Highlight", "Outline characters", "Highlight")
-VisualToggle("Chams", "Fill characters", "Chams")
-VisualToggle("ESP Team Check", "Ignore teammates", "TeamCheck")
-
-table.insert(VisualRows, ColorPicker(Scroll, "ESP Color", Config.Visual.Color, function(Color)
-    Config.Visual.Color = Color
-    RefreshESP()
-end))
-table.insert(VisualRows, Slider(Scroll, "Box Thickness", 1, 5, Config.Visual.BoxThickness, function(v)
-    Config.Visual.BoxThickness = v
-    RefreshESP()
-end, function(v) return string.format("%.1f",v) end))
-table.insert(VisualRows, Slider(Scroll, "Tracer Thickness", 1, 5, Config.Visual.TracerThickness, function(v)
-    Config.Visual.TracerThickness = v
-    RefreshESP()
-end, function(v) return string.format("%.1f",v) end))
-table.insert(VisualRows, Slider(Scroll, "Skeleton Thickness", 1, 5, Config.Visual.SkeletonThickness, function(v)
-    Config.Visual.SkeletonThickness = v
-    RefreshESP()
-end, function(v) return string.format("%.1f",v) end))
-table.insert(VisualRows, Slider(Scroll, "ESP Text Size", 8, 16, Config.Visual.TextSize, function(v)
-    Config.Visual.TextSize = math.floor(v)
-    RefreshESP()
-end, function(v) return string.format("%d",v) end))
 
 -- ESP (com retry imediato)
 local ESPData = {}
@@ -1846,14 +1828,16 @@ local function RemoveSkeleton(player)
 end
 
 local function CreateESP(Player)
-    if Player == LocalPlayer then return end
+    if Player == LocalPlayer then return false end
+    if not Player or not Player.Parent then return false end
+
     RemoveESP(Player)
     RemoveSkeleton(Player)
     if not Config.Visual.ESP then return end
     if IsTeammate(Player) then return end
 
     local Character = Player.Character
-    if not Character then return false end
+    if not Character or not Character.Parent then return false end
 
     local Root = Character:FindFirstChild("HumanoidRootPart")
     local Head = Character:FindFirstChild("Head")
@@ -1961,6 +1945,49 @@ local function RefreshESP()
         end
     end
 end
+
+
+-- VISUAL PAGE
+local function VisualToggle(Title, Description, Key)
+    local Row = Toggle(Scroll, Title, Description, Config.Visual[Key], function(v)
+        Config.Visual[Key] = v
+        RefreshESP()
+    end)
+    table.insert(VisualRows, Row)
+    return Row
+end
+
+VisualToggle("ESP", "Enable player visualization", "ESP")
+VisualToggle("Box ESP", "Display player boxes", "Box")
+VisualToggle("Skeleton ESP", "Display character skeleton", "Skeleton")
+VisualToggle("Name ESP", "Display player names", "Name")
+VisualToggle("Health ESP", "Display health", "Health")
+VisualToggle("Distance ESP", "Display distance", "Distance")
+VisualToggle("Tracer ESP", "Draw tracers to players", "Tracer")
+VisualToggle("Highlight", "Outline characters", "Highlight")
+VisualToggle("Chams", "Fill characters", "Chams")
+VisualToggle("ESP Team Check", "Ignore teammates", "TeamCheck")
+
+table.insert(VisualRows, ColorPicker(Scroll, "ESP Color", Config.Visual.Color, function(Color)
+    Config.Visual.Color = Color
+    RefreshESP()
+end))
+table.insert(VisualRows, Slider(Scroll, "Box Thickness", 1, 5, Config.Visual.BoxThickness, function(v)
+    Config.Visual.BoxThickness = v
+    RefreshESP()
+end, function(v) return string.format("%.1f",v) end))
+table.insert(VisualRows, Slider(Scroll, "Tracer Thickness", 1, 5, Config.Visual.TracerThickness, function(v)
+    Config.Visual.TracerThickness = v
+    RefreshESP()
+end, function(v) return string.format("%.1f",v) end))
+table.insert(VisualRows, Slider(Scroll, "Skeleton Thickness", 1, 5, Config.Visual.SkeletonThickness, function(v)
+    Config.Visual.SkeletonThickness = v
+    RefreshESP()
+end, function(v) return string.format("%.1f",v) end))
+table.insert(VisualRows, Slider(Scroll, "ESP Text Size", 8, 16, Config.Visual.TextSize, function(v)
+    Config.Visual.TextSize = math.floor(v)
+    RefreshESP()
+end, function(v) return string.format("%d",v) end))
 
 -- TARGET (AIM ASSIST)
 local function IsValidTarget(Player)
@@ -2871,11 +2898,13 @@ local function SetupPlayer(Player)
 
     table.insert(Connections, Player.CharacterAdded:Connect(function(Character)
         RemoveESP(Player)
+        RemoveSkeleton(Player)
         BuildESPImmediately(Player, Character)
     end))
 
     table.insert(Connections, Player.CharacterRemoving:Connect(function()
         RemoveESP(Player)
+        RemoveSkeleton(Player)
     end))
 
     table.insert(Connections, Player:GetPropertyChangedSignal("Team"):Connect(function()
@@ -3101,3 +3130,19 @@ RefreshLinesAccent()
 ShowAim()
 
 print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
+
+-- ============================================================
+-- NOVA HUB - REVISÃO FINAL ESTÁTICA
+-- ============================================================
+-- Arquivo revisado: Nova_Hub_COMPLETO_CORRIGIDO_V2.txt
+-- Linhas após correções: 3132
+-- Correções aplicadas:
+-- 1. Página Visual movida para depois da declaração de RefreshESP.
+-- 2. Limpeza centralizada do popup INFO + overlay.
+-- 3. INFO agora toca o som de clique.
+-- 4. Sistema de som usa SoundService, Ended + timeout de segurança.
+-- 5. Skeleton é removido no CharacterRemoving.
+-- 6. Skeleton antigo é removido antes de reconstruir o ESP no respawn.
+-- 7. CreateESP recebeu validações defensivas.
+-- 8. ESP continua com tentativa imediata + retry por Heartbeat.
+-- ============================================================
