@@ -10,6 +10,8 @@
     - Toggle de Lock para o HUD (não pode arrastar)
     - Cor da borda do HUD segue o UI Accent
     - Popup INFO centralizado na tela
+    - InfoButton acima do DragButton (ZIndex=5)
+    - HUDStroke declarado antes de RefreshLinesAccent
 ]]
 
 -- Services
@@ -362,6 +364,7 @@ InfoButton.TextSize = 6
 InfoButton.Font = Enum.Font.GothamBold
 InfoButton.AutoButtonColor = false
 InfoButton.Parent = Header
+InfoButton.ZIndex = 5  -- CORREÇÃO: para ficar acima do DragButton
 
 Instance.new("UICorner", InfoButton).CornerRadius = UDim.new(0, 5)
 
@@ -819,6 +822,9 @@ local SettingsRows = {}
 -- Toggle registry
 local ToggleRenderers = {}
 
+-- CORREÇÃO: declarar HUDStroke no escopo para RefreshLinesAccent
+local HUDStroke  -- será atribuído depois na criação do HUD
+
 local function RefreshToggleAccent()
     for _,Renderer in ipairs(ToggleRenderers) do
         if Renderer then Renderer() end
@@ -839,7 +845,9 @@ local function RefreshLinesAccent()
     QuickInfoStroke.Color = Accent()
     QuickInfoTitle.TextColor3 = Accent()
     Scroll.ScrollBarImageColor3 = Accent()
-    HUDStroke.Color = Accent()  -- Atualiza borda do HUD
+    if HUDStroke then
+        HUDStroke.Color = Accent()
+    end
 end
 
 -- Toggle
@@ -2157,7 +2165,7 @@ RunService.RenderStepped:Connect(function()
             for _, bone in pairs(data.Bones) do
                 bone.Line.Visible = false
             end
-            -- Marcar para remover skeleton (mas não remover enquanto itera)
+            -- Marcar para remover skeleton
             table.insert(PlayersToRemove, player)
             continue
         end
@@ -2302,7 +2310,8 @@ HUDFrame.Parent = Gui
 
 Instance.new("UICorner",HUDFrame).CornerRadius = UDim.new(0,7)
 
-local HUDStroke = Instance.new("UIStroke")
+-- CORREÇÃO: atribuir HUDStroke à variável local pré-declarada
+HUDStroke = Instance.new("UIStroke")
 HUDStroke.Color = Accent()
 HUDStroke.Thickness = 1
 HUDStroke.Transparency = Config.HUD.Transparency
@@ -3174,7 +3183,7 @@ print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
 -- ============================================================
 -- NOVA HUB - REVISÃO FINAL ESTÁTICA
 -- ============================================================
--- Arquivo revisado: Nova_Hub_COMPLETO_CORRIGIDO_V4.txt
+-- Arquivo revisado: Nova_Hub_COMPLETO_CORRIGIDO_V5.txt
 -- Correções aplicadas:
 -- 1. CameraDistance -> CameraMaxZoomDistance (todas as ocorrências)
 -- 2. Declaração antecipada de MinimizeHub e CloseAll (evita nil)
@@ -3183,4 +3192,6 @@ print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
 -- 5. Toggle de Lock para o HUD (não pode arrastar)
 -- 6. HUD stroke segue o UI Accent (atualizado em RefreshLinesAccent)
 -- 7. Popup INFO centralizado na tela (AnchorPoint)
+-- 8. InfoButton ZIndex = 5 (para receber cliques acima do DragButton)
+-- 9. HUDStroke declarado antes de RefreshLinesAccent (corrige atualização de cor)
 -- ============================================================
