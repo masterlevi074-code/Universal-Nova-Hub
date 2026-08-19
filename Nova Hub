@@ -3,11 +3,10 @@
     LocalScript
     StarterPlayer > StarterPlayerScripts
 
-    REVISADO E CORRIGIDO:
-    • Verificações de nil na câmera
-    • UI Scale aplicado corretamente
-    • Fechamento sem erros
-    • Tela de carregamento sincronizada
+    CORRIGIDO:
+    • Ordem: Main criado antes da tela de carregamento
+    • Tela de carregamento revela o Main corretamente
+    • Verificações de nil adicionadas
 ]]
 
 ------------------------------------------------------------
@@ -167,182 +166,6 @@ Gui.DisplayOrder = 100
 Gui.Parent = PlayerGui
 
 ------------------------------------------------------------
--- TELA DE CARREGAMENTO
-------------------------------------------------------------
-
-local LoadingScreen = Instance.new("Frame")
-LoadingScreen.Name = "LoadingScreen"
-LoadingScreen.Size = UDim2.fromScale(1,1)
-LoadingScreen.BackgroundColor3 = Color3.fromRGB(10,10,15)
-LoadingScreen.BorderSizePixel = 0
-LoadingScreen.ZIndex = 1000
-LoadingScreen.Parent = Gui
-
-local Particles = {}
-for i = 1, 15 do
-    local Particle = Instance.new("Frame")
-    Particle.Size = UDim2.fromOffset(math.random(3,8), math.random(3,8))
-    Particle.Position = UDim2.new(math.random(), 0, math.random(), 0)
-    Particle.BackgroundColor3 = Accent()
-    Particle.BackgroundTransparency = 0.7
-    Particle.BorderSizePixel = 0
-    Particle.ZIndex = 1002
-    Particle.Parent = LoadingScreen
-    
-    local ParticleCorner = Instance.new("UICorner")
-    ParticleCorner.CornerRadius = UDim.new(1,0)
-    ParticleCorner.Parent = Particle
-    
-    table.insert(Particles, Particle)
-end
-
-local LoadingLogo = Instance.new("TextLabel")
-LoadingLogo.Size = UDim2.fromOffset(80,80)
-LoadingLogo.Position = UDim2.new(0.5,-40,0.4,-40)
-LoadingLogo.BackgroundColor3 = Accent()
-LoadingLogo.Text = "N"
-LoadingLogo.TextColor3 = Color3.new(1,1,1)
-LoadingLogo.TextSize = 35
-LoadingLogo.Font = Enum.Font.GothamBold
-LoadingLogo.ZIndex = 1002
-LoadingLogo.Parent = LoadingScreen
-
-local LoadingLogoCorner = Instance.new("UICorner")
-LoadingLogoCorner.CornerRadius = UDim.new(0,20)
-LoadingLogoCorner.Parent = LoadingLogo
-
-local LoadingLogoGlow = Instance.new("UIStroke")
-LoadingLogoGlow.Color = Accent()
-LoadingLogoGlow.Thickness = 4
-LoadingLogoGlow.Transparency = 0.3
-LoadingLogoGlow.ZIndex = 1002
-LoadingLogoGlow.Parent = LoadingLogo
-
-local LoadingTitle = Instance.new("TextLabel")
-LoadingTitle.Size = UDim2.new(0,300,0,30)
-LoadingTitle.Position = UDim2.new(0.5,-150,0.55,-15)
-LoadingTitle.BackgroundTransparency = 1
-LoadingTitle.Text = "NOVA HUB"
-LoadingTitle.TextColor3 = Color3.new(1,1,1)
-LoadingTitle.TextSize = 24
-LoadingTitle.Font = Enum.Font.GothamBold
-LoadingTitle.ZIndex = 1002
-LoadingTitle.Parent = LoadingScreen
-
-local LoadingSub = Instance.new("TextLabel")
-LoadingSub.Size = UDim2.new(0,300,0,20)
-LoadingSub.Position = UDim2.new(0.5,-150,0.60,-10)
-LoadingSub.BackgroundTransparency = 1
-LoadingSub.Text = "STUDIO EDITION v4.0"
-LoadingSub.TextColor3 = Color3.fromRGB(150,153,164)
-LoadingSub.TextSize = 10
-LoadingSub.Font = Enum.Font.GothamMedium
-LoadingSub.ZIndex = 1002
-LoadingSub.Parent = LoadingScreen
-
-local LoadingBarBg = Instance.new("Frame")
-LoadingBarBg.Size = UDim2.new(0,250,0,6)
-LoadingBarBg.Position = UDim2.new(0.5,-125,0.70,-3)
-LoadingBarBg.BackgroundColor3 = Color3.fromRGB(30,31,39)
-LoadingBarBg.BorderSizePixel = 0
-LoadingBarBg.ZIndex = 1002
-LoadingBarBg.Parent = LoadingScreen
-
-local LoadingBarBgCorner = Instance.new("UICorner")
-LoadingBarBgCorner.CornerRadius = UDim.new(1,0)
-LoadingBarBgCorner.Parent = LoadingBarBg
-
-local LoadingBarFill = Instance.new("Frame")
-LoadingBarFill.Size = UDim2.new(0,0,1,0)
-LoadingBarFill.BackgroundColor3 = Accent()
-LoadingBarFill.BorderSizePixel = 0
-LoadingBarFill.ZIndex = 1003
-LoadingBarFill.Parent = LoadingBarBg
-
-local LoadingBarFillCorner = Instance.new("UICorner")
-LoadingBarFillCorner.CornerRadius = UDim.new(1,0)
-LoadingBarFillCorner.Parent = LoadingBarFill
-
-local LoadingBarGlow = Instance.new("UIStroke")
-LoadingBarGlow.Color = Accent()
-LoadingBarGlow.Thickness = 2
-LoadingBarGlow.Transparency = 0.5
-LoadingBarGlow.ZIndex = 1003
-LoadingBarGlow.Parent = LoadingBarFill
-
-local LoadingStatus = Instance.new("TextLabel")
-LoadingStatus.Size = UDim2.new(0,300,0,20)
-LoadingStatus.Position = UDim2.new(0.5,-150,0.75,-10)
-LoadingStatus.BackgroundTransparency = 1
-LoadingStatus.Text = "Carregando..."
-LoadingStatus.TextColor3 = Color3.fromRGB(180,183,194)
-LoadingStatus.TextSize = 9
-LoadingStatus.Font = Enum.Font.GothamMedium
-LoadingStatus.ZIndex = 1002
-LoadingStatus.Parent = LoadingScreen
-
-task.spawn(function()
-    for _, Particle in ipairs(Particles) do
-        task.spawn(function()
-            while LoadingScreen.Parent do
-                pcall(function()
-                    local newX = math.random()
-                    local newY = math.random()
-                    local newTransparency = math.random(50, 90) / 100
-                    Tween(Particle, {
-                        Position = UDim2.new(newX, 0, newY, 0),
-                        BackgroundTransparency = newTransparency
-                    }, TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut))
-                end)
-                task.wait(2)
-            end
-        end)
-    end
-    
-    task.spawn(function()
-        while LoadingScreen.Parent do
-            pcall(function()
-                Tween(LoadingLogo, {Size = UDim2.fromOffset(85,85)}, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut))
-            end)
-            task.wait(0.5)
-            pcall(function()
-                Tween(LoadingLogo, {Size = UDim2.fromOffset(80,80)}, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut))
-            end)
-            task.wait(0.5)
-        end
-    end)
-    
-    local Statuses = {"Carregando...", "Inicializando...", "Configurando...", "Quase pronto..."}
-    for i = 1, 4 do
-        LoadingStatus.Text = Statuses[i]
-        task.wait(0.6)
-    end
-    
-    Tween(LoadingBarFill, {Size = UDim2.new(1,0,1,0)}, TweenInfo.new(2.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out))
-    
-    task.wait(3)
-    
-    Tween(LoadingScreen, {BackgroundTransparency = 1}, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out))
-    
-    if Main then
-        Main.BackgroundTransparency = 1
-        Main.Visible = true
-        Main.Size = UDim2.fromOffset(0, 0)
-        Main.AnchorPoint = Vector2.new(0.5, 0.5)
-        Main.Position = UDim2.new(0.5, 0, 0.5, 0)
-        Tween(Main, {
-            Size = UDim2.fromOffset(420, 370),
-            BackgroundTransparency = 0
-        }, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out))
-        task.wait(0.5)
-        Main.Position = UDim2.new(0.5, -210, 0.5, -185)
-        Main.AnchorPoint = Vector2.new(0, 0)
-    end
-    
-    LoadingScreen:Destroy()
-end)
-
-------------------------------------------------------------
 -- SOUND FUNCTIONS
 ------------------------------------------------------------
 
@@ -373,7 +196,7 @@ local function PlayHoverSound()
 end
 
 ------------------------------------------------------------
--- MAIN
+-- MAIN (criado primeiro)
 ------------------------------------------------------------
 
 local Main = Instance.new("Frame")
@@ -381,9 +204,9 @@ Main.Name = "Main"
 Main.Size = UDim2.fromOffset(420,370)
 Main.Position = UDim2.new(.5,-210,.5,-185)
 Main.BackgroundColor3 = DarkColor()
-Main.BackgroundTransparency = 1
+Main.BackgroundTransparency = 1 -- começa invisível
 Main.BorderSizePixel = 0
-Main.Visible = false
+Main.Visible = false -- começa invisível
 Main.Parent = Gui
 
 local MainCorner = Instance.new("UICorner")
@@ -1854,7 +1677,6 @@ AddCustom(Slider(Scroll, "UI Scale", 0.5, 2, Config.Customization.UIScale, funct
     local scale = v
     Main.Size = UDim2.fromOffset(420 * scale, 370 * scale)
     
-    -- Escalar elementos internos
     Header.Size = UDim2.new(1,0,0,50 * scale)
     TabBar.Size = UDim2.new(1,-20*scale,0,35 * scale)
     TabBar.Position = UDim2.fromOffset(10 * scale, 55 * scale)
@@ -3178,6 +3000,181 @@ LocalPlayer.CharacterAdded:Connect(function()
     end
     
     Camera.FieldOfView = Config.World.FOV
+end)
+
+------------------------------------------------------------
+-- TELA DE CARREGAMENTO (AGORA DEPOIS DO MAIN)
+------------------------------------------------------------
+
+local LoadingScreen = Instance.new("Frame")
+LoadingScreen.Name = "LoadingScreen"
+LoadingScreen.Size = UDim2.fromScale(1,1)
+LoadingScreen.BackgroundColor3 = Color3.fromRGB(10,10,15)
+LoadingScreen.BorderSizePixel = 0
+LoadingScreen.ZIndex = 1000
+LoadingScreen.Parent = Gui
+
+local Particles = {}
+for i = 1, 15 do
+    local Particle = Instance.new("Frame")
+    Particle.Size = UDim2.fromOffset(math.random(3,8), math.random(3,8))
+    Particle.Position = UDim2.new(math.random(), 0, math.random(), 0)
+    Particle.BackgroundColor3 = Accent()
+    Particle.BackgroundTransparency = 0.7
+    Particle.BorderSizePixel = 0
+    Particle.ZIndex = 1002
+    Particle.Parent = LoadingScreen
+    
+    local ParticleCorner = Instance.new("UICorner")
+    ParticleCorner.CornerRadius = UDim.new(1,0)
+    ParticleCorner.Parent = Particle
+    
+    table.insert(Particles, Particle)
+end
+
+local LoadingLogo = Instance.new("TextLabel")
+LoadingLogo.Size = UDim2.fromOffset(80,80)
+LoadingLogo.Position = UDim2.new(0.5,-40,0.4,-40)
+LoadingLogo.BackgroundColor3 = Accent()
+LoadingLogo.Text = "N"
+LoadingLogo.TextColor3 = Color3.new(1,1,1)
+LoadingLogo.TextSize = 35
+LoadingLogo.Font = Enum.Font.GothamBold
+LoadingLogo.ZIndex = 1002
+LoadingLogo.Parent = LoadingScreen
+
+local LoadingLogoCorner = Instance.new("UICorner")
+LoadingLogoCorner.CornerRadius = UDim.new(0,20)
+LoadingLogoCorner.Parent = LoadingLogo
+
+local LoadingLogoGlow = Instance.new("UIStroke")
+LoadingLogoGlow.Color = Accent()
+LoadingLogoGlow.Thickness = 4
+LoadingLogoGlow.Transparency = 0.3
+LoadingLogoGlow.ZIndex = 1002
+LoadingLogoGlow.Parent = LoadingLogo
+
+local LoadingTitle = Instance.new("TextLabel")
+LoadingTitle.Size = UDim2.new(0,300,0,30)
+LoadingTitle.Position = UDim2.new(0.5,-150,0.55,-15)
+LoadingTitle.BackgroundTransparency = 1
+LoadingTitle.Text = "NOVA HUB"
+LoadingTitle.TextColor3 = Color3.new(1,1,1)
+LoadingTitle.TextSize = 24
+LoadingTitle.Font = Enum.Font.GothamBold
+LoadingTitle.ZIndex = 1002
+LoadingTitle.Parent = LoadingScreen
+
+local LoadingSub = Instance.new("TextLabel")
+LoadingSub.Size = UDim2.new(0,300,0,20)
+LoadingSub.Position = UDim2.new(0.5,-150,0.60,-10)
+LoadingSub.BackgroundTransparency = 1
+LoadingSub.Text = "STUDIO EDITION v4.0"
+LoadingSub.TextColor3 = Color3.fromRGB(150,153,164)
+LoadingSub.TextSize = 10
+LoadingSub.Font = Enum.Font.GothamMedium
+LoadingSub.ZIndex = 1002
+LoadingSub.Parent = LoadingScreen
+
+local LoadingBarBg = Instance.new("Frame")
+LoadingBarBg.Size = UDim2.new(0,250,0,6)
+LoadingBarBg.Position = UDim2.new(0.5,-125,0.70,-3)
+LoadingBarBg.BackgroundColor3 = Color3.fromRGB(30,31,39)
+LoadingBarBg.BorderSizePixel = 0
+LoadingBarBg.ZIndex = 1002
+LoadingBarBg.Parent = LoadingScreen
+
+local LoadingBarBgCorner = Instance.new("UICorner")
+LoadingBarBgCorner.CornerRadius = UDim.new(1,0)
+LoadingBarBgCorner.Parent = LoadingBarBg
+
+local LoadingBarFill = Instance.new("Frame")
+LoadingBarFill.Size = UDim2.new(0,0,1,0)
+LoadingBarFill.BackgroundColor3 = Accent()
+LoadingBarFill.BorderSizePixel = 0
+LoadingBarFill.ZIndex = 1003
+LoadingBarFill.Parent = LoadingBarBg
+
+local LoadingBarFillCorner = Instance.new("UICorner")
+LoadingBarFillCorner.CornerRadius = UDim.new(1,0)
+LoadingBarFillCorner.Parent = LoadingBarFill
+
+local LoadingBarGlow = Instance.new("UIStroke")
+LoadingBarGlow.Color = Accent()
+LoadingBarGlow.Thickness = 2
+LoadingBarGlow.Transparency = 0.5
+LoadingBarGlow.ZIndex = 1003
+LoadingBarGlow.Parent = LoadingBarFill
+
+local LoadingStatus = Instance.new("TextLabel")
+LoadingStatus.Size = UDim2.new(0,300,0,20)
+LoadingStatus.Position = UDim2.new(0.5,-150,0.75,-10)
+LoadingStatus.BackgroundTransparency = 1
+LoadingStatus.Text = "Carregando..."
+LoadingStatus.TextColor3 = Color3.fromRGB(180,183,194)
+LoadingStatus.TextSize = 9
+LoadingStatus.Font = Enum.Font.GothamMedium
+LoadingStatus.ZIndex = 1002
+LoadingStatus.Parent = LoadingScreen
+
+task.spawn(function()
+    for _, Particle in ipairs(Particles) do
+        task.spawn(function()
+            while LoadingScreen.Parent do
+                pcall(function()
+                    local newX = math.random()
+                    local newY = math.random()
+                    local newTransparency = math.random(50, 90) / 100
+                    Tween(Particle, {
+                        Position = UDim2.new(newX, 0, newY, 0),
+                        BackgroundTransparency = newTransparency
+                    }, TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut))
+                end)
+                task.wait(2)
+            end
+        end)
+    end
+    
+    task.spawn(function()
+        while LoadingScreen.Parent do
+            pcall(function()
+                Tween(LoadingLogo, {Size = UDim2.fromOffset(85,85)}, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut))
+            end)
+            task.wait(0.5)
+            pcall(function()
+                Tween(LoadingLogo, {Size = UDim2.fromOffset(80,80)}, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut))
+            end)
+            task.wait(0.5)
+        end
+    end)
+    
+    local Statuses = {"Carregando...", "Inicializando...", "Configurando...", "Quase pronto..."}
+    for i = 1, 4 do
+        LoadingStatus.Text = Statuses[i]
+        task.wait(0.6)
+    end
+    
+    Tween(LoadingBarFill, {Size = UDim2.new(1,0,1,0)}, TweenInfo.new(2.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out))
+    
+    task.wait(3)
+    
+    Tween(LoadingScreen, {BackgroundTransparency = 1}, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out))
+    
+    -- Revelar o Main (agora Main existe)
+    Main.BackgroundTransparency = 1
+    Main.Visible = true
+    Main.Size = UDim2.fromOffset(0, 0)
+    Main.AnchorPoint = Vector2.new(0.5, 0.5)
+    Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+    Tween(Main, {
+        Size = UDim2.fromOffset(420 * Config.Customization.UIScale, 370 * Config.Customization.UIScale),
+        BackgroundTransparency = 0
+    }, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out))
+    task.wait(0.5)
+    Main.Position = UDim2.new(0.5, -210 * Config.Customization.UIScale, 0.5, -185 * Config.Customization.UIScale)
+    Main.AnchorPoint = Vector2.new(0, 0)
+    
+    LoadingScreen:Destroy()
 end)
 
 ------------------------------------------------------------
