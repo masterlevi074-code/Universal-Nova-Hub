@@ -4,6 +4,12 @@
     StarterPlayer > StarterPlayerScripts
     ESP com retry imediato (sem precisar morrer)
     Botão INFO adicionado
+    Correções e melhorias:
+    - ESP/Highlight/Chams não fica deslocado após morte (remove ESP ao morrer)
+    - HUD compacto, sem espaços em branco
+    - Toggle de Lock para o HUD (não pode arrastar)
+    - Cor da borda do HUD segue o UI Accent
+    - Popup INFO centralizado na tela
 ]]
 
 -- Services
@@ -65,7 +71,8 @@ local Config = {
         ShowSessionTime = false,
         Position = UDim2.fromOffset(15,15),
         Size = 118,
-        Transparency = 0
+        Transparency = 0,
+        Lock = false  -- novo: trava o HUD
     },
     UI = {
         Animations = true,
@@ -379,7 +386,9 @@ InfoButton.MouseButton1Click:Connect(function()
 
     local InfoPopup = Instance.new("Frame")
     InfoPopup.Size = UDim2.fromOffset(280, 200)
-    InfoPopup.Position = UDim2.new(0.5, -140, 0.5, -100)
+    -- Alterado para centralizar na tela usando AnchorPoint
+    InfoPopup.AnchorPoint = Vector2.new(0.5, 0.5)
+    InfoPopup.Position = UDim2.fromScale(0.5, 0.5)
     InfoPopup.BackgroundColor3 = Color3.fromRGB(28,30,38)
     InfoPopup.BorderSizePixel = 0
     InfoPopup.ZIndex = 999
@@ -830,6 +839,7 @@ local function RefreshLinesAccent()
     QuickInfoStroke.Color = Accent()
     QuickInfoTitle.TextColor3 = Accent()
     Scroll.ScrollBarImageColor3 = Accent()
+    HUDStroke.Color = Accent()  -- Atualiza borda do HUD
 end
 
 -- Toggle
@@ -2117,6 +2127,9 @@ RunService.RenderStepped:Connect(function()
     Camera = workspace.CurrentCamera
     if not Camera then return end
 
+    -- Coletar jogadores mortos para remover ESP (evita Highlight deslocado)
+    local PlayersToRemove = {}
+
     for player, data in pairs(Skeletons) do
         if not player.Parent then
             RemoveSkeleton(player)
@@ -2144,6 +2157,8 @@ RunService.RenderStepped:Connect(function()
             for _, bone in pairs(data.Bones) do
                 bone.Line.Visible = false
             end
+            -- Marcar para remover skeleton (mas não remover enquanto itera)
+            table.insert(PlayersToRemove, player)
             continue
         end
         local localCharacter = LocalPlayer.Character
@@ -2193,10 +2208,8 @@ RunService.RenderStepped:Connect(function()
         local Head = Character and Character:FindFirstChild("Head")
         local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
         if not Character or not Root or not Head or not Humanoid or Humanoid.Health <= 0 then
-            if Data.Box then Data.Box.Visible = false end
-            if Data.Tracer then Data.Tracer.Visible = false end
-            if Data.Highlight then Data.Highlight.Enabled = false end      -- corrigido
-            if Data.Billboard then Data.Billboard.Enabled = false end     -- corrigido
+            -- Remover ESP completo do jogador morto
+            table.insert(PlayersToRemove, Player)
             continue
         end
         local MyCharacter = LocalPlayer.Character
@@ -2208,7 +2221,7 @@ RunService.RenderStepped:Connect(function()
         if Distance > Config.Visual.MaxDistance then
             if Data.Box then Data.Box.Visible = false end
             if Data.Tracer then Data.Tracer.Visible = false end
-            if Data.Highlight then Data.Highlight.Enabled = false end      -- esconder se longe
+            if Data.Highlight then Data.Highlight.Enabled = false end
             if Data.Billboard then Data.Billboard.Enabled = false end
             continue
         end
@@ -2269,6 +2282,12 @@ RunService.RenderStepped:Connect(function()
             end
         end
     end
+
+    -- Remover ESP de jogadores mortos após o loop
+    for _,Player in ipairs(PlayersToRemove) do
+        RemoveESP(Player)
+        RemoveSkeleton(Player)
+    end
 end)
 
 -- HUD
@@ -2313,12 +2332,13 @@ local function UpdateHUDAppearance()
     prevHUDSize = newSize
 end
 
--- HUD DRAG
+-- HUD DRAG (com Lock)
 local HUDDragging = false
 local HUDDragStart
 local HUDStartPosition
 
 HUDFrame.InputBegan:Connect(function(Input)
+    if Config.HUD.Lock then return end  -- se travado, não permite arrastar
     if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
         HUDDragging = true
         HUDDragStart = Input.Position
@@ -2327,7 +2347,7 @@ HUDFrame.InputBegan:Connect(function(Input)
 end)
 
 UserInputService.InputChanged:Connect(function(Input)
-    if not HUDDragging then return end
+    if not HUDDragging or Config.HUD.Lock then return end
     if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
         local Delta = Input.Position-HUDDragStart
         HUDFrame.Position = UDim2.new(
@@ -2384,6 +2404,10 @@ AddHUD(Slider(Scroll, "HUD Transparency", 0, .9, Config.HUD.Transparency, functi
     Config.HUD.Transparency = v
     UpdateHUDAppearance()
 end, function(v) return string.format("%d%%", math.floor(v*100)) end))
+-- Novo toggle: Lock HUD
+AddHUD(Toggle(Scroll, "Lock HUD", "Disable HUD dragging", Config.HUD.Lock, function(v)
+    Config.HUD.Lock = v
+end))
 
 -- SETTINGS
 local function AddSetting(Row)
@@ -2790,7 +2814,7 @@ Mini.MouseButton1Click:Connect(function()
     end)
 end)
 
--- FPS / HUD
+-- FPS / HUD (compacto)
 local Frames = 0
 local Elapsed = 0
 local FPS = 60
@@ -2846,11 +2870,14 @@ RunService.RenderStepped:Connect(function(DT)
     HUDText.Text = table.concat(Lines, "\n")
     local numLines = #Lines
     if numLines > 0 then
-        local textHeight = numLines * 14
-        local newHeight = textHeight + 8
+        -- Compacto: menos espaçamento e altura dinâmica
+        local textHeight = numLines * 12
+        local newHeight = textHeight + 6
         HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, newHeight)
         HUDText.Size = UDim2.new(1,-12,0,textHeight)
-        HUDText.Position = UDim2.fromOffset(6,4)
+        HUDText.Position = UDim2.fromOffset(6, 3)
+    else
+        HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, 30)  -- altura mínima se nenhuma linha
     end
 end)
 
@@ -3147,10 +3174,13 @@ print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
 -- ============================================================
 -- NOVA HUB - REVISÃO FINAL ESTÁTICA
 -- ============================================================
--- Arquivo revisado: Nova_Hub_COMPLETO_CORRIGIDO_V3.txt
+-- Arquivo revisado: Nova_Hub_COMPLETO_CORRIGIDO_V4.txt
 -- Correções aplicadas:
 -- 1. CameraDistance -> CameraMaxZoomDistance (todas as ocorrências)
 -- 2. Declaração antecipada de MinimizeHub e CloseAll (evita nil)
--- 3. ESP/Chams: destiva Highlight ao morrer, reativa ao vivo, e não cria ESP para mortos.
--- 4. Remoção segura do Highlight antes de destruir.
+-- 3. ESP/Chams: remove ESP completamente ao morrer (evita Highlight deslocado)
+-- 4. HUD compacto, com menos espaçamento e altura dinâmica
+-- 5. Toggle de Lock para o HUD (não pode arrastar)
+-- 6. HUD stroke segue o UI Accent (atualizado em RefreshLinesAccent)
+-- 7. Popup INFO centralizado na tela (AnchorPoint)
 -- ============================================================
