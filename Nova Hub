@@ -2,14 +2,8 @@
     NOVA HUB - STUDIO EDITION v4.0
     LocalScript
     StarterPlayer > StarterPlayerScripts
-    Correções:
-    - Fly estável com BodyGyro/BodyVelocity moderados e AutoRotate off
-    - Gravidade movida para Player
-    - JumpPower removido do World
-    - CameraZoom com CameraMaxZoomDistance e CameraMinZoomDistance
-    - FOV com toggle e slider
-    - Infinite Jump funcional (imediato, sem atraso)
-    - ESP com Drawing (sem deslocamento)
+    ESP com retry imediato (sem precisar morrer)
+    Botão INFO adicionado
 ]]
 
 -- Services
@@ -71,8 +65,7 @@ local Config = {
         ShowSessionTime = false,
         Position = UDim2.fromOffset(15,15),
         Size = 118,
-        Transparency = 0,
-        Lock = false
+        Transparency = 0
     },
     UI = {
         Animations = true,
@@ -90,18 +83,18 @@ local Config = {
         FlySpeed = 50,
         NoClip = false,
         JumpPower = 50,
-        JumpPowerEnabled = false,
-        InfiniteJump = false,
-        LowGravity = false,
-        GravityValue = 196.2
+        InfiniteJump = false
     },
     World = {
         FullBright = false,
         RemoveFog = false,
         Brightness = 3,
         TimeOfDay = 14,
+        JumpPowerEnabled = false,
+        JumpHeight = 50,
+        LowGravity = false,
+        GravityValue = 196.2,
         CameraZoom = 15,
-        FOVEnabled = false,
         FOV = 70,
         NoShadows = false,
         NoNeon = false
@@ -169,6 +162,7 @@ local function PlayUISound(volume)
     Sound.Ended:Connect(Cleanup)
     Sound:Play()
 
+    -- Failsafe if the asset cannot report Ended.
     task.delay(2, Cleanup)
 end
 
@@ -180,7 +174,7 @@ local function PlayHoverSound()
     PlayUISound(0.1)
 end
 
--- PopupLayer
+-- PopupLayer (movido para cima para ser usado no Header)
 local PopupLayer = Instance.new("Frame")
 PopupLayer.Size = UDim2.fromScale(1,1)
 PopupLayer.BackgroundTransparency = 1
@@ -206,7 +200,7 @@ local function ClosePopup()
     end
 end
 
--- Main
+-- Main (criado primeiro)
 local Main = Instance.new("Frame")
 Main.Name = "Main"
 Main.Size = UDim2.fromOffset(420,370)
@@ -361,7 +355,6 @@ InfoButton.TextSize = 6
 InfoButton.Font = Enum.Font.GothamBold
 InfoButton.AutoButtonColor = false
 InfoButton.Parent = Header
-InfoButton.ZIndex = 5
 
 Instance.new("UICorner", InfoButton).CornerRadius = UDim.new(0, 5)
 
@@ -386,8 +379,7 @@ InfoButton.MouseButton1Click:Connect(function()
 
     local InfoPopup = Instance.new("Frame")
     InfoPopup.Size = UDim2.fromOffset(280, 200)
-    InfoPopup.AnchorPoint = Vector2.new(0.5, 0.5)
-    InfoPopup.Position = UDim2.fromScale(0.5, 0.5)
+    InfoPopup.Position = UDim2.new(0.5, -140, 0.5, -100)
     InfoPopup.BackgroundColor3 = Color3.fromRGB(28,30,38)
     InfoPopup.BorderSizePixel = 0
     InfoPopup.ZIndex = 999
@@ -463,13 +455,9 @@ InfoButton.MouseButton1Click:Connect(function()
 • UI Scale escalona todos os elementos
 • Som de clique com ativação/desativação
 • Perfil do usuário e QuickInfo
-• World: Full Bright, Camera Zoom, FOV com toggle
-• Player: Speed Hack, Fly, NoClip, Jump Power, Gravidade
+• World: Full Bright, Gravity, Jump Power, etc.
+• Player: Speed, Fly, NoClip, Jump
 • Skeleton ESP corrigido
-• CORREÇÃO: ESP agora usa Drawing.new (sem deslocamento após respawn)
-• Fly estável com AutoRotate desativado
-• Gravidade movida para Player
-• Infinite Jump implementado
 ]]
     InfoText.TextColor3 = Color3.fromRGB(200,202,210)
     InfoText.TextSize = 8
@@ -526,11 +514,10 @@ Close.MouseLeave:Connect(function()
     Tween(Close,{BackgroundColor3 = Color3.fromRGB(30,31,39), TextColor3 = Color3.fromRGB(180,180,190)})
 end)
 
--- Declaração antecipada para evitar nil
-local MinimizeHub
-local CloseAll
-
-
+Minimize.MouseButton1Click:Connect(function()
+    PlayClickSound()
+    MinimizeHub()
+end)
 
 -- TAB BAR
 local TabBar = Instance.new("Frame")
@@ -779,9 +766,9 @@ Layout.Padding = UDim.new(0,6)
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 Layout.Parent = Scroll
 
--- Pequeno espaço extra no final para a última função nunca ficar escondida.
+-- Espaço extra somente no final do scroll para alcançar as últimas opções.
 local ScrollBottomPadding = Instance.new("UIPadding")
-ScrollBottomPadding.PaddingBottom = UDim.new(0, 55)
+ScrollBottomPadding.PaddingBottom = UDim.new(0,55)
 ScrollBottomPadding.Parent = Scroll
 
 -- FOV
@@ -824,9 +811,6 @@ local SettingsRows = {}
 -- Toggle registry
 local ToggleRenderers = {}
 
--- CORREÇÃO: declarar HUDStroke no escopo para RefreshLinesAccent
-local HUDStroke  -- será atribuído depois na criação do HUD
-
 local function RefreshToggleAccent()
     for _,Renderer in ipairs(ToggleRenderers) do
         if Renderer then Renderer() end
@@ -847,9 +831,6 @@ local function RefreshLinesAccent()
     QuickInfoStroke.Color = Accent()
     QuickInfoTitle.TextColor3 = Accent()
     Scroll.ScrollBarImageColor3 = Accent()
-    if HUDStroke then
-        HUDStroke.Color = Accent()
-    end
 end
 
 -- Toggle
@@ -1474,14 +1455,10 @@ AddAim(Toggle(Scroll, "Wall Check", "Ignore targets behind walls", Config.Aim.Wa
     Config.Aim.WallCheck = v
 end))
 
--- PLAYER PAGE (MODIFICADA)
+-- PLAYER PAGE
 local function AddPlayer(Row)
     table.insert(PlayerRows,Row)
 end
-
--- Variáveis para o voo
-local PlayerFlyBodyVelocity = nil
-local PlayerFlyBodyGyro = nil
 
 AddPlayer(Toggle(Scroll, "Speed Hack", "Increase movement speed", Config.Player.SpeedHack, function(v)
     Config.Player.SpeedHack = v
@@ -1489,7 +1466,11 @@ AddPlayer(Toggle(Scroll, "Speed Hack", "Increase movement speed", Config.Player.
     if Character then
         local Humanoid = Character:FindFirstChildOfClass("Humanoid")
         if Humanoid then
-            Humanoid.WalkSpeed = v and (16 * Config.Player.SpeedMultiplier) or 16
+            if v then
+                Humanoid.WalkSpeed = 16 * Config.Player.SpeedMultiplier
+            else
+                Humanoid.WalkSpeed = 16
+            end
         end
     end
 end))
@@ -1505,472 +1486,38 @@ AddPlayer(Slider(Scroll, "Speed Multiplier", 1, 10, Config.Player.SpeedMultiplie
         end
     end
 end, function(v) return string.format("%.1fx",v) end))
-
--- Fly Hack
--- PC + Mobile:
---   PC: W/A/S/D movimentam; Space sobe; Ctrl desce.
---   Mobile: o analógico movimenta e segurar o botão padrão de pulo sobe.
---   Em ambos: W/S/analógico para frente/trás acompanha a inclinação da câmera,
---   permitindo subir/descer olhando para cima/baixo como um fly normal.
-
-local FlyConnection = nil
-local FlyInputBegan = nil
-local FlyInputEnded = nil
-local FlyJumpBegan = nil
-local FlyJumpEnded = nil
-local PlayerFlyBodyVelocity = nil
-local PlayerFlyBodyGyro = nil
-
-local FlyKeys = {
-    Forward = false,
-    Backward = false,
-    Left = false,
-    Right = false,
-    Up = false,
-    Down = false,
-}
-
-local MobileJumpHeld = false
-
-local function ResetFlyInput()
-    for Key in pairs(FlyKeys) do
-        FlyKeys[Key] = false
-    end
-    MobileJumpHeld = false
-end
-
-local function GetMobileJumpButton()
-    local PlayerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
-    if not PlayerGui then
-        return nil
-    end
-
-    local TouchGui = PlayerGui:FindFirstChild("TouchGui")
-    if not TouchGui then
-        return nil
-    end
-
-    -- Roblox normally uses TouchControlFrame > JumpButton.
-    local TouchControlFrame = TouchGui:FindFirstChild("TouchControlFrame")
-    if TouchControlFrame then
-        local JumpButton = TouchControlFrame:FindFirstChild("JumpButton")
-        if JumpButton and JumpButton:IsA("GuiButton") then
-            return JumpButton
-        end
-    end
-
-    -- Fallback for versions where the button is nested differently.
-    local JumpButton = TouchGui:FindFirstChild("JumpButton", true)
-    if JumpButton and JumpButton:IsA("GuiButton") then
-        return JumpButton
-    end
-
-    return nil
-end
-
-local function DisconnectFlyInputs()
-    if FlyInputBegan then
-        FlyInputBegan:Disconnect()
-        FlyInputBegan = nil
-    end
-
-    if FlyInputEnded then
-        FlyInputEnded:Disconnect()
-        FlyInputEnded = nil
-    end
-
-    if FlyJumpBegan then
-        FlyJumpBegan:Disconnect()
-        FlyJumpBegan = nil
-    end
-
-    if FlyJumpEnded then
-        FlyJumpEnded:Disconnect()
-        FlyJumpEnded = nil
-    end
-end
-
-local function StopFly()
-    DisconnectFlyInputs()
-    ResetFlyInput()
-
-    if FlyConnection then
-        FlyConnection:Disconnect()
-        FlyConnection = nil
-    end
-
-    if PlayerFlyBodyVelocity then
-        PlayerFlyBodyVelocity:Destroy()
-        PlayerFlyBodyVelocity = nil
-    end
-
-    if PlayerFlyBodyGyro then
-        PlayerFlyBodyGyro:Destroy()
-        PlayerFlyBodyGyro = nil
-    end
-
-    local Character = LocalPlayer.Character
-    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-
-    if Humanoid then
-        Humanoid.PlatformStand = false
-        Humanoid.AutoRotate = true
-        Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-    end
-end
-
-local function StartFly()
-    StopFly()
-
-    local Character = LocalPlayer.Character
-    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
-    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-
-    if not Root or not Humanoid then
-        Config.Player.FlyHack = false
-        return
-    end
-
-    ResetFlyInput()
-
-    Humanoid.PlatformStand = true
-    Humanoid.AutoRotate = false
-
-    PlayerFlyBodyVelocity = Instance.new("BodyVelocity")
-    PlayerFlyBodyVelocity.Name = "NovaFlyVelocity"
-    PlayerFlyBodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-    PlayerFlyBodyVelocity.P = 1e4
-    PlayerFlyBodyVelocity.Velocity = Vector3.zero
-    PlayerFlyBodyVelocity.Parent = Root
-
-    PlayerFlyBodyGyro = Instance.new("BodyGyro")
-    PlayerFlyBodyGyro.Name = "NovaFlyGyro"
-    PlayerFlyBodyGyro.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
-    PlayerFlyBodyGyro.P = 2e4
-    PlayerFlyBodyGyro.D = 500
-    PlayerFlyBodyGyro.CFrame = Camera.CFrame
-    PlayerFlyBodyGyro.Parent = Root
-
-    -- PC keyboard controls.
-    FlyInputBegan = UserInputService.InputBegan:Connect(function(Input, GameProcessed)
-        if GameProcessed or not Config.Player.FlyHack then
-            return
-        end
-
-        if Input.KeyCode == Enum.KeyCode.W then
-            FlyKeys.Forward = true
-        elseif Input.KeyCode == Enum.KeyCode.S then
-            FlyKeys.Backward = true
-        elseif Input.KeyCode == Enum.KeyCode.A then
-            FlyKeys.Left = true
-        elseif Input.KeyCode == Enum.KeyCode.D then
-            FlyKeys.Right = true
-        elseif Input.KeyCode == Enum.KeyCode.Space then
-            FlyKeys.Up = true
-        elseif Input.KeyCode == Enum.KeyCode.LeftControl
-            or Input.KeyCode == Enum.KeyCode.RightControl then
-            FlyKeys.Down = true
-        end
-    end)
-
-    FlyInputEnded = UserInputService.InputEnded:Connect(function(Input)
-        if Input.KeyCode == Enum.KeyCode.W then
-            FlyKeys.Forward = false
-        elseif Input.KeyCode == Enum.KeyCode.S then
-            FlyKeys.Backward = false
-        elseif Input.KeyCode == Enum.KeyCode.A then
-            FlyKeys.Left = false
-        elseif Input.KeyCode == Enum.KeyCode.D then
-            FlyKeys.Right = false
-        elseif Input.KeyCode == Enum.KeyCode.Space then
-            FlyKeys.Up = false
-        elseif Input.KeyCode == Enum.KeyCode.LeftControl
-            or Input.KeyCode == Enum.KeyCode.RightControl then
-            FlyKeys.Down = false
-        end
-    end)
-
-    -- Mobile jump button. We listen directly to the actual Roblox button,
-    -- rather than guessing a screen coordinate.
-    task.defer(function()
-        for _ = 1, 40 do
-            if not Config.Player.FlyHack or not LocalPlayer.Character then
-                return
-            end
-
-            local JumpButton = GetMobileJumpButton()
-
-            if JumpButton then
-                FlyJumpBegan = JumpButton.InputBegan:Connect(function(Input)
-                    if Input.UserInputType == Enum.UserInputType.Touch
-                        or Input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        MobileJumpHeld = true
-                    end
-                end)
-
-                FlyJumpEnded = JumpButton.InputEnded:Connect(function(Input)
-                    if Input.UserInputType == Enum.UserInputType.Touch
-                        or Input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        MobileJumpHeld = false
-                    end
-                end)
-
-                return
-            end
-
-            task.wait(0.1)
-        end
-    end)
-
-    FlyConnection = RunService.RenderStepped:Connect(function()
-        if not Config.Player.FlyHack then
-            StopFly()
-            return
-        end
-
-        if not LocalPlayer.Character
-            or LocalPlayer.Character ~= Character
-            or not Root.Parent
-            or Humanoid.Health <= 0 then
-            StopFly()
-            return
-        end
-
-        Camera = workspace.CurrentCamera
-        if not Camera then
-            return
-        end
-
-        -- Humanoid.MoveDirection gives the mobile thumbstick direction
-        -- relative to the camera. We split it into camera-forward/right
-        -- components so the camera's pitch can control flight altitude.
-        local Move = Humanoid.MoveDirection
-        local CameraLook = Camera.CFrame.LookVector
-        local CameraRight = Camera.CFrame.RightVector
-
-        local ForwardAmount = Move:Dot(CameraLook)
-        local RightAmount = Move:Dot(CameraRight)
-
-        -- The vertical component from the thumbstick itself is intentionally
-        -- not used directly; ForwardAmount + CameraLook makes looking up/down
-        -- behave like a normal camera-relative fly.
-        local Direction = Vector3.zero
-
-        if math.abs(ForwardAmount) > 0.03 then
-            Direction += CameraLook * ForwardAmount
-        end
-
-        if math.abs(RightAmount) > 0.03 then
-            Direction += CameraRight * RightAmount
-        end
-
-        -- Keyboard fallback/control.
-        local KeyboardForward = 0
-        local KeyboardRight = 0
-
-        if FlyKeys.Forward then KeyboardForward += 1 end
-        if FlyKeys.Backward then KeyboardForward -= 1 end
-        if FlyKeys.Right then KeyboardRight += 1 end
-        if FlyKeys.Left then KeyboardRight -= 1 end
-
-        if KeyboardForward ~= 0 then
-            Direction += CameraLook * KeyboardForward
-        end
-
-        if KeyboardRight ~= 0 then
-            Direction += CameraRight * KeyboardRight
-        end
-
-        -- Vertical controls:
-        -- mobile jump / PC Space = up
-        -- PC Ctrl = down
-        if MobileJumpHeld or FlyKeys.Up then
-            Direction += Vector3.yAxis
-        end
-
-        if FlyKeys.Down then
-            Direction -= Vector3.yAxis
-        end
-
-        if Direction.Magnitude > 1 then
-            Direction = Direction.Unit
-        end
-
-        PlayerFlyBodyVelocity.Velocity =
-            Direction * Config.Player.FlySpeed
-
-        -- Face the same direction as the camera, while keeping the character
-        -- stable and avoiding unwanted rolling.
-        PlayerFlyBodyGyro.CFrame =
-            CFrame.lookAt(
-                Root.Position,
-                Root.Position + CameraLook,
-                Vector3.yAxis
-            )
-    end)
-end
-
 AddPlayer(Toggle(Scroll, "Fly Hack", "Enable flying", Config.Player.FlyHack, function(v)
     Config.Player.FlyHack = v
-
-    if v then
-        StartFly()
-    else
-        StopFly()
-    end
 end))
-
 AddPlayer(Slider(Scroll, "Fly Speed", 10, 100, Config.Player.FlySpeed, function(v)
     Config.Player.FlySpeed = v
-end, function(v)
-    return string.format("%.0f", v)
-end))
-
--- No-Clip
-local NoClipConnection = nil
-
-local function SetCharacterCollision(enabled)
-    local Character = LocalPlayer.Character
-    if not Character then return end
-
-    for _, Part in ipairs(Character:GetDescendants()) do
-        if Part:IsA("BasePart") then
-            Part.CanCollide = enabled
-        end
-    end
-end
-
-local function StopNoClip()
-    if NoClipConnection then
-        NoClipConnection:Disconnect()
-        NoClipConnection = nil
-    end
-
-    SetCharacterCollision(true)
-end
-
-local function StartNoClip()
-    StopNoClip()
-
-    NoClipConnection = RunService.Stepped:Connect(function()
-        if not Config.Player.NoClip then
-            StopNoClip()
-            return
-        end
-
-        local Character = LocalPlayer.Character
-        if not Character then return end
-
-        for _, Part in ipairs(Character:GetDescendants()) do
-            if Part:IsA("BasePart") then
-                Part.CanCollide = false
-            end
-        end
-    end)
-end
-
+end, function(v) return string.format("%.0f",v) end))
 AddPlayer(Toggle(Scroll, "No-Clip", "Walk through walls", Config.Player.NoClip, function(v)
     Config.Player.NoClip = v
-
-    if v then
-        StartNoClip()
-    else
-        StopNoClip()
+    local Character = LocalPlayer.Character
+    if Character then
+        for _,Part in ipairs(Character:GetDescendants()) do
+            if Part:IsA("BasePart") then
+                Part.CanCollide = not v
+            end
+        end
     end
 end))
-
--- Jump Power (Toggle + Slider)
-AddPlayer(Toggle(Scroll, "Jump Power", "Enable custom jump power", Config.Player.JumpPowerEnabled, function(v)
-    Config.Player.JumpPowerEnabled = v
+AddPlayer(Slider(Scroll, "Jump Power", 50, 500, Config.Player.JumpPower, function(v)
+    Config.Player.JumpPower = v
     local Character = LocalPlayer.Character
     if Character then
         local Humanoid = Character:FindFirstChildOfClass("Humanoid")
         if Humanoid then
-            Humanoid.UseJumpPower = true
-            Humanoid.JumpPower = v and Config.Player.JumpPower or 50
-        end
-    end
-end))
-AddPlayer(Slider(Scroll, "Jump Height", 50, 500, Config.Player.JumpPower, function(v)
-    Config.Player.JumpPower = v
-    if Config.Player.JumpPowerEnabled then
-        local Character = LocalPlayer.Character
-        if Character then
-            local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-            if Humanoid then
-                Humanoid.JumpPower = v
-            end
+            Humanoid.JumpPower = v
         end
     end
 end, function(v) return string.format("%.0f",v) end))
-
--- Infinite Jump
--- PC + Mobile:
--- Permite iniciar um novo pulo sempre que o jogador solicitar o pulo,
--- inclusive no ar. O evento JumpRequest é disparado tanto pelo Space
--- quanto pelo botão de pulo do Roblox no celular.
-
-local InfiniteJumpConnection = nil
-
-local function StopInfiniteJump()
-    if InfiniteJumpConnection then
-        InfiniteJumpConnection:Disconnect()
-        InfiniteJumpConnection = nil
-    end
-end
-
-local function StartInfiniteJump()
-    StopInfiniteJump()
-
-    InfiniteJumpConnection = UserInputService.JumpRequest:Connect(function()
-        if not Config.Player.InfiniteJump then
-            return
-        end
-
-        local Character = LocalPlayer.Character
-        if not Character then
-            return
-        end
-
-        local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-        if not Humanoid or Humanoid.Health <= 0 then
-            return
-        end
-
-        -- Force a fresh jump on every JumpRequest.
-        Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-    end)
-end
-
-AddPlayer(Toggle(
-    Scroll,
-    "Infinite Jump",
-    "Jump repeatedly in the air",
-    Config.Player.InfiniteJump,
-    function(v)
-        Config.Player.InfiniteJump = v
-
-        if v then
-            StartInfiniteJump()
-        else
-            StopInfiniteJump()
-        end
-    end
-))
-
--- Low Gravity (movido para Player)
-AddPlayer(Toggle(Scroll, "Low Gravity", "Reduce gravity", Config.Player.LowGravity, function(v)
-    Config.Player.LowGravity = v
-    workspace.Gravity = v and Config.Player.GravityValue or 196.2
+AddPlayer(Toggle(Scroll, "Infinite Jump", "Jump infinitely", Config.Player.InfiniteJump, function(v)
+    Config.Player.InfiniteJump = v
 end))
-AddPlayer(Slider(Scroll, "Gravity Value", 0, 196.2, Config.Player.GravityValue, function(v)
-    Config.Player.GravityValue = v
-    if Config.Player.LowGravity then
-        workspace.Gravity = v
-    end
-end, function(v) return string.format("%.0f",v) end))
 
--- WORLD PAGE (JumpPower e LowGravity removidos)
+-- WORLD PAGE
 local function AddWorld(Row)
     table.insert(WorldRows,Row)
 end
@@ -2009,36 +1556,60 @@ AddWorld(Slider(Scroll, "Time of Day", 0, 24, Config.World.TimeOfDay, function(v
     Config.World.TimeOfDay = v
     Lighting.ClockTime = v
 end, function(v) return string.format("%.0fh",v) end))
-
--- Camera Zoom (corrigido)
+AddWorld(Toggle(Scroll, "Jump Power", "Enable custom jump power", Config.World.JumpPowerEnabled, function(v)
+    Config.World.JumpPowerEnabled = v
+    local Character = LocalPlayer.Character
+    if Character then
+        local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+        if Humanoid then
+            if v then
+                Humanoid.JumpPower = Config.World.JumpHeight
+            else
+                Humanoid.JumpPower = 50
+            end
+        end
+    end
+end))
+AddWorld(Slider(Scroll, "Jump Height", 50, 500, Config.World.JumpHeight, function(v)
+    Config.World.JumpHeight = v
+    if Config.World.JumpPowerEnabled then
+        local Character = LocalPlayer.Character
+        if Character then
+            local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+            if Humanoid then
+                Humanoid.JumpPower = v
+            end
+        end
+    end
+end, function(v) return string.format("%.0f",v) end))
+AddWorld(Toggle(Scroll, "Low Gravity", "Reduce gravity", Config.World.LowGravity, function(v)
+    Config.World.LowGravity = v
+    if v then
+        workspace.Gravity = Config.World.GravityValue
+    else
+        workspace.Gravity = 196.2
+    end
+end))
+AddWorld(Slider(Scroll, "Gravity Value", 0, 196.2, Config.World.GravityValue, function(v)
+    Config.World.GravityValue = v
+    if Config.World.LowGravity then
+        workspace.Gravity = v
+    end
+end, function(v) return string.format("%.0f",v) end))
 AddWorld(Slider(Scroll, "Camera Zoom", 5, 30, Config.World.CameraZoom, function(v)
     Config.World.CameraZoom = v
     local Character = LocalPlayer.Character
     if Character then
         local Humanoid = Character:FindFirstChildOfClass("Humanoid")
         if Humanoid then
-            LocalPlayer.CameraMaxZoomDistance = v
-            LocalPlayer.CameraMinZoomDistance = v
+            Humanoid.CameraDistance = v
         end
     end
 end, function(v) return string.format("%.0f",v) end))
-
--- FOV (Toggle + Slider)
-AddWorld(Toggle(Scroll, "FOV Custom", "Enable custom field of view", Config.World.FOVEnabled, function(v)
-    Config.World.FOVEnabled = v
-    if not v then
-        Camera.FieldOfView = 70  -- volta ao padrão
-    else
-        Camera.FieldOfView = Config.World.FOV
-    end
-end))
 AddWorld(Slider(Scroll, "Field of View", 30, 120, Config.World.FOV, function(v)
     Config.World.FOV = v
-    if Config.World.FOVEnabled then
-        Camera.FieldOfView = v
-    end
+    Camera.FieldOfView = v
 end, function(v) return string.format("%.0f",v) end))
-
 AddWorld(Toggle(Scroll, "No Shadows", "Disable all shadows", Config.World.NoShadows, function(v)
     Config.World.NoShadows = v
     if v then
@@ -2148,556 +1719,245 @@ AddCustom(Toggle(Scroll, "Animations", "Enable animations", Config.UI.Animations
     Config.UI.Animations = v
 end))
 
--- ======================= ESP (Drawing) =======================
--- ESP engine adapted from the supplied Mobile ESP Hub architecture.
--- The Nova Hub GUI/config remains the controller; this section owns only
--- ESP object lifecycle and rendering.
 
+-- ESP (com retry imediato)
 local ESPData = {}
-local ESPRunning = true
+local Skeletons = {}
 
-local SkeletonConnections = {
-    {"Head", "UpperTorso"},
-    {"UpperTorso", "LowerTorso"},
-
-    {"UpperTorso", "LeftUpperArm"},
-    {"LeftUpperArm", "LeftLowerArm"},
-    {"LeftLowerArm", "LeftHand"},
-
-    {"UpperTorso", "RightUpperArm"},
-    {"RightUpperArm", "RightLowerArm"},
-    {"RightLowerArm", "RightHand"},
-
-    {"LowerTorso", "LeftUpperLeg"},
-    {"LeftUpperLeg", "LeftLowerLeg"},
-    {"LeftLowerLeg", "LeftFoot"},
-
-    {"LowerTorso", "RightUpperLeg"},
-    {"RightUpperLeg", "RightLowerLeg"},
-    {"RightLowerLeg", "RightFoot"},
-}
-
-local R6Connections = {
-    {"Head", "Torso"},
-    {"Torso", "Left Arm"},
-    {"Left Arm", "Left Leg"},
-    {"Torso", "Right Arm"},
-    {"Right Arm", "Right Leg"},
-    {"Torso", "Left Leg"},
-    {"Torso", "Right Leg"},
-}
-
-local function SafeDrawing(Type)
-    local ok, object = pcall(function()
-        return Drawing.new(Type)
-    end)
-    return ok and object or nil
+local function IsTeammate(Player)
+    return Config.Visual.TeamCheck and LocalPlayer.Team ~= nil and Player.Team == LocalPlayer.Team
 end
 
-local function SafeRemoveDrawing(object)
-    if not object then return end
-
-    pcall(function()
-        object.Visible = false
-    end)
-
-    pcall(function()
-        object:Remove()
-    end)
-end
-
-local function SafeDestroyInstance(object)
-    if not object then return end
-    pcall(function()
-        object.Enabled = false
-    end)
-    pcall(function()
-        object:Destroy()
-    end)
-end
-
-local function ClearSkeletonLines(data)
-    if not data or not data.Lines then return end
-
-    for i = #data.Lines, 1, -1 do
-        local entry = data.Lines[i]
-        if type(entry) == "table" then
-            SafeRemoveDrawing(entry.Drawing)
-        else
-            SafeRemoveDrawing(entry)
-        end
-        data.Lines[i] = nil
-    end
-end
-
-local function HideData(data)
-    if not data then return end
-
-    for _, key in ipairs({"Box","Tracer","Name","Health","Distance"}) do
-        if data[key] then
-            pcall(function()
-                data[key].Visible = false
-            end)
+local function RemoveESP(Player)
+    local Data = ESPData[Player]
+    if not Data then return end
+    for _,Object in pairs(Data) do
+        if typeof(Object) == "Instance" then
+            Object:Destroy()
         end
     end
-
-    if data.Highlight then
-        pcall(function()
-            data.Highlight.Enabled = false
-        end)
-    end
-
-    for _, entry in ipairs(data.Lines or {}) do
-        local line = type(entry) == "table" and entry.Drawing or entry
-        if line then
-            pcall(function()
-                line.Visible = false
-            end)
-        end
-    end
-end
-
-local function ClearESP(Player)
-    local data = ESPData[Player]
-    if not data then return end
-
-    HideData(data)
-    ClearSkeletonLines(data)
-
-    SafeRemoveDrawing(data.Box)
-    SafeRemoveDrawing(data.Tracer)
-    SafeRemoveDrawing(data.Name)
-    SafeRemoveDrawing(data.Health)
-    SafeRemoveDrawing(data.Distance)
-
-    for _, line in ipairs(data.Lines or {}) do
-        SafeRemoveDrawing(line)
-    end
-
-    SafeDestroyInstance(data.Highlight)
-
     ESPData[Player] = nil
 end
 
-local function ClearAllESP()
-    local list = {}
+local ESPGui = Instance.new("ScreenGui")
+ESPGui.Name = "NovaESP"
+ESPGui.ResetOnSpawn = false
+ESPGui.IgnoreGuiInset = true
+ESPGui.DisplayOrder = 80
+ESPGui.Parent = PlayerGui
 
-    for Player in pairs(ESPData or {}) do
-        list[#list + 1] = Player
-    end
+local R15Skeleton = {
+    {"Head","UpperTorso"},
+    {"UpperTorso","LowerTorso"},
+    {"UpperTorso","LeftUpperArm"},
+    {"LeftUpperArm","LeftLowerArm"},
+    {"LeftLowerArm","LeftHand"},
+    {"UpperTorso","RightUpperArm"},
+    {"RightUpperArm","RightLowerArm"},
+    {"RightLowerArm","RightHand"},
+    {"LowerTorso","LeftUpperLeg"},
+    {"LeftUpperLeg","LeftLowerLeg"},
+    {"LeftLowerLeg","LeftFoot"},
+    {"LowerTorso","RightUpperLeg"},
+    {"RightUpperLeg","RightLowerLeg"},
+    {"RightLowerLeg","RightFoot"}
+}
 
-    for _, Player in ipairs(list) do
-        ClearESP(Player)
-    end
+local R6Skeleton = {
+    {"Head","Torso"},
+    {"Torso","Left Arm"},
+    {"Torso","Right Arm"},
+    {"Torso","Left Leg"},
+    {"Torso","Right Leg"}
+}
+
+local function CreateSkeletonLine(parent)
+    local line = Instance.new("Frame")
+    line.Name = "Bone"
+    line.AnchorPoint = Vector2.new(0.5, 0.5)
+    line.BackgroundColor3 = Config.Visual.Color
+    line.BorderSizePixel = 0
+    line.Size = UDim2.fromOffset(0, Config.Visual.SkeletonThickness)
+    line.Visible = false
+    line.Parent = parent
+    return line
 end
 
-local function GetCharacter(Player)
-    if not Player or Player == LocalPlayer or not Player.Parent then
-        return nil
+local function CreateSkeleton(player)
+    if player == LocalPlayer then return end
+    if Skeletons[player] then
+        Skeletons[player].Folder:Destroy()
+        Skeletons[player] = nil
     end
-
-    if Config.Visual.TeamCheck
-        and LocalPlayer.Team ~= nil
-        and Player.Team == LocalPlayer.Team then
-        return nil
+    local character = player.Character
+    if not character then return false end
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return false end
+    local folder = Instance.new("Folder")
+    folder.Name = player.Name .. "_Skeleton"
+    folder.Parent = ESPGui
+    local connections
+    if humanoid.RigType == Enum.HumanoidRigType.R15 then
+        connections = R15Skeleton
+    else
+        connections = R6Skeleton
     end
-
-    local Character = Player.Character
-    if not Character or not Character.Parent then
-        return nil
-    end
-
-    local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-    if not Humanoid or Humanoid.Health <= 0 then
-        return nil
-    end
-
-    return Character, Humanoid
-end
-
-local function GetRoot(Character)
-    return Character:FindFirstChild("HumanoidRootPart")
-        or Character:FindFirstChild("UpperTorso")
-        or Character:FindFirstChild("Torso")
-end
-
-local function CreateSkeleton(data, Character)
-    if not Config.Visual.Skeleton then
-        return
-    end
-
-    local connections = Character:FindFirstChild("UpperTorso")
-        and SkeletonConnections
-        or R6Connections
-
-    for _, pair in ipairs(connections) do
-        local PartA = Character:FindFirstChild(pair[1])
-        local PartB = Character:FindFirstChild(pair[2])
-
-        if PartA and PartB then
-            local Line = SafeDrawing("Line")
-
-            if Line then
-                Line.Visible = false
-                Line.Thickness = Config.Visual.SkeletonThickness
-                Line.Color = Config.Visual.Color
-
-                data.Lines[#data.Lines + 1] = {
-                    Drawing = Line,
-                    PartA = PartA,
-                    PartB = PartB,
-                }
-            end
+    local bones = {}
+    for index, connection in ipairs(connections) do
+        local part1 = character:FindFirstChild(connection[1])
+        local part2 = character:FindFirstChild(connection[2])
+        if part1 and part2 then
+            local line = CreateSkeletonLine(folder)
+            bones[index] = {
+                Line = line,
+                Part1 = part1,
+                Part2 = part2,
+            }
         end
     end
+    Skeletons[player] = {
+        Character = character,
+        Folder = folder,
+        Bones = bones,
+    }
+    return true
+end
+
+local function RemoveSkeleton(player)
+    local data = Skeletons[player]
+    if not data then return end
+    if data.Folder then
+        data.Folder:Destroy()
+    end
+    Skeletons[player] = nil
 end
 
 local function CreateESP(Player)
-    if not Config.Visual.ESP or Player == LocalPlayer then
-        return
-    end
+    if Player == LocalPlayer then return false end
+    if not Player or not Player.Parent then return false end
 
-    local Character, Humanoid = GetCharacter(Player)
-    if not Character then
-        return
-    end
+    RemoveESP(Player)
+    RemoveSkeleton(Player)
+    if not Config.Visual.ESP then return end
+    if IsTeammate(Player) then return end
 
-    local Root = GetRoot(Character)
+    local Character = Player.Character
+    if not Character or not Character.Parent then return false end
+
+    local Root = Character:FindFirstChild("HumanoidRootPart")
     local Head = Character:FindFirstChild("Head")
+    local Humanoid = Character:FindFirstChildOfClass("Humanoid")
 
-    if not Root or not Head then
-        return
-    end
+    if not Root or not Head or not Humanoid then return false end
 
-    ClearESP(Player)
-
-    local data = {
-        Player = Player,
-        Character = Character,
-        Humanoid = Humanoid,
-        Root = Root,
-        Head = Head,
-        Box = nil,
-        Tracer = nil,
-        Name = nil,
-        Health = nil,
-        Distance = nil,
-        Highlight = nil,
-        Lines = {},
-    }
-
-    -- Allocate only requested Drawing types.
-    if Config.Visual.Box then
-        local Box = SafeDrawing("Square")
-        if Box then
-            Box.Visible = false
-            Box.Filled = false
-            Box.Thickness = Config.Visual.BoxThickness
-            Box.Color = Config.Visual.Color
-            data.Box = Box
-        end
-    end
-
-    if Config.Visual.Tracer then
-        local Tracer = SafeDrawing("Line")
-        if Tracer then
-            Tracer.Visible = false
-            Tracer.Thickness = Config.Visual.TracerThickness
-            Tracer.Color = Config.Visual.Color
-            data.Tracer = Tracer
-        end
-    end
-
-    if Config.Visual.Name then
-        local Name = SafeDrawing("Text")
-        if Name then
-            Name.Visible = false
-            Name.Size = Config.Visual.TextSize
-            Name.Center = true
-            Name.Outline = true
-            Name.Color = Config.Visual.Color
-            data.Name = Name
-        end
-    end
-
-    if Config.Visual.Health then
-        local Health = SafeDrawing("Text")
-        if Health then
-            Health.Visible = false
-            Health.Size = math.max(1, Config.Visual.TextSize - 1)
-            Health.Center = true
-            Health.Outline = true
-            data.Health = Health
-        end
-    end
-
-    if Config.Visual.Distance then
-        local Distance = SafeDrawing("Text")
-        if Distance then
-            Distance.Visible = false
-            Distance.Size = math.max(1, Config.Visual.TextSize - 2)
-            Distance.Center = true
-            Distance.Outline = true
-            Distance.Color = Color3.fromRGB(200,200,200)
-            data.Distance = Distance
-        end
-    end
+    local Data = {}
+    ESPData[Player] = Data
 
     if Config.Visual.Highlight or Config.Visual.Chams then
         local Highlight = Instance.new("Highlight")
         Highlight.Name = "NovaESPHighlight"
         Highlight.Adornee = Character
-        Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
         Highlight.FillColor = Config.Visual.Color
         Highlight.OutlineColor = Config.Visual.Color
-        Highlight.FillTransparency = Config.Visual.Chams and 0.55 or 1
+        Highlight.FillTransparency = Config.Visual.Chams and .55 or 1
         Highlight.OutlineTransparency = 0
-        Highlight.Enabled = true
-        Highlight.Parent = workspace
-        data.Highlight = Highlight
+        Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        Highlight.Parent = Character
+        Data.Highlight = Highlight
     end
 
-    CreateSkeleton(data, Character)
-
-    ESPData[Player] = data
-end
-
-local function UpdateSkeleton(data)
-    if not Config.Visual.Skeleton then
-        ClearSkeletonLines(data)
-        return
+    if Config.Visual.Name or Config.Visual.Health or Config.Visual.Distance then
+        local Billboard = Instance.new("BillboardGui")
+        Billboard.Name = "NovaESPInfo"
+        Billboard.Adornee = Head
+        Billboard.Size = UDim2.fromOffset(180,70)
+        Billboard.StudsOffset = Vector3.new(0,3,0)
+        Billboard.AlwaysOnTop = true
+        Billboard.Parent = Head
+        local Text = Instance.new("TextLabel")
+        Text.Size = UDim2.fromScale(1,1)
+        Text.BackgroundTransparency = 1
+        Text.TextColor3 = Config.Visual.Color
+        Text.TextStrokeTransparency = .4
+        Text.TextSize = Config.Visual.TextSize
+        Text.Font = Enum.Font.GothamBold
+        Text.Parent = Billboard
+        Data.Billboard = Billboard
+        Data.InfoText = Text
     end
 
-    if #data.Lines == 0 then
-        CreateSkeleton(data, data.Character)
+    if Config.Visual.Box then
+        local Box = Instance.new("Frame")
+        Box.Name = "NovaBox"
+        Box.AnchorPoint = Vector2.new(.5,.5)
+        Box.BackgroundTransparency = 1
+        Box.BorderSizePixel = 0
+        Box.Visible = false
+        Box.Parent = ESPGui
+        local Stroke = Instance.new("UIStroke")
+        Stroke.Color = Config.Visual.Color
+        Stroke.Thickness = Config.Visual.BoxThickness
+        Stroke.Parent = Box
+        Data.Box = Box
+        Data.BoxStroke = Stroke
     end
 
-    for _, entry in ipairs(data.Lines or {}) do
-        local Line = entry.Drawing
-        local PartA = entry.PartA
-        local PartB = entry.PartB
-
-        if not Line or not PartA or not PartB
-            or not PartA.Parent or not PartB.Parent then
-            if Line then Line.Visible = false end
-            continue
-        end
-
-        local A, AVisible = Camera:WorldToViewportPoint(PartA.Position)
-        local B, BVisible = Camera:WorldToViewportPoint(PartB.Position)
-
-        if not AVisible and not BVisible then
-            Line.Visible = false
-            continue
-        end
-
-        local From = Vector2.new(A.X, A.Y)
-        local To = Vector2.new(B.X, B.Y)
-
-        if (To - From).Magnitude > 600 then
-            Line.Visible = false
-            continue
-        end
-
-        Line.From = From
-        Line.To = To
-        Line.Thickness = Config.Visual.SkeletonThickness
-        Line.Color = Config.Visual.Color
-        Line.Visible = true
-    end
-end
-
-local function HidePlayerESP(data)
-    HideData(data)
-end
-
-local function UpdateESP(Player, data)
-    if not Config.Visual.ESP then
-        HidePlayerESP(data)
-        return
-    end
-
-    -- Never keep references to a dead/old Character after respawn.
-    if Player.Character ~= data.Character then
-        ClearESP(Player)
-
-        if Player.Character then
-            task.defer(function()
-                if Player.Parent and Config.Visual.ESP then
-                    CreateESP(Player)
-                end
-            end)
-        end
-
-        return
-    end
-
-    local Character = data.Character
-    local Humanoid = data.Humanoid
-    local Root = data.Root
-    local Head = data.Head
-
-    if not Character or not Character.Parent
-        or not Humanoid or not Humanoid.Parent
-        or Humanoid.Health <= 0
-        or not Root or not Root.Parent
-        or not Head or not Head.Parent then
-        HidePlayerESP(data)
-        return
-    end
-
-    if Config.Visual.TeamCheck
-        and LocalPlayer.Team ~= nil
-        and Player.Team == LocalPlayer.Team then
-        HidePlayerESP(data)
-        return
-    end
-
-    local Distance = (Camera.CFrame.Position - Root.Position).Magnitude
-
-    if Distance > Config.Visual.MaxDistance then
-        HidePlayerESP(data)
-        return
-    end
-
-    local RootPos, RootVisible = Camera:WorldToViewportPoint(Root.Position)
-    if not RootVisible or RootPos.Z <= 0 then
-        HidePlayerESP(data)
-        return
-    end
-
-    local HeadPos = Camera:WorldToViewportPoint(
-        Head.Position + Vector3.new(0, 0.5, 0)
-    )
-
-    local BottomPos = Camera:WorldToViewportPoint(
-        Root.Position - Vector3.new(0, 3, 0)
-    )
-
-    if data.Box then
-        if Config.Visual.Box and HeadPos.Z > 0 and BottomPos.Z > 0 then
-            local Height = math.abs(BottomPos.Y - HeadPos.Y)
-            local Width = Height * 0.55
-
-            if Height > 1 and Height < 600 and Width > 1 and Width < 600 then
-                data.Box.Size = Vector2.new(Width, Height)
-                data.Box.Position = Vector2.new(
-                    RootPos.X - Width / 2,
-                    HeadPos.Y
-                )
-                data.Box.Thickness = Config.Visual.BoxThickness
-                data.Box.Color = Config.Visual.Color
-                data.Box.Visible = true
-            else
-                data.Box.Visible = false
-            end
-        else
-            data.Box.Visible = false
+    if Config.Visual.Skeleton then
+        if not CreateSkeleton(Player) then
+            -- Skeleton falhou, mas ESP principal já foi criado
         end
     end
 
-    if data.Name then
-        if Config.Visual.Name then
-            data.Name.Text = Player.DisplayName
-            data.Name.Position = Vector2.new(RootPos.X, HeadPos.Y - 18)
-            data.Name.Size = Config.Visual.TextSize
-            data.Name.Color = Config.Visual.Color
-            data.Name.Visible = true
-        else
-            data.Name.Visible = false
-        end
+    if Config.Visual.Tracer then
+        local Tracer = Instance.new("Frame")
+        Tracer.Name = "NovaTracer"
+        Tracer.AnchorPoint = Vector2.new(.5,.5)
+        Tracer.BorderSizePixel = 0
+        Tracer.BackgroundColor3 = Config.Visual.Color
+        Tracer.Size = UDim2.fromOffset(0, Config.Visual.TracerThickness)
+        Tracer.Visible = false
+        Tracer.Parent = ESPGui
+        Data.Tracer = Tracer
     end
 
-    if data.Health then
-        if Config.Visual.Health then
-            local Health = math.max(0, Humanoid.Health)
-            local MaxHealth = math.max(1, Humanoid.MaxHealth)
-
-            data.Health.Text = string.format(
-                "%d/%d",
-                math.floor(Health),
-                math.floor(MaxHealth)
-            )
-
-            data.Health.Position = Vector2.new(RootPos.X, RootPos.Y + 15)
-
-            local Ratio = Health / MaxHealth
-            if Ratio > 0.5 then
-                data.Health.Color = Color3.fromRGB(100,255,100)
-            elseif Ratio > 0.25 then
-                data.Health.Color = Color3.fromRGB(255,220,80)
-            else
-                data.Health.Color = Color3.fromRGB(255,80,80)
-            end
-
-            data.Health.Visible = true
-        else
-            data.Health.Visible = false
-        end
-    end
-
-    if data.Distance then
-        if Config.Visual.Distance then
-            data.Distance.Text = math.floor(Distance) .. "m"
-            data.Distance.Position = Vector2.new(RootPos.X, RootPos.Y + 30)
-            data.Distance.Visible = true
-        else
-            data.Distance.Visible = false
-        end
-    end
-
-    if data.Tracer then
-        if Config.Visual.Tracer then
-            local Viewport = Camera.ViewportSize
-
-            data.Tracer.From = Vector2.new(Viewport.X / 2, Viewport.Y)
-            data.Tracer.To = Vector2.new(RootPos.X, RootPos.Y)
-            data.Tracer.Thickness = Config.Visual.TracerThickness
-            data.Tracer.Color = Config.Visual.Color
-            data.Tracer.Visible = true
-        else
-            data.Tracer.Visible = false
-        end
-    end
-
-    if data.Highlight then
-        data.Highlight.Adornee = Character
-        data.Highlight.FillColor = Config.Visual.Color
-        data.Highlight.OutlineColor = Config.Visual.Color
-        data.Highlight.FillTransparency = Config.Visual.Chams and 0.55 or 1
-        data.Highlight.Enabled =
-            Config.Visual.Highlight or Config.Visual.Chams
-    end
-
-    UpdateSkeleton(data)
+    return true
 end
 
 local function RefreshESP()
-    ClearAllESP()
-
-    if not Config.Visual.ESP then
-        return
+    for Player in pairs(ESPData) do
+        RemoveESP(Player)
     end
+    for Player in pairs(Skeletons) do
+        RemoveSkeleton(Player)
+    end
+    if not Config.Visual.ESP then return end
 
-    for _, Player in ipairs(Players:GetPlayers()) do
+    for _,Player in ipairs(Players:GetPlayers()) do
         if Player ~= LocalPlayer then
-            CreateESP(Player)
+            if not CreateESP(Player) then
+                task.spawn(function()
+                    for attempt = 1, 5 do
+                        task.wait(0.3)
+                        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChild("Head") and Player.Character:FindFirstChildOfClass("Humanoid") then
+                            if Config.Visual.ESP then
+                                CreateESP(Player)
+                            end
+                            break
+                        end
+                    end
+                end)
+            end
         end
     end
 end
 
-local function VisualToggle(Title, Description, Key)
-    local Row = Toggle(
-        Scroll,
-        Title,
-        Description,
-        Config.Visual[Key],
-        function(Value)
-            Config.Visual[Key] = Value
-            RefreshESP()
-        end
-    )
 
+-- VISUAL PAGE
+local function VisualToggle(Title, Description, Key)
+    local Row = Toggle(Scroll, Title, Description, Config.Visual[Key], function(v)
+        Config.Visual[Key] = v
+        RefreshESP()
+    end)
     table.insert(VisualRows, Row)
     return Row
 end
@@ -2717,34 +1977,22 @@ table.insert(VisualRows, ColorPicker(Scroll, "ESP Color", Config.Visual.Color, f
     Config.Visual.Color = Color
     RefreshESP()
 end))
-
-table.insert(VisualRows, Slider(Scroll, "Box Thickness", 1, 5, Config.Visual.BoxThickness, function(Value)
-    Config.Visual.BoxThickness = Value
+table.insert(VisualRows, Slider(Scroll, "Box Thickness", 1, 5, Config.Visual.BoxThickness, function(v)
+    Config.Visual.BoxThickness = v
     RefreshESP()
-end, function(Value)
-    return string.format("%.1f", Value)
-end))
-
-table.insert(VisualRows, Slider(Scroll, "Tracer Thickness", 1, 5, Config.Visual.TracerThickness, function(Value)
-    Config.Visual.TracerThickness = Value
+end, function(v) return string.format("%.1f",v) end))
+table.insert(VisualRows, Slider(Scroll, "Tracer Thickness", 1, 5, Config.Visual.TracerThickness, function(v)
+    Config.Visual.TracerThickness = v
     RefreshESP()
-end, function(Value)
-    return string.format("%.1f", Value)
-end))
-
-table.insert(VisualRows, Slider(Scroll, "Skeleton Thickness", 1, 5, Config.Visual.SkeletonThickness, function(Value)
-    Config.Visual.SkeletonThickness = Value
+end, function(v) return string.format("%.1f",v) end))
+table.insert(VisualRows, Slider(Scroll, "Skeleton Thickness", 1, 5, Config.Visual.SkeletonThickness, function(v)
+    Config.Visual.SkeletonThickness = v
     RefreshESP()
-end, function(Value)
-    return string.format("%.1f", Value)
-end))
-
-table.insert(VisualRows, Slider(Scroll, "ESP Text Size", 8, 16, Config.Visual.TextSize, function(Value)
-    Config.Visual.TextSize = math.floor(Value)
+end, function(v) return string.format("%.1f",v) end))
+table.insert(VisualRows, Slider(Scroll, "ESP Text Size", 8, 16, Config.Visual.TextSize, function(v)
+    Config.Visual.TextSize = math.floor(v)
     RefreshESP()
-end, function(Value)
-    return string.format("%d", Value)
-end))
+end, function(v) return string.format("%d",v) end))
 
 -- TARGET (AIM ASSIST)
 local function IsValidTarget(Player)
@@ -2817,7 +2065,7 @@ TargetHighlight.FillTransparency = .75
 TargetHighlight.OutlineTransparency = 0
 TargetHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 TargetHighlight.Enabled = false
-TargetHighlight.Parent = workspace
+TargetHighlight.Parent = Gui
 
 local function UpdateTargetHighlight(Target)
     if not Config.Aim.TargetHighlight or not Target then
@@ -2861,41 +2109,154 @@ RunService:BindToRenderStep("NovaAim", Enum.RenderPriority.Camera.Value+1, funct
 end)
 
 -- ESP RENDER
--- 30 updates/sec keeps the supplied ESP behavior smooth while avoiding
--- unnecessary work on mobile devices.
-local ESP_UPDATE_INTERVAL = 1 / 30
-local ESPAccumulator = ESP_UPDATE_INTERVAL
-
-RunService.RenderStepped:Connect(function(DeltaTime)
-    if not ESPRunning then
-        return
-    end
-
-    ESPAccumulator += DeltaTime
-
-    if ESPAccumulator < ESP_UPDATE_INTERVAL then
-        return
-    end
-
-    ESPAccumulator = 0
+RunService.RenderStepped:Connect(function()
     Camera = workspace.CurrentCamera
+    if not Camera then return end
 
-    if not Camera or not Config.Visual.ESP then
-        return
-    end
-
-    local ToClear = {}
-
-    for Player, data in pairs(ESPData or {}) do
-        if not Player.Parent then
-            ToClear[#ToClear + 1] = Player
-        else
-            UpdateESP(Player, data)
+    for player, data in pairs(Skeletons) do
+        if not player.Parent then
+            RemoveSkeleton(player)
+            continue
+        end
+        local character = data.Character
+        if not character or not character.Parent then
+            RemoveSkeleton(player)
+            continue
+        end
+        if not Config.Visual.ESP or not Config.Visual.Skeleton then
+            for _, bone in pairs(data.Bones) do
+                bone.Line.Visible = false
+            end
+            continue
+        end
+        if IsTeammate(player) then
+            for _, bone in pairs(data.Bones) do
+                bone.Line.Visible = false
+            end
+            continue
+        end
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if not humanoid or humanoid.Health <= 0 then
+            for _, bone in pairs(data.Bones) do
+                bone.Line.Visible = false
+            end
+            continue
+        end
+        local localCharacter = LocalPlayer.Character
+        if not localCharacter then continue end
+        local localRoot = localCharacter:FindFirstChild("HumanoidRootPart")
+        local targetRoot = character:FindFirstChild("HumanoidRootPart")
+        if not localRoot or not targetRoot then continue end
+        local distance = (targetRoot.Position - localRoot.Position).Magnitude
+        if distance > Config.Visual.MaxDistance then
+            for _, bone in pairs(data.Bones) do
+                bone.Line.Visible = false
+            end
+            continue
+        end
+        for _, bone in pairs(data.Bones) do
+            local part1 = bone.Part1
+            local part2 = bone.Part2
+            local line = bone.Line
+            if not part1 or not part2 or not part1.Parent or not part2.Parent then
+                line.Visible = false
+                continue
+            end
+            local position1, visible1 = Camera:WorldToViewportPoint(part1.Position)
+            local position2, visible2 = Camera:WorldToViewportPoint(part2.Position)
+            if not visible1 and not visible2 then
+                line.Visible = false
+                continue
+            end
+            local delta = Vector2.new(position2.X, position2.Y) - Vector2.new(position1.X, position1.Y)
+            local length = delta.Magnitude
+            if length <= 0 or length > 500 then
+                line.Visible = false
+                continue
+            end
+            local middle = (Vector2.new(position1.X, position1.Y) + Vector2.new(position2.X, position2.Y)) / 2
+            line.Position = UDim2.fromOffset(middle.X, middle.Y)
+            line.Size = UDim2.fromOffset(length, Config.Visual.SkeletonThickness)
+            line.Rotation = math.deg(math.atan2(delta.Y, delta.X))
+            line.BackgroundColor3 = Config.Visual.Color
+            line.Visible = true
         end
     end
 
-    for _, Player in ipairs(ToClear) do
-        ClearESP(Player)
+    for Player,Data in pairs(ESPData) do
+        local Character = Player.Character
+        local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+        local Head = Character and Character:FindFirstChild("Head")
+        local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+        if not Character or not Root or not Head or not Humanoid or Humanoid.Health <= 0 then
+            if Data.Box then Data.Box.Visible = false end
+            if Data.Tracer then Data.Tracer.Visible = false end
+            continue
+        end
+        local MyCharacter = LocalPlayer.Character
+        local MyRoot = MyCharacter and MyCharacter:FindFirstChild("HumanoidRootPart")
+        local Distance = math.huge
+        if MyRoot then
+            Distance = (Root.Position-MyRoot.Position).Magnitude
+        end
+        if Distance > Config.Visual.MaxDistance then
+            if Data.Box then Data.Box.Visible = false end
+            if Data.Tracer then Data.Tracer.Visible = false end
+            continue
+        end
+        if Data.InfoText then
+            local Lines = {}
+            if Config.Visual.Name then table.insert(Lines, Player.DisplayName) end
+            if Config.Visual.Health then table.insert(Lines, "HP: "..math.floor(Humanoid.Health)) end
+            if Config.Visual.Distance then table.insert(Lines, "Distance: "..math.floor(Distance)) end
+            Data.InfoText.Text = table.concat(Lines, "\n")
+            Data.InfoText.TextColor3 = Config.Visual.Color
+            Data.Billboard.Enabled = #Lines > 0
+        end
+        if Data.Highlight then
+            Data.Highlight.FillColor = Config.Visual.Color
+            Data.Highlight.OutlineColor = Config.Visual.Color
+            Data.Highlight.FillTransparency = Config.Visual.Chams and .55 or 1
+        end
+        if Data.Box then
+            local TopPoint = Camera:WorldToViewportPoint(Head.Position + Vector3.new(0,.5,0))
+            local BottomPoint = Camera:WorldToViewportPoint(Root.Position - Vector3.new(0,3,0))
+            if TopPoint.Z > 0 and BottomPoint.Z > 0 then
+                local Height = math.abs(BottomPoint.Y - TopPoint.Y)
+                local Width = Height*.55
+                if Height < 500 and Width < 500 then
+                    Data.Box.Position = UDim2.fromOffset((TopPoint.X+BottomPoint.X)/2, (TopPoint.Y+BottomPoint.Y)/2)
+                    Data.Box.Size = UDim2.fromOffset(Width, Height)
+                    Data.BoxStroke.Color = Config.Visual.Color
+                    Data.BoxStroke.Thickness = Config.Visual.BoxThickness
+                    Data.Box.Visible = true
+                else
+                    Data.Box.Visible = false
+                end
+            else
+                Data.Box.Visible = false
+            end
+        end
+        if Data.Tracer then
+            local Point,IsVisible = Camera:WorldToViewportPoint(Root.Position)
+            if IsVisible and Point.Z > 0 then
+                local Start = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y)
+                local End = Vector2.new(Point.X, Point.Y)
+                local TracerDistance = (End - Start).Magnitude
+                if TracerDistance < 1000 then
+                    Data.Tracer.BackgroundColor3 = Config.Visual.Color
+                    local Delta = End - Start
+                    Data.Tracer.Position = UDim2.fromOffset((Start.X+End.X)/2, (Start.Y+End.Y)/2)
+                    Data.Tracer.Size = UDim2.fromOffset(Delta.Magnitude, Config.Visual.TracerThickness)
+                    Data.Tracer.Rotation = math.deg(math.atan2(Delta.Y, Delta.X))
+                    Data.Tracer.Visible = true
+                else
+                    Data.Tracer.Visible = false
+                end
+            else
+                Data.Tracer.Visible = false
+            end
+        end
     end
 end)
 
@@ -2911,8 +2272,7 @@ HUDFrame.Parent = Gui
 
 Instance.new("UICorner",HUDFrame).CornerRadius = UDim.new(0,7)
 
--- CORREÇÃO: atribuir HUDStroke à variável local pré-declarada
-HUDStroke = Instance.new("UIStroke")
+local HUDStroke = Instance.new("UIStroke")
 HUDStroke.Color = Accent()
 HUDStroke.Thickness = 1
 HUDStroke.Transparency = Config.HUD.Transparency
@@ -2942,13 +2302,12 @@ local function UpdateHUDAppearance()
     prevHUDSize = newSize
 end
 
--- HUD DRAG (com Lock)
+-- HUD DRAG
 local HUDDragging = false
 local HUDDragStart
 local HUDStartPosition
 
 HUDFrame.InputBegan:Connect(function(Input)
-    if Config.HUD.Lock then return end
     if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
         HUDDragging = true
         HUDDragStart = Input.Position
@@ -2957,7 +2316,7 @@ HUDFrame.InputBegan:Connect(function(Input)
 end)
 
 UserInputService.InputChanged:Connect(function(Input)
-    if not HUDDragging or Config.HUD.Lock then return end
+    if not HUDDragging then return end
     if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
         local Delta = Input.Position-HUDDragStart
         HUDFrame.Position = UDim2.new(
@@ -3014,9 +2373,6 @@ AddHUD(Slider(Scroll, "HUD Transparency", 0, .9, Config.HUD.Transparency, functi
     Config.HUD.Transparency = v
     UpdateHUDAppearance()
 end, function(v) return string.format("%d%%", math.floor(v*100)) end))
-AddHUD(Toggle(Scroll, "Lock HUD", "Disable HUD dragging", Config.HUD.Lock, function(v)
-    Config.HUD.Lock = v
-end))
 
 -- SETTINGS
 local function AddSetting(Row)
@@ -3210,55 +2566,27 @@ MiniGlow.Thickness = 2
 MiniGlow.Transparency = 0.5
 MiniGlow.Parent = Mini
 
-local HubMinimized = false
-
 local function MinimizeHub()
-    if HubMinimized then return end
-    HubMinimized = true
-
-    pcall(ClosePopup)
+    ClosePopup()
     MainDragging = false
     HUDDragging = false
-
     Main.Visible = false
-
     Mini.Visible = true
-    Mini.AnchorPoint = Vector2.new(0, 0)
+    Mini.Size = UDim2.fromOffset(0,0)
+    Mini.AnchorPoint = Vector2.new(0.5, 0.5)
     Mini.Position = UDim2.new(0, 15, 0.5, -25)
-    Mini.Size = UDim2.fromOffset(
-        50 * Config.Customization.UIScale,
-        50 * Config.Customization.UIScale
-    )
+    Tween(Mini, {Size = UDim2.fromOffset(50 * Config.Customization.UIScale, 50 * Config.Customization.UIScale)}, TweenBounce)
+    Main.Size = UDim2.fromOffset(420 * Config.Customization.UIScale, 370 * Config.Customization.UIScale)
+    Main.Position = UDim2.new(0.5, -210 * Config.Customization.UIScale, 0.5, -185 * Config.Customization.UIScale)
+    Main.AnchorPoint = Vector2.new(0, 0)
 end
 
-local function RestoreHub()
-    if not HubMinimized then return end
-    HubMinimized = false
-
-    Mini.Visible = false
-    Main.Visible = true
-end
-
--- Use Activated so the same button works reliably with touch and mouse.
-Minimize.Activated:Connect(function()
+Minimize.MouseButton1Click:Connect(function()
     PlayClickSound()
     MinimizeHub()
 end)
 
-Mini.Activated:Connect(function()
-    PlayClickSound()
-    RestoreHub()
-end)
-
 local function CloseAll()
-    pcall(StopInfiniteJump)
-    pcall(StopFly)
-    pcall(StopNoClip)
-    ESPRunning = false
-    ClearAllESP()
-    for Player in pairs(PlayerConnections or {}) do
-        DisconnectPlayer(Player)
-    end
     Config.Aim.Enabled = false
     Config.Aim.FOVEnabled = false
     Config.Visual.ESP = false
@@ -3274,19 +2602,18 @@ local function CloseAll()
     Config.Player.SpeedHack = false
     Config.Player.FlyHack = false
     Config.Player.NoClip = false
-    Config.Player.JumpPowerEnabled = false
-    Config.Player.InfiniteJump = false
-    Config.Player.LowGravity = false
     Config.World.FullBright = false
     Config.World.RemoveFog = false
+    Config.World.JumpPowerEnabled = false
+    Config.World.LowGravity = false
     Config.World.NoShadows = false
     Config.World.NoNeon = false
-
+    
     pcall(function()
-        for Player in pairs(ESPData) do ClearESP(Player) end
-        TargetHighlight:Destroy()
+        for Player in pairs(ESPData) do RemoveESP(Player) end
+        for Player in pairs(Skeletons) do RemoveSkeleton(Player) end
     end)
-
+    
     pcall(function()
         Lighting.Brightness = 2
         Lighting.ClockTime = 14
@@ -3295,7 +2622,7 @@ local function CloseAll()
         workspace.Gravity = 196.2
         Camera.FieldOfView = 70
     end)
-
+    
     pcall(function()
         local Character = LocalPlayer.Character
         if Character then
@@ -3303,35 +2630,28 @@ local function CloseAll()
             if Humanoid then
                 Humanoid.JumpPower = 50
                 Humanoid.WalkSpeed = 16
-                LocalPlayer.CameraMaxZoomDistance = 15
-                LocalPlayer.CameraMinZoomDistance = 15
-                Humanoid.PlatformStand = false
-                Humanoid.AutoRotate = true
-            end
-            for _, part in ipairs(Character:GetDescendants()) do
-                if part:IsA("BasePart") then part.CanCollide = true end
+                Humanoid.CameraDistance = 15
             end
         end
-        if PlayerFlyBodyVelocity then PlayerFlyBodyVelocity:Destroy() end
-        if PlayerFlyBodyGyro then PlayerFlyBodyGyro:Destroy() end
     end)
-
+    
     pcall(function()
         RunService:UnbindFromRenderStep("NovaAim")
     end)
-
+    
     pcall(function()
         UpdateFov()
         HUDFrame.Visible = false
         Gui:Destroy()
         FovGui:Destroy()
+        ESPGui:Destroy()
     end)
 end
 
 Close.MouseButton1Click:Connect(function()
     PlayClickSound()
     if ActivePopup then ClosePopup() end
-
+    
     local ConfirmOverlay = Instance.new("Frame")
     ConfirmOverlay.Size = UDim2.fromScale(1,1)
     ConfirmOverlay.BackgroundColor3 = Color3.fromRGB(0,0,0)
@@ -3462,7 +2782,7 @@ Mini.MouseButton1Click:Connect(function()
     end)
 end)
 
--- FPS / HUD (compacto)
+-- FPS / HUD
 local Frames = 0
 local Elapsed = 0
 local FPS = 60
@@ -3518,165 +2838,133 @@ RunService.RenderStepped:Connect(function(DT)
     HUDText.Text = table.concat(Lines, "\n")
     local numLines = #Lines
     if numLines > 0 then
-        local textHeight = numLines * 12
-        local newHeight = textHeight + 6
+        local textHeight = numLines * 14
+        local newHeight = textHeight + 8
         HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, newHeight)
         HUDText.Size = UDim2.new(1,-12,0,textHeight)
-        HUDText.Position = UDim2.fromOffset(6, 3)
-    else
-        HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, 30)
+        HUDText.Position = UDim2.fromOffset(6,4)
     end
 end)
 
 -- PLAYER EVENTS
 local PlayerConnections = {}
 
-local function DisconnectPlayer(Player)
+local function DisconnectPlayerESPEvents(Player)
     local Connections = PlayerConnections[Player]
-
     if Connections then
         for _, Connection in ipairs(Connections) do
-            pcall(function()
+            if Connection then
                 Connection:Disconnect()
-            end)
+            end
         end
+        PlayerConnections[Player] = nil
     end
+end
 
-    PlayerConnections[Player] = nil
+local function BuildESPImmediately(Player, Character)
+    if Player == LocalPlayer then return end
+    if not Config.Visual.ESP then return end
+    if not Character or Player.Character ~= Character then return end
+
+    -- First attempt is immediate: no task.wait and no artificial delay.
+    CreateESP(Player)
+
+    -- If Roblox is still assembling R6/R15, retry on Heartbeat.
+    if not ESPData[Player] then
+        task.spawn(function()
+            for _ = 1, 12 do
+                if not Config.Visual.ESP then return end
+                if Player.Character ~= Character then return end
+
+                RunService.Heartbeat:Wait()
+
+                if Character.Parent
+                    and Character:FindFirstChild("HumanoidRootPart")
+                    and Character:FindFirstChild("Head")
+                    and Character:FindFirstChildOfClass("Humanoid") then
+
+                    CreateESP(Player)
+                    if ESPData[Player] then
+                        return
+                    end
+                end
+            end
+        end)
+    end
 end
 
 local function SetupPlayer(Player)
-    if Player == LocalPlayer then
-        return
-    end
+    if Player == LocalPlayer then return end
 
-    DisconnectPlayer(Player)
+    DisconnectPlayerESPEvents(Player)
 
     local Connections = {}
     PlayerConnections[Player] = Connections
 
     table.insert(Connections, Player.CharacterAdded:Connect(function(Character)
-        ClearESP(Player)
-
-        task.spawn(function()
-            for _ = 1, 30 do
-                if not Player.Parent or Player.Character ~= Character then
-                    return
-                end
-
-                local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-                local Root = GetRoot(Character)
-                local Head = Character:FindFirstChild("Head")
-
-                if Humanoid and Root and Head then
-                    if Config.Visual.ESP then
-                        CreateESP(Player)
-                    end
-                    return
-                end
-
-                task.wait(0.05)
-            end
-        end)
+        RemoveESP(Player)
+        RemoveSkeleton(Player)
+        BuildESPImmediately(Player, Character)
     end))
 
-    table.insert(Connections, Player.CharacterRemoving:Connect(function(Character)
-        local data = ESPData[Player]
-
-        if data and data.Character == Character then
-            ClearESP(Player)
-        end
+    table.insert(Connections, Player.CharacterRemoving:Connect(function()
+        RemoveESP(Player)
+        RemoveSkeleton(Player)
     end))
 
     table.insert(Connections, Player:GetPropertyChangedSignal("Team"):Connect(function()
         if Config.Visual.ESP then
-            RefreshESP()
+            CreateESP(Player)
+        else
+            RemoveESP(Player)
         end
     end))
 
-    if Player.Character and Config.Visual.ESP then
-        CreateESP(Player)
+    -- Existing players are also handled immediately.
+    if Player.Character then
+        BuildESPImmediately(Player, Player.Character)
     end
 end
 
-for _, Player in ipairs(Players:GetPlayers()) do
+for _,Player in ipairs(Players:GetPlayers()) do
     SetupPlayer(Player)
 end
 
 Players.PlayerAdded:Connect(SetupPlayer)
-
 Players.PlayerRemoving:Connect(function(Player)
-    DisconnectPlayer(Player)
-    ClearESP(Player)
+    DisconnectPlayerESPEvents(Player)
+    RemoveESP(Player)
+    RemoveSkeleton(Player)
 end)
 
 -- LOCAL CHARACTER
 LocalPlayer.CharacterAdded:Connect(function()
     task.wait(.5)
     Camera = workspace.CurrentCamera
-    local Character = LocalPlayer.Character
-    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
-
+    local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
     if Humanoid then
         if Config.Player.SpeedHack then
             Humanoid.WalkSpeed = 16 * Config.Player.SpeedMultiplier
         end
-        if Config.Player.JumpPowerEnabled then
-            Humanoid.UseJumpPower = true
-            Humanoid.JumpPower = Config.Player.JumpPower
+        if Config.World.JumpPowerEnabled then
+            Humanoid.JumpPower = Config.World.JumpHeight
         end
-        LocalPlayer.CameraMaxZoomDistance = Config.World.CameraZoom
-        LocalPlayer.CameraMinZoomDistance = Config.World.CameraZoom
+        Humanoid.CameraDistance = Config.World.CameraZoom
     end
-
-    if Config.Player.NoClip and Character then
-        for _,Part in ipairs(Character:GetDescendants()) do
+    if Config.Player.NoClip then
+        for _,Part in ipairs(LocalPlayer.Character:GetDescendants()) do
             if Part:IsA("BasePart") then
                 Part.CanCollide = false
             end
         end
     end
-
-    if Config.Player.FlyHack and Root and Humanoid then
-        Humanoid.PlatformStand = true
-        Humanoid.AutoRotate = false
-        PlayerFlyBodyVelocity = Instance.new("BodyVelocity")
-        PlayerFlyBodyVelocity.MaxForce = Vector3.new(50000, 50000, 50000)
-        PlayerFlyBodyVelocity.Velocity = Vector3.zero
-        PlayerFlyBodyVelocity.Parent = Root
-
-        PlayerFlyBodyGyro = Instance.new("BodyGyro")
-        PlayerFlyBodyGyro.MaxTorque = Vector3.new(400000, 400000, 400000)
-        PlayerFlyBodyGyro.P = 10000
-        PlayerFlyBodyGyro.D = 500
-        PlayerFlyBodyGyro.Parent = Root
+    if Config.World.LowGravity then
+        workspace.Gravity = Config.World.GravityValue
     end
-
-    if Config.Player.LowGravity then
-        workspace.Gravity = Config.Player.GravityValue
-    else
-        workspace.Gravity = 196.2
-    end
-    if Config.World.FOVEnabled then
-        Camera.FieldOfView = Config.World.FOV
-    else
-        Camera.FieldOfView = 70
-    end
+    Camera.FieldOfView = Config.World.FOV
 end)
 
-LocalPlayer.CharacterRemoving:Connect(function()
-    if PlayerFlyBodyVelocity then
-        PlayerFlyBodyVelocity:Destroy()
-        PlayerFlyBodyVelocity = nil
-    end
-    if PlayerFlyBodyGyro then
-        PlayerFlyBodyGyro:Destroy()
-        PlayerFlyBodyGyro = nil
-    end
-end)
-
--- TELA DE CARREGAMENTO
+-- TELA DE CARREGAMENTO (DEPOIS DE TUDO)
 local LoadingScreen = Instance.new("Frame")
 LoadingScreen.Name = "LoadingScreen"
 LoadingScreen.Size = UDim2.fromScale(1,1)
@@ -3849,13 +3137,17 @@ ShowAim()
 print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
 
 -- ============================================================
--- NOVA HUB - REVISÃO FINAL
+-- NOVA HUB - REVISÃO FINAL ESTÁTICA
 -- ============================================================
+-- Arquivo revisado: Nova_Hub_COMPLETO_CORRIGIDO_V2.txt
+-- Linhas após correções: 3132
 -- Correções aplicadas:
--- 1. ESP usa Drawing (sem deslocamento)
--- 2. Player: Fly Hack estável (AutoRotate off), No-Clip, Jump Power, Gravidade
--- 3. CameraZoom corrigido (CameraMaxZoomDistance e CameraMinZoomDistance)
--- 4. FOV com toggle de ativar/desativar
--- 5. Infinite Jump implementado via InputBegan (imediato)
--- 6. JumpPower e Gravidade removidos do World
+-- 1. Página Visual movida para depois da declaração de RefreshESP.
+-- 2. Limpeza centralizada do popup INFO + overlay.
+-- 3. INFO agora toca o som de clique.
+-- 4. Sistema de som usa SoundService, Ended + timeout de segurança.
+-- 5. Skeleton é removido no CharacterRemoving.
+-- 6. Skeleton antigo é removido antes de reconstruir o ESP no respawn.
+-- 7. CreateESP recebeu validações defensivas.
+-- 8. ESP continua com tentativa imediata + retry por Heartbeat.
 -- ============================================================
