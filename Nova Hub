@@ -530,10 +530,7 @@ end)
 local MinimizeHub
 local CloseAll
 
-Minimize.MouseButton1Click:Connect(function()
-    PlayClickSound()
-    if MinimizeHub then MinimizeHub() end
-end)
+
 
 -- TAB BAR
 local TabBar = Instance.new("Frame")
@@ -781,6 +778,11 @@ local Layout = Instance.new("UIListLayout")
 Layout.Padding = UDim.new(0,6)
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 Layout.Parent = Scroll
+
+-- Pequeno espaço extra no final para a última função nunca ficar escondida.
+local ScrollBottomPadding = Instance.new("UIPadding")
+ScrollBottomPadding.PaddingBottom = UDim.new(0, 55)
+ScrollBottomPadding.Parent = Scroll
 
 -- FOV
 local FovGui = Instance.new("ScreenGui")
@@ -1505,11 +1507,93 @@ AddPlayer(Slider(Scroll, "Speed Multiplier", 1, 10, Config.Player.SpeedMultiplie
 end, function(v) return string.format("%.1fx",v) end))
 
 -- Fly Hack
+-- PC + Mobile:
+--   PC: W/A/S/D movimentam; Space sobe; Ctrl desce.
+--   Mobile: o analógico movimenta e segurar o botão padrão de pulo sobe.
+--   Em ambos: W/S/analógico para frente/trás acompanha a inclinação da câmera,
+--   permitindo subir/descer olhando para cima/baixo como um fly normal.
+
 local FlyConnection = nil
+local FlyInputBegan = nil
+local FlyInputEnded = nil
+local FlyJumpBegan = nil
+local FlyJumpEnded = nil
 local PlayerFlyBodyVelocity = nil
 local PlayerFlyBodyGyro = nil
 
+local FlyKeys = {
+    Forward = false,
+    Backward = false,
+    Left = false,
+    Right = false,
+    Up = false,
+    Down = false,
+}
+
+local MobileJumpHeld = false
+
+local function ResetFlyInput()
+    for Key in pairs(FlyKeys) do
+        FlyKeys[Key] = false
+    end
+    MobileJumpHeld = false
+end
+
+local function GetMobileJumpButton()
+    local PlayerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
+    if not PlayerGui then
+        return nil
+    end
+
+    local TouchGui = PlayerGui:FindFirstChild("TouchGui")
+    if not TouchGui then
+        return nil
+    end
+
+    -- Roblox normally uses TouchControlFrame > JumpButton.
+    local TouchControlFrame = TouchGui:FindFirstChild("TouchControlFrame")
+    if TouchControlFrame then
+        local JumpButton = TouchControlFrame:FindFirstChild("JumpButton")
+        if JumpButton and JumpButton:IsA("GuiButton") then
+            return JumpButton
+        end
+    end
+
+    -- Fallback for versions where the button is nested differently.
+    local JumpButton = TouchGui:FindFirstChild("JumpButton", true)
+    if JumpButton and JumpButton:IsA("GuiButton") then
+        return JumpButton
+    end
+
+    return nil
+end
+
+local function DisconnectFlyInputs()
+    if FlyInputBegan then
+        FlyInputBegan:Disconnect()
+        FlyInputBegan = nil
+    end
+
+    if FlyInputEnded then
+        FlyInputEnded:Disconnect()
+        FlyInputEnded = nil
+    end
+
+    if FlyJumpBegan then
+        FlyJumpBegan:Disconnect()
+        FlyJumpBegan = nil
+    end
+
+    if FlyJumpEnded then
+        FlyJumpEnded:Disconnect()
+        FlyJumpEnded = nil
+    end
+end
+
 local function StopFly()
+    DisconnectFlyInputs()
+    ResetFlyInput()
+
     if FlyConnection then
         FlyConnection:Disconnect()
         FlyConnection = nil
@@ -1547,21 +1631,96 @@ local function StartFly()
         return
     end
 
+    ResetFlyInput()
+
     Humanoid.PlatformStand = true
     Humanoid.AutoRotate = false
 
     PlayerFlyBodyVelocity = Instance.new("BodyVelocity")
+    PlayerFlyBodyVelocity.Name = "NovaFlyVelocity"
     PlayerFlyBodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
     PlayerFlyBodyVelocity.P = 1e4
     PlayerFlyBodyVelocity.Velocity = Vector3.zero
     PlayerFlyBodyVelocity.Parent = Root
 
     PlayerFlyBodyGyro = Instance.new("BodyGyro")
+    PlayerFlyBodyGyro.Name = "NovaFlyGyro"
     PlayerFlyBodyGyro.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
     PlayerFlyBodyGyro.P = 2e4
     PlayerFlyBodyGyro.D = 500
     PlayerFlyBodyGyro.CFrame = Camera.CFrame
     PlayerFlyBodyGyro.Parent = Root
+
+    -- PC keyboard controls.
+    FlyInputBegan = UserInputService.InputBegan:Connect(function(Input, GameProcessed)
+        if GameProcessed or not Config.Player.FlyHack then
+            return
+        end
+
+        if Input.KeyCode == Enum.KeyCode.W then
+            FlyKeys.Forward = true
+        elseif Input.KeyCode == Enum.KeyCode.S then
+            FlyKeys.Backward = true
+        elseif Input.KeyCode == Enum.KeyCode.A then
+            FlyKeys.Left = true
+        elseif Input.KeyCode == Enum.KeyCode.D then
+            FlyKeys.Right = true
+        elseif Input.KeyCode == Enum.KeyCode.Space then
+            FlyKeys.Up = true
+        elseif Input.KeyCode == Enum.KeyCode.LeftControl
+            or Input.KeyCode == Enum.KeyCode.RightControl then
+            FlyKeys.Down = true
+        end
+    end)
+
+    FlyInputEnded = UserInputService.InputEnded:Connect(function(Input)
+        if Input.KeyCode == Enum.KeyCode.W then
+            FlyKeys.Forward = false
+        elseif Input.KeyCode == Enum.KeyCode.S then
+            FlyKeys.Backward = false
+        elseif Input.KeyCode == Enum.KeyCode.A then
+            FlyKeys.Left = false
+        elseif Input.KeyCode == Enum.KeyCode.D then
+            FlyKeys.Right = false
+        elseif Input.KeyCode == Enum.KeyCode.Space then
+            FlyKeys.Up = false
+        elseif Input.KeyCode == Enum.KeyCode.LeftControl
+            or Input.KeyCode == Enum.KeyCode.RightControl then
+            FlyKeys.Down = false
+        end
+    end)
+
+    -- Mobile jump button. We listen directly to the actual Roblox button,
+    -- rather than guessing a screen coordinate.
+    task.defer(function()
+        for _ = 1, 40 do
+            if not Config.Player.FlyHack or not LocalPlayer.Character then
+                return
+            end
+
+            local JumpButton = GetMobileJumpButton()
+
+            if JumpButton then
+                FlyJumpBegan = JumpButton.InputBegan:Connect(function(Input)
+                    if Input.UserInputType == Enum.UserInputType.Touch
+                        or Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        MobileJumpHeld = true
+                    end
+                end)
+
+                FlyJumpEnded = JumpButton.InputEnded:Connect(function(Input)
+                    if Input.UserInputType == Enum.UserInputType.Touch
+                        or Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        MobileJumpHeld = false
+                    end
+                end)
+
+                return
+            end
+
+            task.wait(0.1)
+        end
+    end)
 
     FlyConnection = RunService.RenderStepped:Connect(function()
         if not Config.Player.FlyHack then
@@ -1569,24 +1728,85 @@ local function StartFly()
             return
         end
 
-        if not LocalPlayer.Character or LocalPlayer.Character ~= Character
-            or not Root.Parent or Humanoid.Health <= 0 then
+        if not LocalPlayer.Character
+            or LocalPlayer.Character ~= Character
+            or not Root.Parent
+            or Humanoid.Health <= 0 then
             StopFly()
             return
         end
 
         Camera = workspace.CurrentCamera
-        if not Camera then return end
-
-        local move = Humanoid.MoveDirection
-        local velocity = Vector3.zero
-
-        if move.Magnitude > 0 then
-            velocity = move.Unit * Config.Player.FlySpeed
+        if not Camera then
+            return
         end
 
-        PlayerFlyBodyVelocity.Velocity = velocity
-        PlayerFlyBodyGyro.CFrame = Camera.CFrame
+        -- Humanoid.MoveDirection gives the mobile thumbstick direction
+        -- relative to the camera. We split it into camera-forward/right
+        -- components so the camera's pitch can control flight altitude.
+        local Move = Humanoid.MoveDirection
+        local CameraLook = Camera.CFrame.LookVector
+        local CameraRight = Camera.CFrame.RightVector
+
+        local ForwardAmount = Move:Dot(CameraLook)
+        local RightAmount = Move:Dot(CameraRight)
+
+        -- The vertical component from the thumbstick itself is intentionally
+        -- not used directly; ForwardAmount + CameraLook makes looking up/down
+        -- behave like a normal camera-relative fly.
+        local Direction = Vector3.zero
+
+        if math.abs(ForwardAmount) > 0.03 then
+            Direction += CameraLook * ForwardAmount
+        end
+
+        if math.abs(RightAmount) > 0.03 then
+            Direction += CameraRight * RightAmount
+        end
+
+        -- Keyboard fallback/control.
+        local KeyboardForward = 0
+        local KeyboardRight = 0
+
+        if FlyKeys.Forward then KeyboardForward += 1 end
+        if FlyKeys.Backward then KeyboardForward -= 1 end
+        if FlyKeys.Right then KeyboardRight += 1 end
+        if FlyKeys.Left then KeyboardRight -= 1 end
+
+        if KeyboardForward ~= 0 then
+            Direction += CameraLook * KeyboardForward
+        end
+
+        if KeyboardRight ~= 0 then
+            Direction += CameraRight * KeyboardRight
+        end
+
+        -- Vertical controls:
+        -- mobile jump / PC Space = up
+        -- PC Ctrl = down
+        if MobileJumpHeld or FlyKeys.Up then
+            Direction += Vector3.yAxis
+        end
+
+        if FlyKeys.Down then
+            Direction -= Vector3.yAxis
+        end
+
+        if Direction.Magnitude > 1 then
+            Direction = Direction.Unit
+        end
+
+        PlayerFlyBodyVelocity.Velocity =
+            Direction * Config.Player.FlySpeed
+
+        -- Face the same direction as the camera, while keeping the character
+        -- stable and avoiding unwanted rolling.
+        PlayerFlyBodyGyro.CFrame =
+            CFrame.lookAt(
+                Root.Position,
+                Root.Position + CameraLook,
+                Vector3.yAxis
+            )
     end)
 end
 
@@ -1685,9 +1905,58 @@ AddPlayer(Slider(Scroll, "Jump Height", 50, 500, Config.Player.JumpPower, functi
 end, function(v) return string.format("%.0f",v) end))
 
 -- Infinite Jump
-AddPlayer(Toggle(Scroll, "Infinite Jump", "Jump infinitely", Config.Player.InfiniteJump, function(v)
-    Config.Player.InfiniteJump = v
-end))
+-- PC + Mobile:
+-- Permite iniciar um novo pulo sempre que o jogador solicitar o pulo,
+-- inclusive no ar. O evento JumpRequest é disparado tanto pelo Space
+-- quanto pelo botão de pulo do Roblox no celular.
+
+local InfiniteJumpConnection = nil
+
+local function StopInfiniteJump()
+    if InfiniteJumpConnection then
+        InfiniteJumpConnection:Disconnect()
+        InfiniteJumpConnection = nil
+    end
+end
+
+local function StartInfiniteJump()
+    StopInfiniteJump()
+
+    InfiniteJumpConnection = UserInputService.JumpRequest:Connect(function()
+        if not Config.Player.InfiniteJump then
+            return
+        end
+
+        local Character = LocalPlayer.Character
+        if not Character then
+            return
+        end
+
+        local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+        if not Humanoid or Humanoid.Health <= 0 then
+            return
+        end
+
+        -- Force a fresh jump on every JumpRequest.
+        Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end)
+end
+
+AddPlayer(Toggle(
+    Scroll,
+    "Infinite Jump",
+    "Jump repeatedly in the air",
+    Config.Player.InfiniteJump,
+    function(v)
+        Config.Player.InfiniteJump = v
+
+        if v then
+            StartInfiniteJump()
+        else
+            StopInfiniteJump()
+        end
+    end
+))
 
 -- Low Gravity (movido para Player)
 AddPlayer(Toggle(Scroll, "Low Gravity", "Reduce gravity", Config.Player.LowGravity, function(v)
@@ -2941,22 +3210,48 @@ MiniGlow.Thickness = 2
 MiniGlow.Transparency = 0.5
 MiniGlow.Parent = Mini
 
+local HubMinimized = false
+
 local function MinimizeHub()
-    ClosePopup()
+    if HubMinimized then return end
+    HubMinimized = true
+
+    pcall(ClosePopup)
     MainDragging = false
     HUDDragging = false
+
     Main.Visible = false
+
     Mini.Visible = true
-    Mini.Size = UDim2.fromOffset(0,0)
-    Mini.AnchorPoint = Vector2.new(0.5, 0.5)
+    Mini.AnchorPoint = Vector2.new(0, 0)
     Mini.Position = UDim2.new(0, 15, 0.5, -25)
-    Tween(Mini, {Size = UDim2.fromOffset(50 * Config.Customization.UIScale, 50 * Config.Customization.UIScale)}, TweenBounce)
-    Main.Size = UDim2.fromOffset(420 * Config.Customization.UIScale, 370 * Config.Customization.UIScale)
-    Main.Position = UDim2.new(0.5, -210 * Config.Customization.UIScale, 0.5, -185 * Config.Customization.UIScale)
-    Main.AnchorPoint = Vector2.new(0, 0)
+    Mini.Size = UDim2.fromOffset(
+        50 * Config.Customization.UIScale,
+        50 * Config.Customization.UIScale
+    )
 end
 
+local function RestoreHub()
+    if not HubMinimized then return end
+    HubMinimized = false
+
+    Mini.Visible = false
+    Main.Visible = true
+end
+
+-- Use Activated so the same button works reliably with touch and mouse.
+Minimize.Activated:Connect(function()
+    PlayClickSound()
+    MinimizeHub()
+end)
+
+Mini.Activated:Connect(function()
+    PlayClickSound()
+    RestoreHub()
+end)
+
 local function CloseAll()
+    pcall(StopInfiniteJump)
     pcall(StopFly)
     pcall(StopNoClip)
     ESPRunning = false
