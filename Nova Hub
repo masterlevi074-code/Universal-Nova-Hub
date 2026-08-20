@@ -1505,58 +1505,157 @@ AddPlayer(Slider(Scroll, "Speed Multiplier", 1, 10, Config.Player.SpeedMultiplie
 end, function(v) return string.format("%.1fx",v) end))
 
 -- Fly Hack
-AddPlayer(Toggle(Scroll, "Fly Hack", "Enable flying", Config.Player.FlyHack, function(v)
-    Config.Player.FlyHack = v
+local FlyConnection = nil
+local PlayerFlyBodyVelocity = nil
+local PlayerFlyBodyGyro = nil
+
+local function StopFly()
+    if FlyConnection then
+        FlyConnection:Disconnect()
+        FlyConnection = nil
+    end
+
+    if PlayerFlyBodyVelocity then
+        PlayerFlyBodyVelocity:Destroy()
+        PlayerFlyBodyVelocity = nil
+    end
+
+    if PlayerFlyBodyGyro then
+        PlayerFlyBodyGyro:Destroy()
+        PlayerFlyBodyGyro = nil
+    end
+
+    local Character = LocalPlayer.Character
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+
+    if Humanoid then
+        Humanoid.PlatformStand = false
+        Humanoid.AutoRotate = true
+        Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+    end
+end
+
+local function StartFly()
+    StopFly()
+
     local Character = LocalPlayer.Character
     local Root = Character and Character:FindFirstChild("HumanoidRootPart")
     local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+
+    if not Root or not Humanoid then
+        Config.Player.FlyHack = false
+        return
+    end
+
+    Humanoid.PlatformStand = true
+    Humanoid.AutoRotate = false
+
+    PlayerFlyBodyVelocity = Instance.new("BodyVelocity")
+    PlayerFlyBodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+    PlayerFlyBodyVelocity.P = 1e4
+    PlayerFlyBodyVelocity.Velocity = Vector3.zero
+    PlayerFlyBodyVelocity.Parent = Root
+
+    PlayerFlyBodyGyro = Instance.new("BodyGyro")
+    PlayerFlyBodyGyro.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
+    PlayerFlyBodyGyro.P = 2e4
+    PlayerFlyBodyGyro.D = 500
+    PlayerFlyBodyGyro.CFrame = Camera.CFrame
+    PlayerFlyBodyGyro.Parent = Root
+
+    FlyConnection = RunService.RenderStepped:Connect(function()
+        if not Config.Player.FlyHack then
+            StopFly()
+            return
+        end
+
+        if not LocalPlayer.Character or LocalPlayer.Character ~= Character
+            or not Root.Parent or Humanoid.Health <= 0 then
+            StopFly()
+            return
+        end
+
+        Camera = workspace.CurrentCamera
+        if not Camera then return end
+
+        local move = Humanoid.MoveDirection
+        local velocity = Vector3.zero
+
+        if move.Magnitude > 0 then
+            velocity = move.Unit * Config.Player.FlySpeed
+        end
+
+        PlayerFlyBodyVelocity.Velocity = velocity
+        PlayerFlyBodyGyro.CFrame = Camera.CFrame
+    end)
+end
+
+AddPlayer(Toggle(Scroll, "Fly Hack", "Enable flying", Config.Player.FlyHack, function(v)
+    Config.Player.FlyHack = v
+
     if v then
-        if Root and Humanoid then
-            Humanoid.PlatformStand = true
-            Humanoid.AutoRotate = false  -- evita cambalhotas
-            if not PlayerFlyBodyGyro then
-                PlayerFlyBodyGyro = Instance.new("BodyGyro")
-                PlayerFlyBodyGyro.MaxTorque = Vector3.new(400000, 400000, 400000)
-                PlayerFlyBodyGyro.P = 10000
-                PlayerFlyBodyGyro.D = 500
-                PlayerFlyBodyGyro.Parent = Root
-            end
-            if not PlayerFlyBodyVelocity then
-                PlayerFlyBodyVelocity = Instance.new("BodyVelocity")
-                PlayerFlyBodyVelocity.MaxForce = Vector3.new(50000, 50000, 50000)
-                PlayerFlyBodyVelocity.Velocity = Vector3.zero
-                PlayerFlyBodyVelocity.Parent = Root
-            end
-        end
+        StartFly()
     else
-        if PlayerFlyBodyVelocity then
-            PlayerFlyBodyVelocity:Destroy()
-            PlayerFlyBodyVelocity = nil
-        end
-        if PlayerFlyBodyGyro then
-            PlayerFlyBodyGyro:Destroy()
-            PlayerFlyBodyGyro = nil
-        end
-        if Humanoid then
-            Humanoid.PlatformStand = false
-            Humanoid.AutoRotate = true
-            Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-        end
+        StopFly()
     end
 end))
+
 AddPlayer(Slider(Scroll, "Fly Speed", 10, 100, Config.Player.FlySpeed, function(v)
     Config.Player.FlySpeed = v
-end, function(v) return string.format("%.0f",v) end))
+end, function(v)
+    return string.format("%.0f", v)
+end))
 
 -- No-Clip
-AddPlayer(Toggle(Scroll, "No-Clip", "Walk through walls", Config.Player.NoClip, function(v)
-    Config.Player.NoClip = v
-    if not v and LocalPlayer.Character then
-        for _,Part in ipairs(LocalPlayer.Character:GetDescendants()) do
+local NoClipConnection = nil
+
+local function SetCharacterCollision(enabled)
+    local Character = LocalPlayer.Character
+    if not Character then return end
+
+    for _, Part in ipairs(Character:GetDescendants()) do
+        if Part:IsA("BasePart") then
+            Part.CanCollide = enabled
+        end
+    end
+end
+
+local function StopNoClip()
+    if NoClipConnection then
+        NoClipConnection:Disconnect()
+        NoClipConnection = nil
+    end
+
+    SetCharacterCollision(true)
+end
+
+local function StartNoClip()
+    StopNoClip()
+
+    NoClipConnection = RunService.Stepped:Connect(function()
+        if not Config.Player.NoClip then
+            StopNoClip()
+            return
+        end
+
+        local Character = LocalPlayer.Character
+        if not Character then return end
+
+        for _, Part in ipairs(Character:GetDescendants()) do
             if Part:IsA("BasePart") then
-                Part.CanCollide = true
+                Part.CanCollide = false
             end
         end
+    end)
+end
+
+AddPlayer(Toggle(Scroll, "No-Clip", "Walk through walls", Config.Player.NoClip, function(v)
+    Config.Player.NoClip = v
+
+    if v then
+        StartNoClip()
+    else
+        StopNoClip()
     end
 end))
 
@@ -1848,6 +1947,20 @@ local function SafeDestroyInstance(object)
     end)
 end
 
+local function ClearSkeletonLines(data)
+    if not data or not data.Lines then return end
+
+    for i = #data.Lines, 1, -1 do
+        local entry = data.Lines[i]
+        if type(entry) == "table" then
+            SafeRemoveDrawing(entry.Drawing)
+        else
+            SafeRemoveDrawing(entry)
+        end
+        data.Lines[i] = nil
+    end
+end
+
 local function HideData(data)
     if not data then return end
 
@@ -1865,10 +1978,13 @@ local function HideData(data)
         end)
     end
 
-    for _, line in ipairs(data.Lines or {}) do
-        pcall(function()
-            line.Visible = false
-        end)
+    for _, entry in ipairs(data.Lines or {}) do
+        local line = type(entry) == "table" and entry.Drawing or entry
+        if line then
+            pcall(function()
+                line.Visible = false
+            end)
+        end
     end
 end
 
@@ -1877,6 +1993,7 @@ local function ClearESP(Player)
     if not data then return end
 
     HideData(data)
+    ClearSkeletonLines(data)
 
     SafeRemoveDrawing(data.Box)
     SafeRemoveDrawing(data.Tracer)
@@ -2078,12 +2195,12 @@ end
 
 local function UpdateSkeleton(data)
     if not Config.Visual.Skeleton then
-        for _, entry in ipairs(data.Lines or {}) do
-            if entry.Drawing then
-                entry.Drawing.Visible = false
-            end
-        end
+        ClearSkeletonLines(data)
         return
+    end
+
+    if #data.Lines == 0 then
+        CreateSkeleton(data, data.Character)
     end
 
     for _, entry in ipairs(data.Lines or {}) do
@@ -2840,6 +2957,8 @@ local function MinimizeHub()
 end
 
 local function CloseAll()
+    pcall(StopFly)
+    pcall(StopNoClip)
     ESPRunning = false
     ClearAllESP()
     for Player in pairs(PlayerConnections or {}) do
