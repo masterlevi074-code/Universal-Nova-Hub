@@ -16,6 +16,8 @@
     - Render loop não remove ESP por health <= 0, apenas oculta
     - Highlight movido para pasta no Workspace (evita ser destruído junto com o corpo)
     - Retry de criação do ESP após respawn aumentado para 5 segundos
+    - Adicionada verificação de personagem no RenderStepped para remover ESP antigo
+    - Data.Character armazenado para detectar mudança de personagem
 ]]
 
 -- Services
@@ -476,6 +478,7 @@ InfoButton.MouseButton1Click:Connect(function()
 • CORREÇÃO: ESP/Chams não fica mais deslocado após respawn
 • Highlights movidos para o Workspace (não somem com o corpo)
 • Retry de criação do ESP aumentado para 5 segundos
+• Verificação de personagem no RenderStepped para remover ESP antigo
 ]]
     InfoText.TextColor3 = Color3.fromRGB(200,202,210)
     InfoText.TextSize = 8
@@ -1884,6 +1887,7 @@ local function CreateESP(Player)
     if not Root or not Head or not Humanoid then return false end
 
     local Data = {}
+    Data.Character = Character  -- Armazenar referência para verificação posterior
     ESPData[Player] = Data
 
     if Config.Visual.Highlight or Config.Visual.Chams then
@@ -2146,7 +2150,6 @@ RunService.RenderStepped:Connect(function()
     Camera = workspace.CurrentCamera
     if not Camera then return end
 
-    -- NÃO removemos mais por health <= 0; apenas ocultamos os elementos
     local PlayersToRemove = {}
 
     for player, data in pairs(Skeletons) do
@@ -2156,6 +2159,11 @@ RunService.RenderStepped:Connect(function()
         end
         local character = data.Character
         if not character or not character.Parent then
+            RemoveSkeleton(player)
+            continue
+        end
+        -- NOVA VERIFICAÇÃO: se o personagem atual é diferente do armazenado, remover skeleton
+        if player.Character ~= character then
             RemoveSkeleton(player)
             continue
         end
@@ -2226,6 +2234,11 @@ RunService.RenderStepped:Connect(function()
 
     for Player,Data in pairs(ESPData) do
         local Character = Player.Character
+        -- NOVA VERIFICAÇÃO: se o personagem armazenado é diferente do atual, remover ESP
+        if Data.Character ~= Character then
+            table.insert(PlayersToRemove, Player)
+            continue
+        end
         local Root = Character and Character:FindFirstChild("HumanoidRootPart")
         local Head = Character and Character:FindFirstChild("Head")
         local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
@@ -2312,7 +2325,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Remover apenas se a estrutura não existe mais (Character, Head, Root, Humanoid ausentes)
+    -- Remover ESP de jogadores com personagem alterado ou estruturas ausentes
     for _,Player in ipairs(PlayersToRemove) do
         RemoveESP(Player)
         RemoveSkeleton(Player)
@@ -3208,7 +3221,7 @@ print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
 -- ============================================================
 -- NOVA HUB - REVISÃO FINAL ESTÁTICA
 -- ============================================================
--- Arquivo revisado: Nova_Hub_COMPLETO_CORRIGIDO_V7.txt
+-- Arquivo revisado: Nova_Hub_COMPLETO_CORRIGIDO_V8.txt
 -- Correções aplicadas:
 -- 1. CameraDistance -> CameraMaxZoomDistance (todas as ocorrências)
 -- 2. Declaração antecipada de MinimizeHub e CloseAll (evita nil)
@@ -3220,7 +3233,8 @@ print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
 -- 8. InfoButton ZIndex = 5 (para receber cliques acima do DragButton)
 -- 9. HUDStroke declarado antes de RefreshLinesAccent (corrige atualização de cor)
 -- 10. ESP não depende da saúde para ser criado (corrige bug de respawn)
--- 11. Render loop não remove ESP por health <= 0, apenas oculta elementos
+-- 11. Render loop não remove ESP por health <= 0, apenas oculta
 -- 12. Highlight movido para pasta no Workspace (evita ser destruído junto com o corpo)
 -- 13. Retry de criação do ESP após respawn aumentado para 5 segundos
+-- 14. Verificação de personagem no RenderStepped para remover ESP antigo
 -- ============================================================
