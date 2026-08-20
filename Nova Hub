@@ -2087,7 +2087,18 @@ end
 local function VisualToggle(Title, Description, Key)
     local Row = Toggle(Scroll, Title, Description, Config.Visual[Key], function(v)
         Config.Visual[Key] = v
-        RefreshESP()
+
+        if Key == "Skeleton" and not v then
+            DestroyAllSkeletons()
+        elseif Key == "Skeleton" and v and Config.Visual.ESP then
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer and player.Character and not IsTeammate(player) then
+                    CreateSkeleton(player)
+                end
+            end
+        elseif Key == "ESP" and not v then
+            RefreshESP()
+        end
     end)
     table.insert(VisualRows, Row)
     return Row
@@ -2106,23 +2117,18 @@ VisualToggle("ESP Team Check", "Ignore teammates", "TeamCheck")
 
 table.insert(VisualRows, ColorPicker(Scroll, "ESP Color", Config.Visual.Color, function(Color)
     Config.Visual.Color = Color
-    RefreshESP()
 end))
 table.insert(VisualRows, Slider(Scroll, "Box Thickness", 1, 5, Config.Visual.BoxThickness, function(v)
     Config.Visual.BoxThickness = v
-    RefreshESP()
 end, function(v) return string.format("%.1f",v) end))
 table.insert(VisualRows, Slider(Scroll, "Tracer Thickness", 1, 5, Config.Visual.TracerThickness, function(v)
     Config.Visual.TracerThickness = v
-    RefreshESP()
 end, function(v) return string.format("%.1f",v) end))
 table.insert(VisualRows, Slider(Scroll, "Skeleton Thickness", 1, 5, Config.Visual.SkeletonThickness, function(v)
     Config.Visual.SkeletonThickness = v
-    RefreshESP()
 end, function(v) return string.format("%.1f",v) end))
 table.insert(VisualRows, Slider(Scroll, "ESP Text Size", 8, 16, Config.Visual.TextSize, function(v)
     Config.Visual.TextSize = math.floor(v)
-    RefreshESP()
 end, function(v) return string.format("%d",v) end))
 
 -- TARGET (AIM ASSIST)
@@ -2239,138 +2245,224 @@ RunService:BindToRenderStep("NovaAim", Enum.RenderPriority.Camera.Value+1, funct
     Camera.CFrame = Camera.CFrame:Lerp(Desired, Config.Aim.Smoothness)
 end)
 
--- ESP RENDER
-RunService.RenderStepped:Connect(function()
+-- ESP RENDER (OTIMIZADO)
+-- Atualiza o ESP em taxas controladas para reduzir custo no celular.
+local ESP_UPDATE_RATE = 1/20
+local SKELETON_UPDATE_RATE = 1/30
+local espAccumulator = ESP_UPDATE_RATE
+local skeletonAccumulator = SKELETON_UPDATE_RATE
+
+local function HideSkeleton(data)
+    if not data or not data.Bones then return end
+    for _, bone in pairs(data.Bones) do
+        if bone.Line then bone.Line.Visible = false end
+    end
+end
+
+local function DestroyAllSkeletons()
+    local list = {}
+    for player in pairs(Skeletons) do list[#list+1] = player end
+    for _, player in ipairs(list) do RemoveSkeleton(player) end
+end
+
+local function UpdateSkeletons()
     Camera = workspace.CurrentCamera
     if not Camera then return end
 
-    for player, data in pairs(ESPData) do
-        if player.Parent then
-            UpdateESP(player, data)
-        else
-            ClearESP(player)
+    if not Config.Visual.ESP or not Config.Visual.Skeleton then
+        DestroyAllSkeletons()
+        return
+    end
+
+    local myCharacter = LocalPlayer.Character
+    local myRoot = myCharacter and myCharacter:FindFirstChild("HumanoidRootPart")
+    if not myRoot then
+        for _, data in pairs(Skeletons) do HideSkeleton(data) end
+        return
+    end
+
+    for player, data in pairs(Skeletons) do
+        if not player.Parent then
+            RemoveSkeleton(player)
+            continue
+        end
+
+        local character = data.Character
+        if not character or not character.Parent or player.Character ~= character then
+            RemoveSkeleton(player)
+            continue
+        end
+
+        if IsTeammate(player) then
+            HideSkeleton(data)
+            continue
+        end
+
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        local targetRoot = character:FindFirstChild("HumanoidRootPart")
+        if not humanoid or humanoid.Health <= 0 or not targetRoot then
+            HideSkeleton(data)
+            continue
+        end
+
+        if (targetRoot.Position - myRoot.Position).Magnitude > Config.Visual.MaxDistance then
+            HideSkeleton(data)
+            continue
+        end
+
+        for _, bone in pairs(data.Bones) do
+            local part1, part2, line = bone.Part1, bone.Part2, bone.Line
+            if not part1 or not part2 or not part1.Parent or not part2.Parent then
+                line.Visible = false
+                continue
+            end
+
+            local a, va = Camera:WorldToViewportPoint(part1.Position)
+            local b, vb = Camera:WorldToViewportPoint(part2.Position)
+            if not va and not vb then
+                line.Visible = false
+                continue
+            end
+
+            local p1 = Vector2.new(a.X, a.Y)
+            local p2 = Vector2.new(b.X, b.Y)
+            local delta = p2 - p1
+            local length = delta.Magnitude
+            if length <= 0 or length > 500 then
+                line.Visible = false
+                continue
+            end
+
+            local middle = (p1 + p2) / 2
+            line.Position = UDim2.fromOffset(middle.X, middle.Y)
+            line.Size = UDim2.fromOffset(length, Config.Visual.SkeletonThickness)
+            line.Rotation = math.deg(math.atan2(delta.Y, delta.X))
+            line.BackgroundColor3 = Config.Visual.Color
+            line.Visible = true
         end
     end
-end)
-
--- HUD
-local HUDFrame = Instance.new("Frame")
-HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, 50)
-HUDFrame.Position = Config.HUD.Position
-HUDFrame.BackgroundColor3 = Color3.fromRGB(20,21,27)
-HUDFrame.BackgroundTransparency = Config.HUD.Transparency
-HUDFrame.BorderSizePixel = 0
-HUDFrame.Visible = Config.HUD.Enabled
-HUDFrame.Parent = Gui
-
-Instance.new("UICorner",HUDFrame).CornerRadius = UDim.new(0,7)
-
--- CORREÇÃO: atribuir HUDStroke à variável local pré-declarada
-HUDStroke = Instance.new("UIStroke")
-HUDStroke.Color = Accent()
-HUDStroke.Thickness = 1
-HUDStroke.Transparency = Config.HUD.Transparency
-HUDStroke.Parent = HUDFrame
-
-local HUDText = Instance.new("TextLabel")
-HUDText.Size = UDim2.new(1,-12,1,-8)
-HUDText.Position = UDim2.fromOffset(6,4)
-HUDText.BackgroundTransparency = 1
-HUDText.TextColor3 = Color3.fromRGB(220,221,227)
-HUDText.TextSize = 8
-HUDText.Font = Enum.Font.GothamMedium
-HUDText.TextXAlignment = Enum.TextXAlignment.Left
-HUDText.TextYAlignment = Enum.TextYAlignment.Top
-HUDText.Parent = HUDFrame
-
-local prevHUDSize = Config.HUD.Size
-
-local function UpdateHUDAppearance()
-    local newSize = math.floor(Config.HUD.Size)
-    HUDFrame.Size = UDim2.fromOffset(newSize, HUDFrame.Size.Y.Offset)
-    HUDFrame.BackgroundTransparency = Config.HUD.Transparency
-    HUDStroke.Transparency = Config.HUD.Transparency
-    HUDText.TextTransparency = Config.HUD.Transparency
-    local textSize = math.clamp(math.floor(newSize/13), 7, 32)
-    HUDText.TextSize = textSize
-    prevHUDSize = newSize
 end
 
--- HUD DRAG (com Lock)
-local HUDDragging = false
-local HUDDragStart
-local HUDStartPosition
+local function UpdateESPVisuals()
+    Camera = workspace.CurrentCamera
+    if not Camera then return end
 
-HUDFrame.InputBegan:Connect(function(Input)
-    if Config.HUD.Lock then return end
-    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-        HUDDragging = true
-        HUDDragStart = Input.Position
-        HUDStartPosition = HUDFrame.Position
+    if not Config.Visual.ESP then
+        local list = {}
+        for player in pairs(ESPData) do list[#list+1] = player end
+        for _, player in ipairs(list) do RemoveESP(player) end
+        DestroyAllSkeletons()
+        return
     end
-end)
 
-UserInputService.InputChanged:Connect(function(Input)
-    if not HUDDragging or Config.HUD.Lock then return end
-    if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
-        local Delta = Input.Position-HUDDragStart
-        HUDFrame.Position = UDim2.new(
-            HUDStartPosition.X.Scale,
-            HUDStartPosition.X.Offset+Delta.X,
-            HUDStartPosition.Y.Scale,
-            HUDStartPosition.Y.Offset+Delta.Y
-        )
+    local myCharacter = LocalPlayer.Character
+    local myRoot = myCharacter and myCharacter:FindFirstChild("HumanoidRootPart")
+
+    for player, data in pairs(ESPData) do
+        if not player.Parent then
+            RemoveESP(player)
+            continue
+        end
+
+        local character = player.Character
+        local root = character and character:FindFirstChild("HumanoidRootPart")
+        local head = character and character:FindFirstChild("Head")
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+
+        if not character or not character.Parent or not root or not head or not humanoid or humanoid.Health <= 0 then
+            if data.Box then data.Box.Visible = false end
+            if data.Tracer then data.Tracer.Visible = false end
+            if data.Billboard then data.Billboard.Enabled = false end
+            continue
+        end
+
+        if IsTeammate(player) then
+            if data.Box then data.Box.Visible = false end
+            if data.Tracer then data.Tracer.Visible = false end
+            if data.Billboard then data.Billboard.Enabled = false end
+            if data.Highlight then data.Highlight.Enabled = false end
+            continue
+        end
+
+        local distance = myRoot and (root.Position - myRoot.Position).Magnitude or math.huge
+        if distance > Config.Visual.MaxDistance then
+            if data.Box then data.Box.Visible = false end
+            if data.Tracer then data.Tracer.Visible = false end
+            if data.Billboard then data.Billboard.Enabled = false end
+            if data.Highlight then data.Highlight.Enabled = false end
+            continue
+        end
+
+        if data.InfoText then
+            local lines = {}
+            if Config.Visual.Name then lines[#lines+1] = player.DisplayName end
+            if Config.Visual.Health then lines[#lines+1] = "HP: " .. math.floor(humanoid.Health) end
+            if Config.Visual.Distance then lines[#lines+1] = "Distance: " .. math.floor(distance) end
+            data.InfoText.Text = table.concat(lines, "\n")
+            data.InfoText.TextColor3 = Config.Visual.Color
+            data.InfoText.TextSize = Config.Visual.TextSize
+            data.Billboard.Enabled = #lines > 0
+        end
+
+        if data.Highlight then
+            data.Highlight.Enabled = Config.Visual.Highlight or Config.Visual.Chams
+            data.Highlight.FillColor = Config.Visual.Color
+            data.Highlight.OutlineColor = Config.Visual.Color
+            data.Highlight.FillTransparency = Config.Visual.Chams and .55 or 1
+        end
+
+        if data.Box then
+            if Config.Visual.Box then
+                local top = Camera:WorldToViewportPoint(head.Position + Vector3.new(0,.5,0))
+                local bottom = Camera:WorldToViewportPoint(root.Position - Vector3.new(0,3,0))
+                if top.Z > 0 and bottom.Z > 0 then
+                    local height = math.abs(bottom.Y - top.Y)
+                    local width = height * .55
+                    if height < 500 and width < 500 then
+                        data.Box.Position = UDim2.fromOffset((top.X+bottom.X)/2, (top.Y+bottom.Y)/2)
+                        data.Box.Size = UDim2.fromOffset(width, height)
+                        data.BoxStroke.Color = Config.Visual.Color
+                        data.BoxStroke.Thickness = Config.Visual.BoxThickness
+                        data.Box.Visible = true
+                    else data.Box.Visible = false end
+                else data.Box.Visible = false end
+            else data.Box.Visible = false end
+        end
+
+        if data.Tracer then
+            if Config.Visual.Tracer then
+                local point, visible = Camera:WorldToViewportPoint(root.Position)
+                if visible and point.Z > 0 then
+                    local from = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y)
+                    local to = Vector2.new(point.X, point.Y)
+                    local delta = to - from
+                    if delta.Magnitude < 1000 then
+                        data.Tracer.BackgroundColor3 = Config.Visual.Color
+                        data.Tracer.Position = UDim2.fromOffset((from.X+to.X)/2, (from.Y+to.Y)/2)
+                        data.Tracer.Size = UDim2.fromOffset(delta.Magnitude, Config.Visual.TracerThickness)
+                        data.Tracer.Rotation = math.deg(math.atan2(delta.Y, delta.X))
+                        data.Tracer.Visible = true
+                    else data.Tracer.Visible = false end
+                else data.Tracer.Visible = false end
+            else data.Tracer.Visible = false end
+        end
     end
-end)
-
-UserInputService.InputEnded:Connect(function(Input)
-    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-        HUDDragging = false
-        Config.HUD.Position = HUDFrame.Position
-    end
-end)
-
--- HUD PAGE
-local function AddHUD(Row)
-    table.insert(HUDRows,Row)
 end
 
-AddHUD(Toggle(Scroll, "HUD", "Enable information panel", Config.HUD.Enabled, function(v)
-    Config.HUD.Enabled = v
-    HUDFrame.Visible = v
-end))
-AddHUD(Toggle(Scroll, "FPS Counter", "Show current FPS", Config.HUD.FPS, function(v)
-    Config.HUD.FPS = v
-end))
-AddHUD(Toggle(Scroll, "Ping Counter", "Show network ping", Config.HUD.Ping, function(v)
-    Config.HUD.Ping = v
-end))
-AddHUD(Toggle(Scroll, "Player Counter", "Show player count", Config.HUD.Players, function(v)
-    Config.HUD.Players = v
-end))
-AddHUD(Toggle(Scroll, "XYZ Position", "Show character coordinates", Config.HUD.XYZ, function(v)
-    Config.HUD.XYZ = v
-end))
-AddHUD(Toggle(Scroll, "Time", "Show current time", Config.HUD.ShowTime, function(v)
-    Config.HUD.ShowTime = v
-end))
-AddHUD(Toggle(Scroll, "Server ID", "Show server ID", Config.HUD.ShowServer, function(v)
-    Config.HUD.ShowServer = v
-end))
-AddHUD(Toggle(Scroll, "Session Time", "Show time since joined", Config.HUD.ShowSessionTime, function(v)
-    Config.HUD.ShowSessionTime = v
-end))
-AddHUD(Slider(Scroll, "HUD Size", 80, 250, Config.HUD.Size, function(v)
-    Config.HUD.Size = math.floor(v)
-    UpdateHUDAppearance()
-end, function(v) return string.format("%d", v) end))
-AddHUD(Slider(Scroll, "HUD Transparency", 0, .9, Config.HUD.Transparency, function(v)
-    Config.HUD.Transparency = v
-    UpdateHUDAppearance()
-end, function(v) return string.format("%d%%", math.floor(v*100)) end))
-AddHUD(Toggle(Scroll, "Lock HUD", "Disable HUD dragging", Config.HUD.Lock, function(v)
-    Config.HUD.Lock = v
-end))
+RunService.RenderStepped:Connect(function(dt)
+    espAccumulator += dt
+    skeletonAccumulator += dt
+
+    if espAccumulator >= ESP_UPDATE_RATE then
+        espAccumulator = 0
+        UpdateESPVisuals()
+    end
+
+    if skeletonAccumulator >= SKELETON_UPDATE_RATE then
+        skeletonAccumulator = 0
+        UpdateSkeletons()
+    end
+end)
 
 -- SETTINGS
 local function AddSetting(Row)
