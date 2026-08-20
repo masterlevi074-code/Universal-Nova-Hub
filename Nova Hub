@@ -1,5 +1,5 @@
 --[[
-    NOVA HUB - STUDIO EDITION v4.0
+    NOVA HUB - STUDIO EDITION v4.2
     LocalScript
     StarterPlayer > StarterPlayerScripts
     ESP com retry imediato (sem precisar morrer)
@@ -1570,7 +1570,11 @@ AddWorld(Toggle(Scroll, "Full Bright", "Make everything bright", Config.World.Fu
         Lighting.GlobalShadows = false
     else
         Lighting.Brightness = 2
-        Lighting.ClockTime = 14
+        if Config.World.TimeOfDayEnabled then
+            Lighting.ClockTime = Config.World.TimeOfDay
+        else
+            Lighting.ClockTime = 14
+        end
         Lighting.FogEnd = 100000
         Lighting.GlobalShadows = true
     end
@@ -2304,6 +2308,7 @@ local function UpdateHUDAppearance()
     local newSize = math.floor(Config.HUD.Size)
     HUDFrame.Size = UDim2.fromOffset(newSize, HUDFrame.Size.Y.Offset)
     HUDFrame.BackgroundTransparency = Config.HUD.Transparency
+    HUDStroke.Color = Accent()
     HUDStroke.Transparency = Config.HUD.Transparency
     HUDText.TextTransparency = Config.HUD.Transparency
     local textSize = math.clamp(math.floor(newSize/13), 7, 32)
@@ -2648,6 +2653,11 @@ local function CloseAll()
             if Humanoid then
                 Humanoid.JumpPower = 50
                 Humanoid.WalkSpeed = 16
+            end
+            for _, Part in ipairs(Character:GetDescendants()) do
+                if Part:IsA("BasePart") then
+                    Part.CanCollide = true
+                end
             end
         end
     end)
@@ -3161,53 +3171,5 @@ RefreshToggleAccent()
 RefreshLinesAccent()
 ShowAim()
 
-print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
+print("NOVA HUB - STUDIO EDITION v4.2 carregado com sucesso!")
 
--- ============================================================
--- NOVA HUB - REVISÃO FINAL ESTÁTICA
--- ============================================================
--- Arquivo revisado: Nova_Hub_COMPLETO_CORRIGIDO_V2.txt
--- Linhas após correções: 3132
--- Correções aplicadas:
--- 1. Página Visual movida para depois da declaração de RefreshESP.
--- 2. Limpeza centralizada do popup INFO + overlay.
--- 3. INFO agora toca o som de clique.
--- 4. Sistema de som usa SoundService, Ended + timeout de segurança.
--- 5. Skeleton é removido no CharacterRemoving.
--- 6. Skeleton antigo é removido antes de reconstruir o ESP no respawn.
--- 7. CreateESP recebeu validações defensivas.
--- 8. ESP continua com tentativa imediata + retry por Heartbeat.
--- ============================================================
-  Tween(Main, {
-        Size = UDim2.fromOffset(420 * Config.Customization.UIScale, 370 * Config.Customization.UIScale),
-        BackgroundTransparency = 0
-    }, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out))
-    task.wait(0.5)
-    Main.Position = UDim2.new(0.5, -210 * Config.Customization.UIScale, 0.5, -185 * Config.Customization.UIScale)
-    Main.AnchorPoint = Vector2.new(0, 0)
-    LoadingScreen:Destroy()
-end)
-
--- INITIALIZATION
-UpdateFov()
-UpdateHUDAppearance()
-RefreshESP()
-RefreshToggleAccent()
-RefreshLinesAccent()
-ShowAim()
-
-print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
-
--- ============================================================
--- NOVA HUB - REVISÃO FINAL
--- ============================================================
--- Correções aplicadas:
--- 1. ESP usa Drawing (sem deslocamento)
--- 2. Player: Fly Hack estável (AutoRotate off), No-Clip, Jump Power com toggle, Gravidade
--- 3. Camera Zoom removido
--- 4. FOV com toggle de ativar/desativar
--- 5. Infinite Jump implementado via InputBegan (imediato)
--- 6. JumpPower e Gravidade concentrados no Player
--- 7. HUD Lock adicionado e UI Accent aplicado à borda do HUD
--- 8. Time of Day com toggle de ativar/desativar
--- ============================================================
