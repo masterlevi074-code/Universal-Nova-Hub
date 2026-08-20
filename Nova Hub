@@ -14,6 +14,8 @@
     - HUDStroke declarado antes de RefreshLinesAccent
     - ESP não depende da saúde para ser criado (corrige bug de respawn)
     - Render loop não remove ESP por health <= 0, apenas oculta
+    - Highlight movido para pasta no Workspace (evita ser destruído junto com o corpo)
+    - Retry de criação do ESP após respawn aumentado para 5 segundos
 ]]
 
 -- Services
@@ -471,6 +473,9 @@ InfoButton.MouseButton1Click:Connect(function()
 • World: Full Bright, Gravity, Jump Power, etc.
 • Player: Speed, Fly, NoClip, Jump
 • Skeleton ESP corrigido
+• CORREÇÃO: ESP/Chams não fica mais deslocado após respawn
+• Highlights movidos para o Workspace (não somem com o corpo)
+• Retry de criação do ESP aumentado para 5 segundos
 ]]
     InfoText.TextColor3 = Color3.fromRGB(200,202,210)
     InfoText.TextSize = 8
@@ -1768,6 +1773,11 @@ ESPGui.IgnoreGuiInset = true
 ESPGui.DisplayOrder = 80
 ESPGui.Parent = PlayerGui
 
+-- NOVA: Pasta para guardar Highlights no Workspace (não somem com o corpo)
+local HighlightsFolder = Instance.new("Folder")
+HighlightsFolder.Name = "NovaHighlights"
+HighlightsFolder.Parent = workspace
+
 local R15Skeleton = {
     {"Head","UpperTorso"},
     {"UpperTorso","LowerTorso"},
@@ -1885,7 +1895,7 @@ local function CreateESP(Player)
         Highlight.FillTransparency = Config.Visual.Chams and .55 or 1
         Highlight.OutlineTransparency = 0
         Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        Highlight.Parent = Character
+        Highlight.Parent = HighlightsFolder  -- Agora pai é o Workspace, não o Character
         Data.Highlight = Highlight
     end
 
@@ -2664,6 +2674,10 @@ function CloseAll()
     pcall(function()
         for Player in pairs(ESPData) do RemoveESP(Player) end
         for Player in pairs(Skeletons) do RemoveSkeleton(Player) end
+        -- Destruir todos os Highlights restantes
+        if HighlightsFolder then
+            HighlightsFolder:ClearAllChildren()
+        end
     end)
     
     pcall(function()
@@ -2927,12 +2941,12 @@ local function BuildESPImmediately(Player, Character)
     -- If Roblox is still assembling R6/R15, retry on Heartbeat.
     if not ESPData[Player] then
         task.spawn(function()
-            for _ = 1, 12 do
+            local attempts = 0
+            while attempts < 50 do  -- 50 * 0.1 = 5 segundos
+                attempts += 1
+                task.wait(0.1)
                 if not Config.Visual.ESP then return end
                 if Player.Character ~= Character then return end
-
-                RunService.Heartbeat:Wait()
-
                 if Character.Parent
                     and Character:FindFirstChild("HumanoidRootPart")
                     and Character:FindFirstChild("Head")
@@ -3194,7 +3208,7 @@ print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
 -- ============================================================
 -- NOVA HUB - REVISÃO FINAL ESTÁTICA
 -- ============================================================
--- Arquivo revisado: Nova_Hub_COMPLETO_CORRIGIDO_V6.txt
+-- Arquivo revisado: Nova_Hub_COMPLETO_CORRIGIDO_V7.txt
 -- Correções aplicadas:
 -- 1. CameraDistance -> CameraMaxZoomDistance (todas as ocorrências)
 -- 2. Declaração antecipada de MinimizeHub e CloseAll (evita nil)
@@ -3207,4 +3221,6 @@ print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
 -- 9. HUDStroke declarado antes de RefreshLinesAccent (corrige atualização de cor)
 -- 10. ESP não depende da saúde para ser criado (corrige bug de respawn)
 -- 11. Render loop não remove ESP por health <= 0, apenas oculta elementos
+-- 12. Highlight movido para pasta no Workspace (evita ser destruído junto com o corpo)
+-- 13. Retry de criação do ESP após respawn aumentado para 5 segundos
 -- ============================================================
