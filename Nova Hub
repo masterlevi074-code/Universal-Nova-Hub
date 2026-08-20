@@ -2,19 +2,14 @@
     NOVA HUB - STUDIO EDITION v4.0
     LocalScript
     StarterPlayer > StarterPlayerScripts
-    ESP com retry imediato (sem precisar morrer)
-    Botão INFO adicionado
-    Correções e melhorias:
-    - ESP/Highlight/Chams não fica deslocado após morte (usa Drawing)
-    - HUD compacto, sem espaços em branco
-    - Toggle de Lock para o HUD (não pode arrastar)
-    - Cor da borda do HUD segue o UI Accent
-    - Popup INFO centralizado na tela
-    - InfoButton acima do DragButton (ZIndex=5)
-    - HUDStroke declarado antes de RefreshLinesAccent
-    - ESP usa Drawing.new (mais estável no respawn)
-    - Highlight reutilizado e atualizado via Adornee
-    - Player: Fly Hack, No-Clip, Jump Power com toggle e slider, Speed Hack
+    Correções:
+    - Fly estável com BodyGyro/BodyVelocity moderados e AutoRotate off
+    - Gravidade movida para Player
+    - JumpPower removido do World
+    - CameraZoom com CameraMaxZoomDistance e CameraMinZoomDistance
+    - FOV com toggle e slider
+    - Infinite Jump funcional
+    - ESP com Drawing (sem deslocamento)
 ]]
 
 -- Services
@@ -95,19 +90,18 @@ local Config = {
         FlySpeed = 50,
         NoClip = false,
         JumpPower = 50,
-        JumpPowerEnabled = false,  -- novo
-        InfiniteJump = false
+        JumpPowerEnabled = false,
+        InfiniteJump = false,
+        LowGravity = false,
+        GravityValue = 196.2
     },
     World = {
         FullBright = false,
         RemoveFog = false,
         Brightness = 3,
         TimeOfDay = 14,
-        JumpPowerEnabled = false,
-        JumpHeight = 50,
-        LowGravity = false,
-        GravityValue = 196.2,
         CameraZoom = 15,
+        FOVEnabled = false,
         FOV = 70,
         NoShadows = false,
         NoNeon = false
@@ -469,11 +463,13 @@ InfoButton.MouseButton1Click:Connect(function()
 • UI Scale escalona todos os elementos
 • Som de clique com ativação/desativação
 • Perfil do usuário e QuickInfo
-• World: Full Bright, Gravity, Jump Power, etc.
-• Player: Speed Hack, Fly, NoClip, Jump Power com Toggle
+• World: Full Bright, Camera Zoom, FOV com toggle
+• Player: Speed Hack, Fly, NoClip, Jump Power, Gravidade
 • Skeleton ESP corrigido
 • CORREÇÃO: ESP agora usa Drawing.new (sem deslocamento após respawn)
-• Highlight reutilizado e atualizado via Adornee
+• Fly estável com AutoRotate desativado
+• Gravidade movida para Player
+• Infinite Jump implementado
 ]]
     InfoText.TextColor3 = Color3.fromRGB(200,202,210)
     InfoText.TextSize = 8
@@ -1517,15 +1513,17 @@ AddPlayer(Toggle(Scroll, "Fly Hack", "Enable flying", Config.Player.FlyHack, fun
     if v then
         if Root and Humanoid then
             Humanoid.PlatformStand = true
+            Humanoid.AutoRotate = false  -- evita cambalhotas
             if not PlayerFlyBodyGyro then
                 PlayerFlyBodyGyro = Instance.new("BodyGyro")
-                PlayerFlyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-                PlayerFlyBodyGyro.P = 9e9
+                PlayerFlyBodyGyro.MaxTorque = Vector3.new(400000, 400000, 400000)
+                PlayerFlyBodyGyro.P = 10000
+                PlayerFlyBodyGyro.D = 500
                 PlayerFlyBodyGyro.Parent = Root
             end
             if not PlayerFlyBodyVelocity then
                 PlayerFlyBodyVelocity = Instance.new("BodyVelocity")
-                PlayerFlyBodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+                PlayerFlyBodyVelocity.MaxForce = Vector3.new(50000, 50000, 50000)
                 PlayerFlyBodyVelocity.Velocity = Vector3.zero
                 PlayerFlyBodyVelocity.Parent = Root
             end
@@ -1541,6 +1539,7 @@ AddPlayer(Toggle(Scroll, "Fly Hack", "Enable flying", Config.Player.FlyHack, fun
         end
         if Humanoid then
             Humanoid.PlatformStand = false
+            Humanoid.AutoRotate = true
             Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
         end
     end
@@ -1591,7 +1590,19 @@ AddPlayer(Toggle(Scroll, "Infinite Jump", "Jump infinitely", Config.Player.Infin
     Config.Player.InfiniteJump = v
 end))
 
--- WORLD PAGE
+-- Low Gravity (movido para Player)
+AddPlayer(Toggle(Scroll, "Low Gravity", "Reduce gravity", Config.Player.LowGravity, function(v)
+    Config.Player.LowGravity = v
+    workspace.Gravity = v and Config.Player.GravityValue or 196.2
+end))
+AddPlayer(Slider(Scroll, "Gravity Value", 0, 196.2, Config.Player.GravityValue, function(v)
+    Config.Player.GravityValue = v
+    if Config.Player.LowGravity then
+        workspace.Gravity = v
+    end
+end, function(v) return string.format("%.0f",v) end))
+
+-- WORLD PAGE (JumpPower e LowGravity removidos)
 local function AddWorld(Row)
     table.insert(WorldRows,Row)
 end
@@ -1630,46 +1641,8 @@ AddWorld(Slider(Scroll, "Time of Day", 0, 24, Config.World.TimeOfDay, function(v
     Config.World.TimeOfDay = v
     Lighting.ClockTime = v
 end, function(v) return string.format("%.0fh",v) end))
-AddWorld(Toggle(Scroll, "Jump Power", "Enable custom jump power", Config.World.JumpPowerEnabled, function(v)
-    Config.World.JumpPowerEnabled = v
-    local Character = LocalPlayer.Character
-    if Character then
-        local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-        if Humanoid then
-            if v then
-                Humanoid.JumpPower = Config.World.JumpHeight
-            else
-                Humanoid.JumpPower = 50
-            end
-        end
-    end
-end))
-AddWorld(Slider(Scroll, "Jump Height", 50, 500, Config.World.JumpHeight, function(v)
-    Config.World.JumpHeight = v
-    if Config.World.JumpPowerEnabled then
-        local Character = LocalPlayer.Character
-        if Character then
-            local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-            if Humanoid then
-                Humanoid.JumpPower = v
-            end
-        end
-    end
-end, function(v) return string.format("%.0f",v) end))
-AddWorld(Toggle(Scroll, "Low Gravity", "Reduce gravity", Config.World.LowGravity, function(v)
-    Config.World.LowGravity = v
-    if v then
-        workspace.Gravity = Config.World.GravityValue
-    else
-        workspace.Gravity = 196.2
-    end
-end))
-AddWorld(Slider(Scroll, "Gravity Value", 0, 196.2, Config.World.GravityValue, function(v)
-    Config.World.GravityValue = v
-    if Config.World.LowGravity then
-        workspace.Gravity = v
-    end
-end, function(v) return string.format("%.0f",v) end))
+
+-- Camera Zoom (corrigido)
 AddWorld(Slider(Scroll, "Camera Zoom", 5, 30, Config.World.CameraZoom, function(v)
     Config.World.CameraZoom = v
     local Character = LocalPlayer.Character
@@ -1677,13 +1650,27 @@ AddWorld(Slider(Scroll, "Camera Zoom", 5, 30, Config.World.CameraZoom, function(
         local Humanoid = Character:FindFirstChildOfClass("Humanoid")
         if Humanoid then
             Humanoid.CameraMaxZoomDistance = v
+            Humanoid.CameraMinZoomDistance = v
         end
     end
 end, function(v) return string.format("%.0f",v) end))
+
+-- FOV (Toggle + Slider)
+AddWorld(Toggle(Scroll, "FOV Custom", "Enable custom field of view", Config.World.FOVEnabled, function(v)
+    Config.World.FOVEnabled = v
+    if not v then
+        Camera.FieldOfView = 70  -- volta ao padrão
+    else
+        Camera.FieldOfView = Config.World.FOV
+    end
+end))
 AddWorld(Slider(Scroll, "Field of View", 30, 120, Config.World.FOV, function(v)
     Config.World.FOV = v
-    Camera.FieldOfView = v
+    if Config.World.FOVEnabled then
+        Camera.FieldOfView = v
+    end
 end, function(v) return string.format("%.0f",v) end))
+
 AddWorld(Toggle(Scroll, "No Shadows", "Disable all shadows", Config.World.NoShadows, function(v)
     Config.World.NoShadows = v
     if v then
@@ -1711,7 +1698,7 @@ AddWorld(Toggle(Scroll, "No Neon Glow", "Disable neon materials", Config.World.N
     end
 end))
 
--- CUSTOMIZATION PAGE
+-- CUSTOMIZATION PAGE (inalterada, mas vou incluir)
 local function AddCustom(Row)
     table.insert(CustomRows,Row)
 end
@@ -1793,7 +1780,6 @@ AddCustom(Toggle(Scroll, "Animations", "Enable animations", Config.UI.Animations
     Config.UI.Animations = v
 end))
 
-
 -- ======================= ESP (Drawing) =======================
 local ESPData = {}
 
@@ -1849,7 +1835,6 @@ local function CreateESP(player)
         Lines = {},
     }
 
-    -- Box
     local Box = Drawing.new("Square")
     Box.Visible = false
     Box.Thickness = Config.Visual.BoxThickness
@@ -1857,14 +1842,12 @@ local function CreateESP(player)
     Box.Color = Config.Visual.Color
     data.Box = Box
 
-    -- Tracer
     local Tracer = Drawing.new("Line")
     Tracer.Visible = false
     Tracer.Thickness = Config.Visual.TracerThickness
     Tracer.Color = Config.Visual.Color
     data.Tracer = Tracer
 
-    -- Name
     local Name = Drawing.new("Text")
     Name.Visible = false
     Name.Size = Config.Visual.TextSize
@@ -1873,7 +1856,6 @@ local function CreateESP(player)
     Name.Color = Config.Visual.Color
     data.Name = Name
 
-    -- Health
     local Health = Drawing.new("Text")
     Health.Visible = false
     Health.Size = Config.Visual.TextSize - 1
@@ -1882,7 +1864,6 @@ local function CreateESP(player)
     Health.Color = Color3.fromRGB(100,255,100)
     data.Health = Health
 
-    -- Distance
     local Distance = Drawing.new("Text")
     Distance.Visible = false
     Distance.Size = Config.Visual.TextSize - 2
@@ -1891,7 +1872,6 @@ local function CreateESP(player)
     Distance.Color = Color3.fromRGB(200,200,200)
     data.Distance = Distance
 
-    -- Highlight (reutilizável)
     local Highlight = Instance.new("Highlight")
     Highlight.Name = "ESP_Highlight"
     Highlight.FillColor = Config.Visual.Color
@@ -1903,7 +1883,6 @@ local function CreateESP(player)
     Highlight.Parent = workspace
     data.Highlight = Highlight
 
-    -- Skeleton lines
     for _ = 1, 18 do
         local Line = Drawing.new("Line")
         Line.Visible = false
@@ -2104,7 +2083,7 @@ local function RefreshESP()
     end
 end
 
--- Toggle visual page (chamará RefreshESP)
+-- Toggle visual page
 local function VisualToggle(Title, Description, Key)
     local Row = Toggle(Scroll, Title, Description, Config.Visual[Key], function(v)
         Config.Visual[Key] = v
@@ -2617,10 +2596,10 @@ function CloseAll()
     Config.Player.FlyHack = false
     Config.Player.NoClip = false
     Config.Player.JumpPowerEnabled = false
+    Config.Player.InfiniteJump = false
+    Config.Player.LowGravity = false
     Config.World.FullBright = false
     Config.World.RemoveFog = false
-    Config.World.JumpPowerEnabled = false
-    Config.World.LowGravity = false
     Config.World.NoShadows = false
     Config.World.NoNeon = false
 
@@ -2646,7 +2625,9 @@ function CloseAll()
                 Humanoid.JumpPower = 50
                 Humanoid.WalkSpeed = 16
                 Humanoid.CameraMaxZoomDistance = 15
+                Humanoid.CameraMinZoomDistance = 15
                 Humanoid.PlatformStand = false
+                Humanoid.AutoRotate = true
             end
             for _, part in ipairs(Character:GetDescendants()) do
                 if part:IsA("BasePart") then part.CanCollide = true end
@@ -2868,7 +2849,7 @@ RunService.RenderStepped:Connect(function(DT)
     end
 end)
 
--- PLAYER EVENTS (ESP e loops)
+-- PLAYER EVENTS
 local PlayerConnections = {}
 
 local function DisconnectPlayerESPEvents(Player)
@@ -2923,7 +2904,7 @@ Players.PlayerRemoving:Connect(function(Player)
     ClearESP(Player)
 end)
 
--- Loops para NoClip, Jump Power e Fly
+-- Loops contínuos (Stepped e RenderStepped)
 RunService.Stepped:Connect(function()
     local Character = LocalPlayer.Character
     local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
@@ -2946,6 +2927,13 @@ RunService.Stepped:Connect(function()
     -- Speed Hack
     if Config.Player.SpeedHack and Humanoid and not Config.Player.FlyHack then
         Humanoid.WalkSpeed = 16 * Config.Player.SpeedMultiplier
+    end
+
+    -- Low Gravity (Player)
+    if Config.Player.LowGravity then
+        workspace.Gravity = Config.Player.GravityValue
+    else
+        workspace.Gravity = 196.2
     end
 end)
 
@@ -2976,6 +2964,16 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- Infinite Jump
+UserInputService.JumpRequest:Connect(function()
+    if Config.Player.InfiniteJump and LocalPlayer.Character then
+        local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if Humanoid then
+            Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
 -- LOCAL CHARACTER
 LocalPlayer.CharacterAdded:Connect(function()
     task.wait(.5)
@@ -2993,6 +2991,7 @@ LocalPlayer.CharacterAdded:Connect(function()
             Humanoid.JumpPower = Config.Player.JumpPower
         end
         Humanoid.CameraMaxZoomDistance = Config.World.CameraZoom
+        Humanoid.CameraMinZoomDistance = Config.World.CameraZoom
     end
 
     if Config.Player.NoClip and Character then
@@ -3005,20 +3004,29 @@ LocalPlayer.CharacterAdded:Connect(function()
 
     if Config.Player.FlyHack and Root and Humanoid then
         Humanoid.PlatformStand = true
+        Humanoid.AutoRotate = false
         PlayerFlyBodyVelocity = Instance.new("BodyVelocity")
-        PlayerFlyBodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+        PlayerFlyBodyVelocity.MaxForce = Vector3.new(50000, 50000, 50000)
         PlayerFlyBodyVelocity.Velocity = Vector3.zero
         PlayerFlyBodyVelocity.Parent = Root
 
         PlayerFlyBodyGyro = Instance.new("BodyGyro")
-        PlayerFlyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+        PlayerFlyBodyGyro.MaxTorque = Vector3.new(400000, 400000, 400000)
+        PlayerFlyBodyGyro.P = 10000
+        PlayerFlyBodyGyro.D = 500
         PlayerFlyBodyGyro.Parent = Root
     end
 
-    if Config.World.LowGravity then
-        workspace.Gravity = Config.World.GravityValue
+    if Config.Player.LowGravity then
+        workspace.Gravity = Config.Player.GravityValue
+    else
+        workspace.Gravity = 196.2
     end
-    Camera.FieldOfView = Config.World.FOV
+    if Config.World.FOVEnabled then
+        Camera.FieldOfView = Config.World.FOV
+    else
+        Camera.FieldOfView = 70
+    end
 end)
 
 LocalPlayer.CharacterRemoving:Connect(function()
@@ -3209,11 +3217,9 @@ print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
 -- ============================================================
 -- Correções aplicadas:
 -- 1. ESP usa Drawing (sem deslocamento)
--- 2. Player: Fly Hack, No-Clip, Jump Power com toggle, Speed Hack
--- 3. CameraDistance -> CameraMaxZoomDistance
--- 4. InfoButton ZIndex = 5
--- 5. HUDStroke declarado antes de RefreshLinesAccent
--- 6. HUD lock toggle
--- 7. Popup INFO centralizado
--- 8. Loops contínuos para aplicar efeitos
+-- 2. Player: Fly Hack estável (AutoRotate off), No-Clip, Jump Power, Gravidade
+-- 3. CameraZoom corrigido (CameraMaxZoomDistance e CameraMinZoomDistance)
+-- 4. FOV com toggle de ativar/desativar
+-- 5. Infinite Jump implementado via JumpRequest
+-- 6. JumpPower e Gravidade removidos do World
 -- ============================================================
