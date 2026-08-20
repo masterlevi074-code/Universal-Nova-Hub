@@ -12,6 +12,8 @@
     - Popup INFO centralizado na tela
     - InfoButton acima do DragButton (ZIndex=5)
     - HUDStroke declarado antes de RefreshLinesAccent
+    - ESP não depende da saúde para ser criado (corrige bug de respawn)
+    - Render loop não remove ESP por health <= 0, apenas oculta
 ]]
 
 -- Services
@@ -74,7 +76,7 @@ local Config = {
         Position = UDim2.fromOffset(15,15),
         Size = 118,
         Transparency = 0,
-        Lock = false  -- novo: trava o HUD
+        Lock = false
     },
     UI = {
         Animations = true,
@@ -364,7 +366,7 @@ InfoButton.TextSize = 6
 InfoButton.Font = Enum.Font.GothamBold
 InfoButton.AutoButtonColor = false
 InfoButton.Parent = Header
-InfoButton.ZIndex = 5  -- CORREÇÃO: para ficar acima do DragButton
+InfoButton.ZIndex = 5
 
 Instance.new("UICorner", InfoButton).CornerRadius = UDim.new(0, 5)
 
@@ -389,7 +391,6 @@ InfoButton.MouseButton1Click:Connect(function()
 
     local InfoPopup = Instance.new("Frame")
     InfoPopup.Size = UDim2.fromOffset(280, 200)
-    -- Alterado para centralizar na tela usando AnchorPoint
     InfoPopup.AnchorPoint = Vector2.new(0.5, 0.5)
     InfoPopup.Position = UDim2.fromScale(0.5, 0.5)
     InfoPopup.BackgroundColor3 = Color3.fromRGB(28,30,38)
@@ -1869,8 +1870,8 @@ local function CreateESP(Player)
     local Head = Character:FindFirstChild("Head")
     local Humanoid = Character:FindFirstChildOfClass("Humanoid")
 
+    -- Não verificamos mais Health aqui; o ESP será criado mesmo se health 0 temporariamente.
     if not Root or not Head or not Humanoid then return false end
-    if Humanoid.Health <= 0 then return false end  -- não criar ESP para mortos
 
     local Data = {}
     ESPData[Player] = Data
@@ -2135,7 +2136,7 @@ RunService.RenderStepped:Connect(function()
     Camera = workspace.CurrentCamera
     if not Camera then return end
 
-    -- Coletar jogadores mortos para remover ESP (evita Highlight deslocado)
+    -- NÃO removemos mais por health <= 0; apenas ocultamos os elementos
     local PlayersToRemove = {}
 
     for player, data in pairs(Skeletons) do
@@ -2161,12 +2162,15 @@ RunService.RenderStepped:Connect(function()
             continue
         end
         local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if not humanoid or humanoid.Health <= 0 then
+        if not humanoid then
+            RemoveSkeleton(player)
+            continue
+        end
+        -- Se health <= 0, escondemos as linhas, mas não removemos o skeleton
+        if humanoid.Health <= 0 then
             for _, bone in pairs(data.Bones) do
                 bone.Line.Visible = false
             end
-            -- Marcar para remover skeleton
-            table.insert(PlayersToRemove, player)
             continue
         end
         local localCharacter = LocalPlayer.Character
@@ -2215,8 +2219,7 @@ RunService.RenderStepped:Connect(function()
         local Root = Character and Character:FindFirstChild("HumanoidRootPart")
         local Head = Character and Character:FindFirstChild("Head")
         local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-        if not Character or not Root or not Head or not Humanoid or Humanoid.Health <= 0 then
-            -- Remover ESP completo do jogador morto
+        if not Character or not Root or not Head or not Humanoid then
             table.insert(PlayersToRemove, Player)
             continue
         end
@@ -2227,6 +2230,14 @@ RunService.RenderStepped:Connect(function()
             Distance = (Root.Position-MyRoot.Position).Magnitude
         end
         if Distance > Config.Visual.MaxDistance then
+            if Data.Box then Data.Box.Visible = false end
+            if Data.Tracer then Data.Tracer.Visible = false end
+            if Data.Highlight then Data.Highlight.Enabled = false end
+            if Data.Billboard then Data.Billboard.Enabled = false end
+            continue
+        end
+        -- Se health <= 0, esconder tudo, mas não remover
+        if Humanoid.Health <= 0 then
             if Data.Box then Data.Box.Visible = false end
             if Data.Tracer then Data.Tracer.Visible = false end
             if Data.Highlight then Data.Highlight.Enabled = false end
@@ -2291,7 +2302,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Remover ESP de jogadores mortos após o loop
+    -- Remover apenas se a estrutura não existe mais (Character, Head, Root, Humanoid ausentes)
     for _,Player in ipairs(PlayersToRemove) do
         RemoveESP(Player)
         RemoveSkeleton(Player)
@@ -2671,7 +2682,7 @@ function CloseAll()
             if Humanoid then
                 Humanoid.JumpPower = 50
                 Humanoid.WalkSpeed = 16
-                Humanoid.CameraMaxZoomDistance = 15  -- corrigido
+                Humanoid.CameraMaxZoomDistance = 15
             end
         end
     end)
@@ -2886,7 +2897,7 @@ RunService.RenderStepped:Connect(function(DT)
         HUDText.Size = UDim2.new(1,-12,0,textHeight)
         HUDText.Position = UDim2.fromOffset(6, 3)
     else
-        HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, 30)  -- altura mínima se nenhuma linha
+        HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, 30)
     end
 end)
 
@@ -2993,7 +3004,7 @@ LocalPlayer.CharacterAdded:Connect(function()
         if Config.World.JumpPowerEnabled then
             Humanoid.JumpPower = Config.World.JumpHeight
         end
-        Humanoid.CameraMaxZoomDistance = Config.World.CameraZoom  -- corrigido
+        Humanoid.CameraMaxZoomDistance = Config.World.CameraZoom
     end
     if Config.Player.NoClip then
         for _,Part in ipairs(LocalPlayer.Character:GetDescendants()) do
@@ -3183,7 +3194,7 @@ print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
 -- ============================================================
 -- NOVA HUB - REVISÃO FINAL ESTÁTICA
 -- ============================================================
--- Arquivo revisado: Nova_Hub_COMPLETO_CORRIGIDO_V5.txt
+-- Arquivo revisado: Nova_Hub_COMPLETO_CORRIGIDO_V6.txt
 -- Correções aplicadas:
 -- 1. CameraDistance -> CameraMaxZoomDistance (todas as ocorrências)
 -- 2. Declaração antecipada de MinimizeHub e CloseAll (evita nil)
@@ -3194,4 +3205,6 @@ print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
 -- 7. Popup INFO centralizado na tela (AnchorPoint)
 -- 8. InfoButton ZIndex = 5 (para receber cliques acima do DragButton)
 -- 9. HUDStroke declarado antes de RefreshLinesAccent (corrige atualização de cor)
+-- 10. ESP não depende da saúde para ser criado (corrige bug de respawn)
+-- 11. Render loop não remove ESP por health <= 0, apenas oculta elementos
 -- ============================================================
