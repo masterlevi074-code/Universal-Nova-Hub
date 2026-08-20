@@ -5,19 +5,15 @@
     ESP com retry imediato (sem precisar morrer)
     Botão INFO adicionado
     Correções e melhorias:
-    - ESP/Highlight/Chams não fica deslocado após morte (remove ESP ao morrer)
+    - ESP/Highlight/Chams não fica deslocado após morte (usa Drawing)
     - HUD compacto, sem espaços em branco
     - Toggle de Lock para o HUD (não pode arrastar)
     - Cor da borda do HUD segue o UI Accent
     - Popup INFO centralizado na tela
     - InfoButton acima do DragButton (ZIndex=5)
     - HUDStroke declarado antes de RefreshLinesAccent
-    - ESP não depende da saúde para ser criado (corrige bug de respawn)
-    - Render loop não remove ESP por health <= 0, apenas oculta
-    - Highlight movido para pasta no Workspace (evita ser destruído junto com o corpo)
-    - Retry de criação do ESP após respawn aumentado para 5 segundos
-    - Adicionada verificação de personagem no RenderStepped para remover ESP antigo
-    - Data.Character armazenado para detectar mudança de personagem
+    - ESP usa Drawing.new (mais estável no respawn)
+    - Highlight reutilizado e atualizado via Adornee
 ]]
 
 -- Services
@@ -177,7 +173,6 @@ local function PlayUISound(volume)
     Sound.Ended:Connect(Cleanup)
     Sound:Play()
 
-    -- Failsafe if the asset cannot report Ended.
     task.delay(2, Cleanup)
 end
 
@@ -189,7 +184,7 @@ local function PlayHoverSound()
     PlayUISound(0.1)
 end
 
--- PopupLayer (movido para cima para ser usado no Header)
+-- PopupLayer
 local PopupLayer = Instance.new("Frame")
 PopupLayer.Size = UDim2.fromScale(1,1)
 PopupLayer.BackgroundTransparency = 1
@@ -215,7 +210,7 @@ local function ClosePopup()
     end
 end
 
--- Main (criado primeiro)
+-- Main
 local Main = Instance.new("Frame")
 Main.Name = "Main"
 Main.Size = UDim2.fromOffset(420,370)
@@ -475,10 +470,8 @@ InfoButton.MouseButton1Click:Connect(function()
 • World: Full Bright, Gravity, Jump Power, etc.
 • Player: Speed, Fly, NoClip, Jump
 • Skeleton ESP corrigido
-• CORREÇÃO: ESP/Chams não fica mais deslocado após respawn
-• Highlights movidos para o Workspace (não somem com o corpo)
-• Retry de criação do ESP aumentado para 5 segundos
-• Verificação de personagem no RenderStepped para remover ESP antigo
+• CORREÇÃO: ESP agora usa Drawing.new (sem deslocamento após respawn)
+• Highlight reutilizado e atualizado via Adornee
 ]]
     InfoText.TextColor3 = Color3.fromRGB(200,202,210)
     InfoText.TextSize = 8
@@ -1628,7 +1621,7 @@ AddWorld(Slider(Scroll, "Camera Zoom", 5, 30, Config.World.CameraZoom, function(
     if Character then
         local Humanoid = Character:FindFirstChildOfClass("Humanoid")
         if Humanoid then
-            Humanoid.CameraMaxZoomDistance = v  -- CORRIGIDO
+            Humanoid.CameraMaxZoomDistance = v
         end
     end
 end, function(v) return string.format("%.0f",v) end))
@@ -1746,40 +1739,126 @@ AddCustom(Toggle(Scroll, "Animations", "Enable animations", Config.UI.Animations
 end))
 
 
--- ESP (com retry imediato)
+-- ======================= ESP NOVO (Drawing) =======================
 local ESPData = {}
-local Skeletons = {}
 
 local function IsTeammate(Player)
     return Config.Visual.TeamCheck and LocalPlayer.Team ~= nil and Player.Team == LocalPlayer.Team
 end
 
-local function RemoveESP(Player)
-    local Data = ESPData[Player]
-    if not Data then return end
-    -- Desativa Highlight antes de destruir (evita ESP deslocado após morte)
-    if Data.Highlight then
-        Data.Highlight.Enabled = false
-    end
-    for _,Object in pairs(Data) do
-        if typeof(Object) == "Instance" then
-            Object:Destroy()
-        end
-    end
-    ESPData[Player] = nil
+local function GetCharacter(player)
+    if player == LocalPlayer or not player.Parent then return nil end
+    if IsTeammate(player) then return nil end
+    local character = player.Character
+    if not character then return nil end
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then return nil end
+    return character, humanoid
 end
 
-local ESPGui = Instance.new("ScreenGui")
-ESPGui.Name = "NovaESP"
-ESPGui.ResetOnSpawn = false
-ESPGui.IgnoreGuiInset = true
-ESPGui.DisplayOrder = 80
-ESPGui.Parent = PlayerGui
+local function GetRoot(character)
+    return character:FindFirstChild("HumanoidRootPart")
+        or character:FindFirstChild("UpperTorso")
+        or character:FindFirstChild("Torso")
+end
 
--- NOVA: Pasta para guardar Highlights no Workspace (não somem com o corpo)
-local HighlightsFolder = Instance.new("Folder")
-HighlightsFolder.Name = "NovaHighlights"
-HighlightsFolder.Parent = workspace
+local function ClearESP(player)
+    local data = ESPData[player]
+    if not data then return end
+
+    if data.Highlight then
+        data.Highlight.Enabled = false
+        data.Highlight:Destroy()
+    end
+
+    for _, obj in pairs(data) do
+        if typeof(obj) == "Drawing" then
+            obj:Remove()
+        end
+    end
+
+    ESPData[player] = nil
+end
+
+local function CreateESP(player)
+    ClearESP(player)
+    if not Config.Visual.ESP then return end
+
+    local data = {
+        Box = nil,
+        Tracer = nil,
+        Name = nil,
+        Health = nil,
+        Distance = nil,
+        Highlight = nil,
+        Lines = {},
+    }
+
+    -- Box
+    local Box = Drawing.new("Square")
+    Box.Visible = false
+    Box.Thickness = Config.Visual.BoxThickness
+    Box.Filled = false
+    Box.Color = Config.Visual.Color
+    data.Box = Box
+
+    -- Tracer
+    local Tracer = Drawing.new("Line")
+    Tracer.Visible = false
+    Tracer.Thickness = Config.Visual.TracerThickness
+    Tracer.Color = Config.Visual.Color
+    data.Tracer = Tracer
+
+    -- Name
+    local Name = Drawing.new("Text")
+    Name.Visible = false
+    Name.Size = Config.Visual.TextSize
+    Name.Center = true
+    Name.Outline = true
+    Name.Color = Config.Visual.Color
+    data.Name = Name
+
+    -- Health
+    local Health = Drawing.new("Text")
+    Health.Visible = false
+    Health.Size = Config.Visual.TextSize - 1
+    Health.Center = true
+    Health.Outline = true
+    Health.Color = Color3.fromRGB(100,255,100)
+    data.Health = Health
+
+    -- Distance
+    local Distance = Drawing.new("Text")
+    Distance.Visible = false
+    Distance.Size = Config.Visual.TextSize - 2
+    Distance.Center = true
+    Distance.Outline = true
+    Distance.Color = Color3.fromRGB(200,200,200)
+    data.Distance = Distance
+
+    -- Highlight (reutilizável)
+    local Highlight = Instance.new("Highlight")
+    Highlight.Name = "ESP_Highlight"
+    Highlight.FillColor = Config.Visual.Color
+    Highlight.OutlineColor = Config.Visual.Color
+    Highlight.FillTransparency = Config.Visual.Chams and .55 or 1
+    Highlight.OutlineTransparency = 0
+    Highlight.Enabled = false
+    Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    Highlight.Parent = workspace
+    data.Highlight = Highlight
+
+    -- Skeleton lines
+    for _ = 1, 18 do
+        local Line = Drawing.new("Line")
+        Line.Visible = false
+        Line.Thickness = Config.Visual.SkeletonThickness
+        Line.Color = Config.Visual.Color
+        table.insert(data.Lines, Line)
+    end
+
+    ESPData[player] = data
+end
 
 local R15Skeleton = {
     {"Head","UpperTorso"},
@@ -1806,190 +1885,171 @@ local R6Skeleton = {
     {"Torso","Right Leg"}
 }
 
-local function CreateSkeletonLine(parent)
-    local line = Instance.new("Frame")
-    line.Name = "Bone"
-    line.AnchorPoint = Vector2.new(0.5, 0.5)
-    line.BackgroundColor3 = Config.Visual.Color
-    line.BorderSizePixel = 0
-    line.Size = UDim2.fromOffset(0, Config.Visual.SkeletonThickness)
-    line.Visible = false
-    line.Parent = parent
-    return line
-end
-
-local function CreateSkeleton(player)
-    if player == LocalPlayer then return end
-    if Skeletons[player] then
-        Skeletons[player].Folder:Destroy()
-        Skeletons[player] = nil
-    end
-    local character = player.Character
-    if not character then return false end
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if not humanoid then return false end
-    local folder = Instance.new("Folder")
-    folder.Name = player.Name .. "_Skeleton"
-    folder.Parent = ESPGui
+local function UpdateSkeleton(data, character)
     local connections
-    if humanoid.RigType == Enum.HumanoidRigType.R15 then
+    if character:FindFirstChild("UpperTorso") then
         connections = R15Skeleton
     else
         connections = R6Skeleton
     end
-    local bones = {}
-    for index, connection in ipairs(connections) do
-        local part1 = character:FindFirstChild(connection[1])
-        local part2 = character:FindFirstChild(connection[2])
-        if part1 and part2 then
-            local line = CreateSkeletonLine(folder)
-            bones[index] = {
-                Line = line,
-                Part1 = part1,
-                Part2 = part2,
-            }
+
+    local index = 1
+    for _, connection in ipairs(connections) do
+        local PartA = character:FindFirstChild(connection[1])
+        local PartB = character:FindFirstChild(connection[2])
+        local Line = data.Lines[index]
+        if PartA and PartB and Line then
+            local A, AVisible = Camera:WorldToViewportPoint(PartA.Position)
+            local B, BVisible = Camera:WorldToViewportPoint(PartB.Position)
+            Line.Visible = AVisible and BVisible
+            if Line.Visible then
+                Line.From = Vector2.new(A.X, A.Y)
+                Line.To = Vector2.new(B.X, B.Y)
+            end
+        elseif Line then
+            Line.Visible = false
         end
+        index += 1
     end
-    Skeletons[player] = {
-        Character = character,
-        Folder = folder,
-        Bones = bones,
-    }
-    return true
+    for i = index, #data.Lines do
+        data.Lines[i].Visible = false
+    end
 end
 
-local function RemoveSkeleton(player)
-    local data = Skeletons[player]
-    if not data then return end
-    if data.Folder then
-        data.Folder:Destroy()
-    end
-    Skeletons[player] = nil
-end
-
-local function CreateESP(Player)
-    if Player == LocalPlayer then return false end
-    if not Player or not Player.Parent then return false end
-
-    RemoveESP(Player)
-    RemoveSkeleton(Player)
-    if not Config.Visual.ESP then return end
-    if IsTeammate(Player) then return end
-
-    local Character = Player.Character
-    if not Character or not Character.Parent then return false end
-
-    local Root = Character:FindFirstChild("HumanoidRootPart")
-    local Head = Character:FindFirstChild("Head")
-    local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-
-    -- Não verificamos mais Health aqui; o ESP será criado mesmo se health 0 temporariamente.
-    if not Root or not Head or not Humanoid then return false end
-
-    local Data = {}
-    Data.Character = Character  -- Armazenar referência para verificação posterior
-    ESPData[Player] = Data
-
-    if Config.Visual.Highlight or Config.Visual.Chams then
-        local Highlight = Instance.new("Highlight")
-        Highlight.Name = "NovaESPHighlight"
-        Highlight.Adornee = Character
-        Highlight.FillColor = Config.Visual.Color
-        Highlight.OutlineColor = Config.Visual.Color
-        Highlight.FillTransparency = Config.Visual.Chams and .55 or 1
-        Highlight.OutlineTransparency = 0
-        Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        Highlight.Parent = HighlightsFolder  -- Agora pai é o Workspace, não o Character
-        Data.Highlight = Highlight
+local function UpdateESP(player, data)
+    local character, humanoid = GetCharacter(player)
+    if not character then
+        data.Box.Visible = false
+        data.Tracer.Visible = false
+        data.Name.Visible = false
+        data.Health.Visible = false
+        data.Distance.Visible = false
+        data.Highlight.Enabled = false
+        for _, line in ipairs(data.Lines) do line.Visible = false end
+        return
     end
 
-    if Config.Visual.Name or Config.Visual.Health or Config.Visual.Distance then
-        local Billboard = Instance.new("BillboardGui")
-        Billboard.Name = "NovaESPInfo"
-        Billboard.Adornee = Head
-        Billboard.Size = UDim2.fromOffset(180,70)
-        Billboard.StudsOffset = Vector3.new(0,3,0)
-        Billboard.AlwaysOnTop = true
-        Billboard.Parent = Head
-        local Text = Instance.new("TextLabel")
-        Text.Size = UDim2.fromScale(1,1)
-        Text.BackgroundTransparency = 1
-        Text.TextColor3 = Config.Visual.Color
-        Text.TextStrokeTransparency = .4
-        Text.TextSize = Config.Visual.TextSize
-        Text.Font = Enum.Font.GothamBold
-        Text.Parent = Billboard
-        Data.Billboard = Billboard
-        Data.InfoText = Text
+    local root = GetRoot(character)
+    if not root then return end
+
+    local distance = (Camera.CFrame.Position - root.Position).Magnitude
+    if distance > Config.Visual.MaxDistance then
+        data.Box.Visible = false
+        data.Tracer.Visible = false
+        data.Name.Visible = false
+        data.Health.Visible = false
+        data.Distance.Visible = false
+        data.Highlight.Enabled = false
+        for _, line in ipairs(data.Lines) do line.Visible = false end
+        return
     end
 
-    if Config.Visual.Box then
-        local Box = Instance.new("Frame")
-        Box.Name = "NovaBox"
-        Box.AnchorPoint = Vector2.new(.5,.5)
-        Box.BackgroundTransparency = 1
-        Box.BorderSizePixel = 0
-        Box.Visible = false
-        Box.Parent = ESPGui
-        local Stroke = Instance.new("UIStroke")
-        Stroke.Color = Config.Visual.Color
-        Stroke.Thickness = Config.Visual.BoxThickness
-        Stroke.Parent = Box
-        Data.Box = Box
-        Data.BoxStroke = Stroke
+    local rootPos, rootVisible = Camera:WorldToViewportPoint(root.Position)
+    if not rootVisible then
+        data.Box.Visible = false
+        data.Tracer.Visible = false
+        data.Name.Visible = false
+        data.Health.Visible = false
+        data.Distance.Visible = false
+        data.Highlight.Enabled = false
+        for _, line in ipairs(data.Lines) do line.Visible = false end
+        return
     end
 
-    if Config.Visual.Skeleton then
-        if not CreateSkeleton(Player) then
-            -- Skeleton falhou, mas ESP principal já foi criado
+    local head = character:FindFirstChild("Head")
+    local headPos
+    if head then
+        headPos = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
+    end
+    local bottomPos = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 3, 0))
+
+    -- Box
+    if Config.Visual.Box and head and headPos then
+        local height = math.abs(bottomPos.Y - headPos.Y)
+        local width = height * 0.55
+        data.Box.Size = Vector2.new(width, height)
+        data.Box.Position = Vector2.new(headPos.X - width/2, headPos.Y)
+        data.Box.Visible = true
+    else
+        data.Box.Visible = false
+    end
+
+    -- Name
+    if Config.Visual.Name then
+        data.Name.Text = player.DisplayName
+        data.Name.Position = Vector2.new(rootPos.X, (headPos and headPos.Y or rootPos.Y) - 18)
+        data.Name.Visible = true
+    else
+        data.Name.Visible = false
+    end
+
+    -- Health
+    if Config.Visual.Health then
+        data.Health.Text = math.floor(humanoid.Health).."/"..math.floor(humanoid.MaxHealth)
+        data.Health.Position = Vector2.new(rootPos.X, rootPos.Y + 15)
+        if humanoid.Health > humanoid.MaxHealth * 0.5 then
+            data.Health.Color = Color3.fromRGB(100,255,100)
+        elseif humanoid.Health > humanoid.MaxHealth * 0.25 then
+            data.Health.Color = Color3.fromRGB(255,220,80)
+        else
+            data.Health.Color = Color3.fromRGB(255,80,80)
         end
+        data.Health.Visible = true
+    else
+        data.Health.Visible = false
     end
 
+    -- Distance
+    if Config.Visual.Distance then
+        data.Distance.Text = math.floor(distance).."m"
+        data.Distance.Position = Vector2.new(rootPos.X, rootPos.Y + 30)
+        data.Distance.Visible = true
+    else
+        data.Distance.Visible = false
+    end
+
+    -- Tracer
     if Config.Visual.Tracer then
-        local Tracer = Instance.new("Frame")
-        Tracer.Name = "NovaTracer"
-        Tracer.AnchorPoint = Vector2.new(.5,.5)
-        Tracer.BorderSizePixel = 0
-        Tracer.BackgroundColor3 = Config.Visual.Color
-        Tracer.Size = UDim2.fromOffset(0, Config.Visual.TracerThickness)
-        Tracer.Visible = false
-        Tracer.Parent = ESPGui
-        Data.Tracer = Tracer
+        local viewport = Camera.ViewportSize
+        data.Tracer.From = Vector2.new(viewport.X/2, viewport.Y)
+        data.Tracer.To = Vector2.new(rootPos.X, rootPos.Y)
+        data.Tracer.Visible = true
+    else
+        data.Tracer.Visible = false
     end
 
-    return true
+    -- Highlight/Chams
+    if Config.Visual.Highlight or Config.Visual.Chams then
+        data.Highlight.Adornee = character
+        data.Highlight.FillColor = Config.Visual.Color
+        data.Highlight.OutlineColor = Config.Visual.Color
+        data.Highlight.FillTransparency = Config.Visual.Chams and .55 or 1
+        data.Highlight.Enabled = true
+    else
+        data.Highlight.Enabled = false
+    end
+
+    -- Skeleton
+    if Config.Visual.Skeleton then
+        UpdateSkeleton(data, character)
+    else
+        for _, line in ipairs(data.Lines) do line.Visible = false end
+    end
 end
 
 local function RefreshESP()
-    for Player in pairs(ESPData) do
-        RemoveESP(Player)
-    end
-    for Player in pairs(Skeletons) do
-        RemoveSkeleton(Player)
+    for player in pairs(ESPData) do
+        ClearESP(player)
     end
     if not Config.Visual.ESP then return end
-
-    for _,Player in ipairs(Players:GetPlayers()) do
-        if Player ~= LocalPlayer then
-            if not CreateESP(Player) then
-                task.spawn(function()
-                    for attempt = 1, 5 do
-                        task.wait(0.3)
-                        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChild("Head") and Player.Character:FindFirstChildOfClass("Humanoid") then
-                            if Config.Visual.ESP then
-                                CreateESP(Player)
-                            end
-                            break
-                        end
-                    end
-                end)
-            end
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Parent then
+            CreateESP(player)
         end
     end
 end
 
-
--- VISUAL PAGE
+-- Toggle visual page (chamará RefreshESP)
 local function VisualToggle(Title, Description, Key)
     local Row = Toggle(Scroll, Title, Description, Config.Visual[Key], function(v)
         Config.Visual[Key] = v
@@ -2030,6 +2090,8 @@ table.insert(VisualRows, Slider(Scroll, "ESP Text Size", 8, 16, Config.Visual.Te
     Config.Visual.TextSize = math.floor(v)
     RefreshESP()
 end, function(v) return string.format("%d",v) end))
+
+-- Target Highlight (Aim) continue
 
 -- TARGET (AIM ASSIST)
 local function IsValidTarget(Player)
@@ -2102,7 +2164,7 @@ TargetHighlight.FillTransparency = .75
 TargetHighlight.OutlineTransparency = 0
 TargetHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 TargetHighlight.Enabled = false
-TargetHighlight.Parent = Gui
+TargetHighlight.Parent = workspace
 
 local function UpdateTargetHighlight(Target)
     if not Config.Aim.TargetHighlight or not Target then
@@ -2150,185 +2212,12 @@ RunService.RenderStepped:Connect(function()
     Camera = workspace.CurrentCamera
     if not Camera then return end
 
-    local PlayersToRemove = {}
-
-    for player, data in pairs(Skeletons) do
-        if not player.Parent then
-            RemoveSkeleton(player)
-            continue
+    for player, data in pairs(ESPData) do
+        if player.Parent then
+            UpdateESP(player, data)
+        else
+            ClearESP(player)
         end
-        local character = data.Character
-        if not character or not character.Parent then
-            RemoveSkeleton(player)
-            continue
-        end
-        -- NOVA VERIFICAÇÃO: se o personagem atual é diferente do armazenado, remover skeleton
-        if player.Character ~= character then
-            RemoveSkeleton(player)
-            continue
-        end
-        if not Config.Visual.ESP or not Config.Visual.Skeleton then
-            for _, bone in pairs(data.Bones) do
-                bone.Line.Visible = false
-            end
-            continue
-        end
-        if IsTeammate(player) then
-            for _, bone in pairs(data.Bones) do
-                bone.Line.Visible = false
-            end
-            continue
-        end
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if not humanoid then
-            RemoveSkeleton(player)
-            continue
-        end
-        -- Se health <= 0, escondemos as linhas, mas não removemos o skeleton
-        if humanoid.Health <= 0 then
-            for _, bone in pairs(data.Bones) do
-                bone.Line.Visible = false
-            end
-            continue
-        end
-        local localCharacter = LocalPlayer.Character
-        if not localCharacter then continue end
-        local localRoot = localCharacter:FindFirstChild("HumanoidRootPart")
-        local targetRoot = character:FindFirstChild("HumanoidRootPart")
-        if not localRoot or not targetRoot then continue end
-        local distance = (targetRoot.Position - localRoot.Position).Magnitude
-        if distance > Config.Visual.MaxDistance then
-            for _, bone in pairs(data.Bones) do
-                bone.Line.Visible = false
-            end
-            continue
-        end
-        for _, bone in pairs(data.Bones) do
-            local part1 = bone.Part1
-            local part2 = bone.Part2
-            local line = bone.Line
-            if not part1 or not part2 or not part1.Parent or not part2.Parent then
-                line.Visible = false
-                continue
-            end
-            local position1, visible1 = Camera:WorldToViewportPoint(part1.Position)
-            local position2, visible2 = Camera:WorldToViewportPoint(part2.Position)
-            if not visible1 and not visible2 then
-                line.Visible = false
-                continue
-            end
-            local delta = Vector2.new(position2.X, position2.Y) - Vector2.new(position1.X, position1.Y)
-            local length = delta.Magnitude
-            if length <= 0 or length > 500 then
-                line.Visible = false
-                continue
-            end
-            local middle = (Vector2.new(position1.X, position1.Y) + Vector2.new(position2.X, position2.Y)) / 2
-            line.Position = UDim2.fromOffset(middle.X, middle.Y)
-            line.Size = UDim2.fromOffset(length, Config.Visual.SkeletonThickness)
-            line.Rotation = math.deg(math.atan2(delta.Y, delta.X))
-            line.BackgroundColor3 = Config.Visual.Color
-            line.Visible = true
-        end
-    end
-
-    for Player,Data in pairs(ESPData) do
-        local Character = Player.Character
-        -- NOVA VERIFICAÇÃO: se o personagem armazenado é diferente do atual, remover ESP
-        if Data.Character ~= Character then
-            table.insert(PlayersToRemove, Player)
-            continue
-        end
-        local Root = Character and Character:FindFirstChild("HumanoidRootPart")
-        local Head = Character and Character:FindFirstChild("Head")
-        local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-        if not Character or not Root or not Head or not Humanoid then
-            table.insert(PlayersToRemove, Player)
-            continue
-        end
-        local MyCharacter = LocalPlayer.Character
-        local MyRoot = MyCharacter and MyCharacter:FindFirstChild("HumanoidRootPart")
-        local Distance = math.huge
-        if MyRoot then
-            Distance = (Root.Position-MyRoot.Position).Magnitude
-        end
-        if Distance > Config.Visual.MaxDistance then
-            if Data.Box then Data.Box.Visible = false end
-            if Data.Tracer then Data.Tracer.Visible = false end
-            if Data.Highlight then Data.Highlight.Enabled = false end
-            if Data.Billboard then Data.Billboard.Enabled = false end
-            continue
-        end
-        -- Se health <= 0, esconder tudo, mas não remover
-        if Humanoid.Health <= 0 then
-            if Data.Box then Data.Box.Visible = false end
-            if Data.Tracer then Data.Tracer.Visible = false end
-            if Data.Highlight then Data.Highlight.Enabled = false end
-            if Data.Billboard then Data.Billboard.Enabled = false end
-            continue
-        end
-        -- Reativar Highlight quando válido
-        if Data.Highlight then Data.Highlight.Enabled = true end
-
-        if Data.InfoText then
-            local Lines = {}
-            if Config.Visual.Name then table.insert(Lines, Player.DisplayName) end
-            if Config.Visual.Health then table.insert(Lines, "HP: "..math.floor(Humanoid.Health)) end
-            if Config.Visual.Distance then table.insert(Lines, "Distance: "..math.floor(Distance)) end
-            Data.InfoText.Text = table.concat(Lines, "\n")
-            Data.InfoText.TextColor3 = Config.Visual.Color
-            Data.Billboard.Enabled = #Lines > 0
-        end
-        if Data.Highlight then
-            Data.Highlight.FillColor = Config.Visual.Color
-            Data.Highlight.OutlineColor = Config.Visual.Color
-            Data.Highlight.FillTransparency = Config.Visual.Chams and .55 or 1
-        end
-        if Data.Box then
-            local TopPoint = Camera:WorldToViewportPoint(Head.Position + Vector3.new(0,.5,0))
-            local BottomPoint = Camera:WorldToViewportPoint(Root.Position - Vector3.new(0,3,0))
-            if TopPoint.Z > 0 and BottomPoint.Z > 0 then
-                local Height = math.abs(BottomPoint.Y - TopPoint.Y)
-                local Width = Height*.55
-                if Height < 500 and Width < 500 then
-                    Data.Box.Position = UDim2.fromOffset((TopPoint.X+BottomPoint.X)/2, (TopPoint.Y+BottomPoint.Y)/2)
-                    Data.Box.Size = UDim2.fromOffset(Width, Height)
-                    Data.BoxStroke.Color = Config.Visual.Color
-                    Data.BoxStroke.Thickness = Config.Visual.BoxThickness
-                    Data.Box.Visible = true
-                else
-                    Data.Box.Visible = false
-                end
-            else
-                Data.Box.Visible = false
-            end
-        end
-        if Data.Tracer then
-            local Point,IsVisible = Camera:WorldToViewportPoint(Root.Position)
-            if IsVisible and Point.Z > 0 then
-                local Start = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y)
-                local End = Vector2.new(Point.X, Point.Y)
-                local TracerDistance = (End - Start).Magnitude
-                if TracerDistance < 1000 then
-                    Data.Tracer.BackgroundColor3 = Config.Visual.Color
-                    local Delta = End - Start
-                    Data.Tracer.Position = UDim2.fromOffset((Start.X+End.X)/2, (Start.Y+End.Y)/2)
-                    Data.Tracer.Size = UDim2.fromOffset(Delta.Magnitude, Config.Visual.TracerThickness)
-                    Data.Tracer.Rotation = math.deg(math.atan2(Delta.Y, Delta.X))
-                    Data.Tracer.Visible = true
-                else
-                    Data.Tracer.Visible = false
-                end
-            else
-                Data.Tracer.Visible = false
-            end
-        end
-    end
-
-    -- Remover ESP de jogadores com personagem alterado ou estruturas ausentes
-    for _,Player in ipairs(PlayersToRemove) do
-        RemoveESP(Player)
-        RemoveSkeleton(Player)
     end
 end)
 
@@ -2381,7 +2270,7 @@ local HUDDragStart
 local HUDStartPosition
 
 HUDFrame.InputBegan:Connect(function(Input)
-    if Config.HUD.Lock then return end  -- se travado, não permite arrastar
+    if Config.HUD.Lock then return end
     if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
         HUDDragging = true
         HUDDragStart = Input.Position
@@ -2447,7 +2336,6 @@ AddHUD(Slider(Scroll, "HUD Transparency", 0, .9, Config.HUD.Transparency, functi
     Config.HUD.Transparency = v
     UpdateHUDAppearance()
 end, function(v) return string.format("%d%%", math.floor(v*100)) end))
--- Novo toggle: Lock HUD
 AddHUD(Toggle(Scroll, "Lock HUD", "Disable HUD dragging", Config.HUD.Lock, function(v)
     Config.HUD.Lock = v
 end))
@@ -2644,7 +2532,6 @@ MiniGlow.Thickness = 2
 MiniGlow.Transparency = 0.5
 MiniGlow.Parent = Mini
 
--- Definir MinimizeHub (agora global)
 function MinimizeHub()
     ClosePopup()
     MainDragging = false
@@ -2660,7 +2547,6 @@ function MinimizeHub()
     Main.AnchorPoint = Vector2.new(0, 0)
 end
 
--- Definir CloseAll (agora global)
 function CloseAll()
     Config.Aim.Enabled = false
     Config.Aim.FOVEnabled = false
@@ -2685,12 +2571,8 @@ function CloseAll()
     Config.World.NoNeon = false
     
     pcall(function()
-        for Player in pairs(ESPData) do RemoveESP(Player) end
-        for Player in pairs(Skeletons) do RemoveSkeleton(Player) end
-        -- Destruir todos os Highlights restantes
-        if HighlightsFolder then
-            HighlightsFolder:ClearAllChildren()
-        end
+        for Player in pairs(ESPData) do ClearESP(Player) end
+        TargetHighlight:Destroy()
     end)
     
     pcall(function()
@@ -2723,7 +2605,6 @@ function CloseAll()
         HUDFrame.Visible = false
         Gui:Destroy()
         FovGui:Destroy()
-        ESPGui:Destroy()
     end)
 end
 
@@ -2917,7 +2798,6 @@ RunService.RenderStepped:Connect(function(DT)
     HUDText.Text = table.concat(Lines, "\n")
     local numLines = #Lines
     if numLines > 0 then
-        -- Compacto: menos espaçamento e altura dinâmica
         local textHeight = numLines * 12
         local newHeight = textHeight + 6
         HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, newHeight)
@@ -2935,76 +2815,41 @@ local function DisconnectPlayerESPEvents(Player)
     local Connections = PlayerConnections[Player]
     if Connections then
         for _, Connection in ipairs(Connections) do
-            if Connection then
-                Connection:Disconnect()
-            end
+            if Connection then Connection:Disconnect() end
         end
         PlayerConnections[Player] = nil
     end
 end
 
-local function BuildESPImmediately(Player, Character)
-    if Player == LocalPlayer then return end
-    if not Config.Visual.ESP then return end
-    if not Character or Player.Character ~= Character then return end
-
-    -- First attempt is immediate: no task.wait and no artificial delay.
-    CreateESP(Player)
-
-    -- If Roblox is still assembling R6/R15, retry on Heartbeat.
-    if not ESPData[Player] then
-        task.spawn(function()
-            local attempts = 0
-            while attempts < 50 do  -- 50 * 0.1 = 5 segundos
-                attempts += 1
-                task.wait(0.1)
-                if not Config.Visual.ESP then return end
-                if Player.Character ~= Character then return end
-                if Character.Parent
-                    and Character:FindFirstChild("HumanoidRootPart")
-                    and Character:FindFirstChild("Head")
-                    and Character:FindFirstChildOfClass("Humanoid") then
-
-                    CreateESP(Player)
-                    if ESPData[Player] then
-                        return
-                    end
-                end
-            end
-        end)
-    end
-end
-
 local function SetupPlayer(Player)
     if Player == LocalPlayer then return end
-
     DisconnectPlayerESPEvents(Player)
 
     local Connections = {}
     PlayerConnections[Player] = Connections
 
-    table.insert(Connections, Player.CharacterAdded:Connect(function(Character)
-        RemoveESP(Player)
-        RemoveSkeleton(Player)
-        BuildESPImmediately(Player, Character)
-    end))
-
-    table.insert(Connections, Player.CharacterRemoving:Connect(function()
-        RemoveESP(Player)
-        RemoveSkeleton(Player)
-    end))
-
-    table.insert(Connections, Player:GetPropertyChangedSignal("Team"):Connect(function()
-        if Config.Visual.ESP then
+    table.insert(Connections, Player.CharacterAdded:Connect(function()
+        task.wait(0.2)
+        if Player.Parent then
             CreateESP(Player)
-        else
-            RemoveESP(Player)
         end
     end))
 
-    -- Existing players are also handled immediately.
+    table.insert(Connections, Player.CharacterRemoving:Connect(function()
+        local data = ESPData[Player]
+        if data then
+            data.Box.Visible = false
+            data.Tracer.Visible = false
+            data.Name.Visible = false
+            data.Health.Visible = false
+            data.Distance.Visible = false
+            data.Highlight.Enabled = false
+            for _, line in ipairs(data.Lines) do line.Visible = false end
+        end
+    end))
+
     if Player.Character then
-        BuildESPImmediately(Player, Player.Character)
+        CreateESP(Player)
     end
 end
 
@@ -3015,8 +2860,7 @@ end
 Players.PlayerAdded:Connect(SetupPlayer)
 Players.PlayerRemoving:Connect(function(Player)
     DisconnectPlayerESPEvents(Player)
-    RemoveESP(Player)
-    RemoveSkeleton(Player)
+    ClearESP(Player)
 end)
 
 -- LOCAL CHARACTER
@@ -3046,7 +2890,7 @@ LocalPlayer.CharacterAdded:Connect(function()
     Camera.FieldOfView = Config.World.FOV
 end)
 
--- TELA DE CARREGAMENTO (DEPOIS DE TUDO)
+-- TELA DE CARREGAMENTO
 local LoadingScreen = Instance.new("Frame")
 LoadingScreen.Name = "LoadingScreen"
 LoadingScreen.Size = UDim2.fromScale(1,1)
@@ -3221,20 +3065,8 @@ print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
 -- ============================================================
 -- NOVA HUB - REVISÃO FINAL ESTÁTICA
 -- ============================================================
--- Arquivo revisado: Nova_Hub_COMPLETO_CORRIGIDO_V8.txt
 -- Correções aplicadas:
--- 1. CameraDistance -> CameraMaxZoomDistance (todas as ocorrências)
--- 2. Declaração antecipada de MinimizeHub e CloseAll (evita nil)
--- 3. ESP/Chams: remove ESP completamente ao morrer (evita Highlight deslocado)
--- 4. HUD compacto, com menos espaçamento e altura dinâmica
--- 5. Toggle de Lock para o HUD (não pode arrastar)
--- 6. HUD stroke segue o UI Accent (atualizado em RefreshLinesAccent)
--- 7. Popup INFO centralizado na tela (AnchorPoint)
--- 8. InfoButton ZIndex = 5 (para receber cliques acima do DragButton)
--- 9. HUDStroke declarado antes de RefreshLinesAccent (corrige atualização de cor)
--- 10. ESP não depende da saúde para ser criado (corrige bug de respawn)
--- 11. Render loop não remove ESP por health <= 0, apenas oculta
--- 12. Highlight movido para pasta no Workspace (evita ser destruído junto com o corpo)
--- 13. Retry de criação do ESP após respawn aumentado para 5 segundos
--- 14. Verificação de personagem no RenderStepped para remover ESP antigo
+-- 1. ESP totalmente reformulado usando Drawing.new (sem deslocamento)
+-- 2. Highlight reutilizado e atualizado via Adornee (sem bug de respawn)
+-- 3. Demais funcionalidades mantidas
 -- ============================================================
