@@ -1,5 +1,5 @@
 --[[
-    NOVA HUB - STUDIO EDITION v4.2
+    NOVA HUB - STUDIO EDITION v4.3
     LocalScript
     StarterPlayer > StarterPlayerScripts
     ESP com retry imediato (sem precisar morrer)
@@ -17,6 +17,117 @@ local Lighting = game:GetService("Lighting")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local Camera = workspace.CurrentCamera
+
+-- FLY SYSTEM
+-- Adapted only from the working flight logic supplied by the user.
+local FlyBodyVelocity = nil
+local FlyBodyGyro = nil
+
+local function StopFly()
+    if FlyBodyVelocity then
+        pcall(function() FlyBodyVelocity:Destroy() end)
+        FlyBodyVelocity = nil
+    end
+
+    if FlyBodyGyro then
+        pcall(function() FlyBodyGyro:Destroy() end)
+        FlyBodyGyro = nil
+    end
+
+    local Character = LocalPlayer.Character
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+
+    if Humanoid then
+        Humanoid.PlatformStand = false
+        pcall(function()
+            Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+        end)
+    end
+end
+
+local function StartFly()
+    StopFly()
+
+    if not Config or not Config.Player or not Config.Player.FlyHack then
+        return
+    end
+
+    local Character = LocalPlayer.Character
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+    local CurrentCamera = workspace.CurrentCamera
+
+    if not Character or not Humanoid or not Root or not CurrentCamera then
+        return
+    end
+
+    Humanoid.PlatformStand = true
+
+    FlyBodyGyro = Instance.new("BodyGyro")
+    FlyBodyGyro.Name = "NovaFlyGyro"
+    FlyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    FlyBodyGyro.CFrame = CurrentCamera.CFrame
+    FlyBodyGyro.P = 9e4
+    FlyBodyGyro.D = 500
+    FlyBodyGyro.Parent = Root
+
+    FlyBodyVelocity = Instance.new("BodyVelocity")
+    FlyBodyVelocity.Name = "NovaFlyVelocity"
+    FlyBodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    FlyBodyVelocity.Velocity = Vector3.zero
+    FlyBodyVelocity.Parent = Root
+end
+
+local function UpdateFly()
+    if not Config.Player.FlyHack then
+        if FlyBodyVelocity or FlyBodyGyro then
+            StopFly()
+        end
+        return
+    end
+
+    local Character = LocalPlayer.Character
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+    local CurrentCamera = workspace.CurrentCamera
+
+    if not Character or not Humanoid or not Root or not CurrentCamera then
+        StopFly()
+        return
+    end
+
+    if not FlyBodyVelocity or not FlyBodyVelocity.Parent
+        or not FlyBodyGyro or not FlyBodyGyro.Parent then
+        StartFly()
+        return
+    end
+
+    FlyBodyGyro.CFrame = CurrentCamera.CFrame
+
+    local Direction = Humanoid.MoveDirection
+    local FlySpeed = math.max(0, tonumber(Config.Player.FlySpeed) or 50)
+    local VerticalVelocity = 0
+
+    -- Keyboard + mobile jump button.
+    if UserInputService:IsKeyDown(Enum.KeyCode.Space) or Humanoid.Jump then
+        VerticalVelocity = FlySpeed + 15
+
+    -- Keyboard downward movement.
+    elseif UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+        VerticalVelocity = -(FlySpeed + 15)
+
+    -- When moving with the mobile/keyboard joystick, follow the camera pitch.
+    elseif Direction.Magnitude > 0 then
+        local Look = CurrentCamera.CFrame.LookVector
+        if Look.Y < -0.3 or Look.Y > 0.3 then
+            VerticalVelocity = Look.Y * (FlySpeed + 10)
+        end
+    end
+
+    FlyBodyVelocity.Velocity =
+        (Direction * FlySpeed) +
+        Vector3.new(0, VerticalVelocity, 0)
+end
 
 -- Config
 local Config = {
@@ -1495,6 +1606,11 @@ AddPlayer(Slider(Scroll, "Speed Multiplier", 1, 10, Config.Player.SpeedMultiplie
 end, function(v) return string.format("%.1fx",v) end))
 AddPlayer(Toggle(Scroll, "Fly Hack", "Enable flying", Config.Player.FlyHack, function(v)
     Config.Player.FlyHack = v
+    if v then
+        StartFly()
+    else
+        StopFly()
+    end
 end))
 AddPlayer(Slider(Scroll, "Fly Speed", 10, 100, Config.Player.FlySpeed, function(v)
     Config.Player.FlySpeed = v
@@ -2623,6 +2739,7 @@ local function CloseAll()
     Config.Player.SpeedHack = false
     Config.Player.FlyHack = false
     Config.Player.NoClip = false
+    pcall(StopFly)
     Config.World.FullBright = false
     Config.World.RemoveFog = false
     Config.Player.JumpPowerEnabled = false
@@ -2817,6 +2934,8 @@ local SessionStart = os.time()
 local ServerName = game.JobId:sub(1, 8)
 
 RunService.RenderStepped:Connect(function(DT)
+    UpdateFly()
+
     Frames += 1
     Elapsed += DT
     if Elapsed >= 1 then
@@ -2972,6 +3091,9 @@ LocalPlayer.CharacterAdded:Connect(function()
     if Humanoid then
         if Config.Player.SpeedHack then
             Humanoid.WalkSpeed = 16 * Config.Player.SpeedMultiplier
+        end
+        if Config.Player.FlyHack then
+            StartFly()
         end
         if Config.Player.JumpPowerEnabled then
             Humanoid.JumpPower = Config.Player.JumpPower
@@ -3171,5 +3293,5 @@ RefreshToggleAccent()
 RefreshLinesAccent()
 ShowAim()
 
-print("NOVA HUB - STUDIO EDITION v4.2 carregado com sucesso!")
+print("NOVA HUB - STUDIO EDITION v4.3 carregado com sucesso!")
 
