@@ -8,7 +8,7 @@
     - JumpPower removido do World
     - CameraZoom com CameraMaxZoomDistance e CameraMinZoomDistance
     - FOV com toggle e slider
-    - Infinite Jump funcional
+    - Infinite Jump funcional (imediato, sem atraso)
     - ESP com Drawing (sem deslocamento)
 ]]
 
@@ -1698,7 +1698,7 @@ AddWorld(Toggle(Scroll, "No Neon Glow", "Disable neon materials", Config.World.N
     end
 end))
 
--- CUSTOMIZATION PAGE (inalterada, mas vou incluir)
+-- CUSTOMIZATION PAGE
 local function AddCustom(Row)
     table.insert(CustomRows,Row)
 end
@@ -2937,6 +2937,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
+-- Fly (RenderStepped)
 RunService.RenderStepped:Connect(function()
     if not Config.Player.FlyHack then return end
     local Character = LocalPlayer.Character
@@ -2950,9 +2951,10 @@ RunService.RenderStepped:Connect(function()
         local velY = 0
 
         if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-            velY = Config.Player.FlySpeed + 15
+            -- Subida forte e responsiva
+            velY = Config.Player.FlySpeed * 1.5 + 30
         elseif UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-            velY = -(Config.Player.FlySpeed + 15)
+            velY = -(Config.Player.FlySpeed * 1.5 + 30)  -- descida rápida
         elseif dir.Magnitude > 0 then
             local look = Camera.CFrame.LookVector
             if look.Y < -0.3 or look.Y > 0.3 then
@@ -2964,13 +2966,28 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Infinite Jump
-UserInputService.JumpRequest:Connect(function()
-    if Config.Player.InfiniteJump and LocalPlayer.Character then
-        local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if Humanoid then
-            Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+-- Infinite Jump imediato (sem atraso)
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if gameProcessedEvent then return end
+    if not Config.Player.InfiniteJump then return end
+
+    local Humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if not Humanoid then return end
+
+    local isJumpKey = false
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        if input.KeyCode == Enum.KeyCode.Space then
+            isJumpKey = true
         end
+    elseif input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isJumpKey = true
+    elseif input.UserInputType == Enum.UserInputType.Touch then
+        isJumpKey = true
+    end
+
+    if isJumpKey then
+        Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        Humanoid.Jump = true
     end
 end)
 
@@ -3220,6 +3237,6 @@ print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
 -- 2. Player: Fly Hack estável (AutoRotate off), No-Clip, Jump Power, Gravidade
 -- 3. CameraZoom corrigido (CameraMaxZoomDistance e CameraMinZoomDistance)
 -- 4. FOV com toggle de ativar/desativar
--- 5. Infinite Jump implementado via JumpRequest
+-- 5. Infinite Jump implementado via InputBegan (imediato)
 -- 6. JumpPower e Gravidade removidos do World
 -- ============================================================
