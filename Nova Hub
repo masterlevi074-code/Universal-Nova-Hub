@@ -14,6 +14,7 @@
     - HUDStroke declarado antes de RefreshLinesAccent
     - ESP usa Drawing.new (mais estável no respawn)
     - Highlight reutilizado e atualizado via Adornee
+    - Player: Fly Hack, No-Clip, Jump Power com toggle e slider, Speed Hack
 ]]
 
 -- Services
@@ -94,6 +95,7 @@ local Config = {
         FlySpeed = 50,
         NoClip = false,
         JumpPower = 50,
+        JumpPowerEnabled = false,  -- novo
         InfiniteJump = false
     },
     World = {
@@ -468,7 +470,7 @@ InfoButton.MouseButton1Click:Connect(function()
 • Som de clique com ativação/desativação
 • Perfil do usuário e QuickInfo
 • World: Full Bright, Gravity, Jump Power, etc.
-• Player: Speed, Fly, NoClip, Jump
+• Player: Speed Hack, Fly, NoClip, Jump Power com Toggle
 • Skeleton ESP corrigido
 • CORREÇÃO: ESP agora usa Drawing.new (sem deslocamento após respawn)
 • Highlight reutilizado e atualizado via Adornee
@@ -1474,10 +1476,14 @@ AddAim(Toggle(Scroll, "Wall Check", "Ignore targets behind walls", Config.Aim.Wa
     Config.Aim.WallCheck = v
 end))
 
--- PLAYER PAGE
+-- PLAYER PAGE (MODIFICADA)
 local function AddPlayer(Row)
     table.insert(PlayerRows,Row)
 end
+
+-- Variáveis para o voo
+local PlayerFlyBodyVelocity = nil
+local PlayerFlyBodyGyro = nil
 
 AddPlayer(Toggle(Scroll, "Speed Hack", "Increase movement speed", Config.Player.SpeedHack, function(v)
     Config.Player.SpeedHack = v
@@ -1485,11 +1491,7 @@ AddPlayer(Toggle(Scroll, "Speed Hack", "Increase movement speed", Config.Player.
     if Character then
         local Humanoid = Character:FindFirstChildOfClass("Humanoid")
         if Humanoid then
-            if v then
-                Humanoid.WalkSpeed = 16 * Config.Player.SpeedMultiplier
-            else
-                Humanoid.WalkSpeed = 16
-            end
+            Humanoid.WalkSpeed = v and (16 * Config.Player.SpeedMultiplier) or 16
         end
     end
 end))
@@ -1505,33 +1507,86 @@ AddPlayer(Slider(Scroll, "Speed Multiplier", 1, 10, Config.Player.SpeedMultiplie
         end
     end
 end, function(v) return string.format("%.1fx",v) end))
+
+-- Fly Hack
 AddPlayer(Toggle(Scroll, "Fly Hack", "Enable flying", Config.Player.FlyHack, function(v)
     Config.Player.FlyHack = v
+    local Character = LocalPlayer.Character
+    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+    if v then
+        if Root and Humanoid then
+            Humanoid.PlatformStand = true
+            if not PlayerFlyBodyGyro then
+                PlayerFlyBodyGyro = Instance.new("BodyGyro")
+                PlayerFlyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+                PlayerFlyBodyGyro.P = 9e9
+                PlayerFlyBodyGyro.Parent = Root
+            end
+            if not PlayerFlyBodyVelocity then
+                PlayerFlyBodyVelocity = Instance.new("BodyVelocity")
+                PlayerFlyBodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+                PlayerFlyBodyVelocity.Velocity = Vector3.zero
+                PlayerFlyBodyVelocity.Parent = Root
+            end
+        end
+    else
+        if PlayerFlyBodyVelocity then
+            PlayerFlyBodyVelocity:Destroy()
+            PlayerFlyBodyVelocity = nil
+        end
+        if PlayerFlyBodyGyro then
+            PlayerFlyBodyGyro:Destroy()
+            PlayerFlyBodyGyro = nil
+        end
+        if Humanoid then
+            Humanoid.PlatformStand = false
+            Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+        end
+    end
 end))
 AddPlayer(Slider(Scroll, "Fly Speed", 10, 100, Config.Player.FlySpeed, function(v)
     Config.Player.FlySpeed = v
 end, function(v) return string.format("%.0f",v) end))
+
+-- No-Clip
 AddPlayer(Toggle(Scroll, "No-Clip", "Walk through walls", Config.Player.NoClip, function(v)
     Config.Player.NoClip = v
-    local Character = LocalPlayer.Character
-    if Character then
-        for _,Part in ipairs(Character:GetDescendants()) do
+    if not v and LocalPlayer.Character then
+        for _,Part in ipairs(LocalPlayer.Character:GetDescendants()) do
             if Part:IsA("BasePart") then
-                Part.CanCollide = not v
+                Part.CanCollide = true
             end
         end
     end
 end))
-AddPlayer(Slider(Scroll, "Jump Power", 50, 500, Config.Player.JumpPower, function(v)
-    Config.Player.JumpPower = v
+
+-- Jump Power (Toggle + Slider)
+AddPlayer(Toggle(Scroll, "Jump Power", "Enable custom jump power", Config.Player.JumpPowerEnabled, function(v)
+    Config.Player.JumpPowerEnabled = v
     local Character = LocalPlayer.Character
     if Character then
         local Humanoid = Character:FindFirstChildOfClass("Humanoid")
         if Humanoid then
-            Humanoid.JumpPower = v
+            Humanoid.UseJumpPower = true
+            Humanoid.JumpPower = v and Config.Player.JumpPower or 50
+        end
+    end
+end))
+AddPlayer(Slider(Scroll, "Jump Height", 50, 500, Config.Player.JumpPower, function(v)
+    Config.Player.JumpPower = v
+    if Config.Player.JumpPowerEnabled then
+        local Character = LocalPlayer.Character
+        if Character then
+            local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+            if Humanoid then
+                Humanoid.JumpPower = v
+            end
         end
     end
 end, function(v) return string.format("%.0f",v) end))
+
+-- Infinite Jump
 AddPlayer(Toggle(Scroll, "Infinite Jump", "Jump infinitely", Config.Player.InfiniteJump, function(v)
     Config.Player.InfiniteJump = v
 end))
@@ -1739,7 +1794,7 @@ AddCustom(Toggle(Scroll, "Animations", "Enable animations", Config.UI.Animations
 end))
 
 
--- ======================= ESP NOVO (Drawing) =======================
+-- ======================= ESP (Drawing) =======================
 local ESPData = {}
 
 local function IsTeammate(Player)
@@ -2090,8 +2145,6 @@ table.insert(VisualRows, Slider(Scroll, "ESP Text Size", 8, 16, Config.Visual.Te
     Config.Visual.TextSize = math.floor(v)
     RefreshESP()
 end, function(v) return string.format("%d",v) end))
-
--- Target Highlight (Aim) continue
 
 -- TARGET (AIM ASSIST)
 local function IsValidTarget(Player)
@@ -2563,18 +2616,19 @@ function CloseAll()
     Config.Player.SpeedHack = false
     Config.Player.FlyHack = false
     Config.Player.NoClip = false
+    Config.Player.JumpPowerEnabled = false
     Config.World.FullBright = false
     Config.World.RemoveFog = false
     Config.World.JumpPowerEnabled = false
     Config.World.LowGravity = false
     Config.World.NoShadows = false
     Config.World.NoNeon = false
-    
+
     pcall(function()
         for Player in pairs(ESPData) do ClearESP(Player) end
         TargetHighlight:Destroy()
     end)
-    
+
     pcall(function()
         Lighting.Brightness = 2
         Lighting.ClockTime = 14
@@ -2583,7 +2637,7 @@ function CloseAll()
         workspace.Gravity = 196.2
         Camera.FieldOfView = 70
     end)
-    
+
     pcall(function()
         local Character = LocalPlayer.Character
         if Character then
@@ -2592,14 +2646,20 @@ function CloseAll()
                 Humanoid.JumpPower = 50
                 Humanoid.WalkSpeed = 16
                 Humanoid.CameraMaxZoomDistance = 15
+                Humanoid.PlatformStand = false
+            end
+            for _, part in ipairs(Character:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = true end
             end
         end
+        if PlayerFlyBodyVelocity then PlayerFlyBodyVelocity:Destroy() end
+        if PlayerFlyBodyGyro then PlayerFlyBodyGyro:Destroy() end
     end)
-    
+
     pcall(function()
         RunService:UnbindFromRenderStep("NovaAim")
     end)
-    
+
     pcall(function()
         UpdateFov()
         HUDFrame.Visible = false
@@ -2611,7 +2671,7 @@ end
 Close.MouseButton1Click:Connect(function()
     PlayClickSound()
     if ActivePopup then ClosePopup() end
-    
+
     local ConfirmOverlay = Instance.new("Frame")
     ConfirmOverlay.Size = UDim2.fromScale(1,1)
     ConfirmOverlay.BackgroundColor3 = Color3.fromRGB(0,0,0)
@@ -2808,7 +2868,7 @@ RunService.RenderStepped:Connect(function(DT)
     end
 end)
 
--- PLAYER EVENTS
+-- PLAYER EVENTS (ESP e loops)
 local PlayerConnections = {}
 
 local function DisconnectPlayerESPEvents(Player)
@@ -2863,31 +2923,113 @@ Players.PlayerRemoving:Connect(function(Player)
     ClearESP(Player)
 end)
 
+-- Loops para NoClip, Jump Power e Fly
+RunService.Stepped:Connect(function()
+    local Character = LocalPlayer.Character
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+
+    -- NoClip
+    if Config.Player.NoClip and Character then
+        for _, part in ipairs(Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+
+    -- Jump Power
+    if Config.Player.JumpPowerEnabled and Humanoid then
+        Humanoid.UseJumpPower = true
+        Humanoid.JumpPower = Config.Player.JumpPower
+    end
+
+    -- Speed Hack
+    if Config.Player.SpeedHack and Humanoid and not Config.Player.FlyHack then
+        Humanoid.WalkSpeed = 16 * Config.Player.SpeedMultiplier
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if not Config.Player.FlyHack then return end
+    local Character = LocalPlayer.Character
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+    local Camera = workspace.CurrentCamera
+
+    if Humanoid and Root and PlayerFlyBodyGyro and PlayerFlyBodyVelocity then
+        PlayerFlyBodyGyro.CFrame = Camera.CFrame
+        local dir = Humanoid.MoveDirection
+        local velY = 0
+
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+            velY = Config.Player.FlySpeed + 15
+        elseif UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+            velY = -(Config.Player.FlySpeed + 15)
+        elseif dir.Magnitude > 0 then
+            local look = Camera.CFrame.LookVector
+            if look.Y < -0.3 or look.Y > 0.3 then
+                velY = look.Y * (Config.Player.FlySpeed + 10)
+            end
+        end
+
+        PlayerFlyBodyVelocity.Velocity = (dir * Config.Player.FlySpeed) + Vector3.new(0, velY, 0)
+    end
+end)
+
 -- LOCAL CHARACTER
 LocalPlayer.CharacterAdded:Connect(function()
     task.wait(.5)
     Camera = workspace.CurrentCamera
-    local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    local Character = LocalPlayer.Character
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+
     if Humanoid then
         if Config.Player.SpeedHack then
             Humanoid.WalkSpeed = 16 * Config.Player.SpeedMultiplier
         end
-        if Config.World.JumpPowerEnabled then
-            Humanoid.JumpPower = Config.World.JumpHeight
+        if Config.Player.JumpPowerEnabled then
+            Humanoid.UseJumpPower = true
+            Humanoid.JumpPower = Config.Player.JumpPower
         end
         Humanoid.CameraMaxZoomDistance = Config.World.CameraZoom
     end
-    if Config.Player.NoClip then
-        for _,Part in ipairs(LocalPlayer.Character:GetDescendants()) do
+
+    if Config.Player.NoClip and Character then
+        for _,Part in ipairs(Character:GetDescendants()) do
             if Part:IsA("BasePart") then
                 Part.CanCollide = false
             end
         end
     end
+
+    if Config.Player.FlyHack and Root and Humanoid then
+        Humanoid.PlatformStand = true
+        PlayerFlyBodyVelocity = Instance.new("BodyVelocity")
+        PlayerFlyBodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+        PlayerFlyBodyVelocity.Velocity = Vector3.zero
+        PlayerFlyBodyVelocity.Parent = Root
+
+        PlayerFlyBodyGyro = Instance.new("BodyGyro")
+        PlayerFlyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+        PlayerFlyBodyGyro.Parent = Root
+    end
+
     if Config.World.LowGravity then
         workspace.Gravity = Config.World.GravityValue
     end
     Camera.FieldOfView = Config.World.FOV
+end)
+
+LocalPlayer.CharacterRemoving:Connect(function()
+    if PlayerFlyBodyVelocity then
+        PlayerFlyBodyVelocity:Destroy()
+        PlayerFlyBodyVelocity = nil
+    end
+    if PlayerFlyBodyGyro then
+        PlayerFlyBodyGyro:Destroy()
+        PlayerFlyBodyGyro = nil
+    end
 end)
 
 -- TELA DE CARREGAMENTO
@@ -3063,10 +3205,15 @@ ShowAim()
 print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
 
 -- ============================================================
--- NOVA HUB - REVISÃO FINAL ESTÁTICA
+-- NOVA HUB - REVISÃO FINAL
 -- ============================================================
 -- Correções aplicadas:
--- 1. ESP totalmente reformulado usando Drawing.new (sem deslocamento)
--- 2. Highlight reutilizado e atualizado via Adornee (sem bug de respawn)
--- 3. Demais funcionalidades mantidas
+-- 1. ESP usa Drawing (sem deslocamento)
+-- 2. Player: Fly Hack, No-Clip, Jump Power com toggle, Speed Hack
+-- 3. CameraDistance -> CameraMaxZoomDistance
+-- 4. InfoButton ZIndex = 5
+-- 5. HUDStroke declarado antes de RefreshLinesAccent
+-- 6. HUD lock toggle
+-- 7. Popup INFO centralizado
+-- 8. Loops contínuos para aplicar efeitos
 -- ============================================================
