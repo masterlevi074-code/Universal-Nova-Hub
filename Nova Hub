@@ -63,6 +63,7 @@ local Config = {
         ShowTime = false,
         ShowServer = false,
         ShowSessionTime = false,
+        Locked = false,
         Position = UDim2.fromOffset(15,15),
         Size = 118,
         Transparency = 0
@@ -82,19 +83,19 @@ local Config = {
         FlyHack = false,
         FlySpeed = 50,
         NoClip = false,
+        JumpPowerEnabled = false,
         JumpPower = 50,
+        LowGravity = false,
+        GravityValue = 50,
         InfiniteJump = false
     },
     World = {
         FullBright = false,
         RemoveFog = false,
         Brightness = 3,
+        TimeOfDayEnabled = false,
         TimeOfDay = 14,
-        JumpPowerEnabled = false,
-        JumpHeight = 50,
-        LowGravity = false,
-        GravityValue = 196.2,
-        CameraZoom = 15,
+        FOVEnabled = false,
         FOV = 70,
         NoShadows = false,
         NoNeon = false
@@ -811,6 +812,9 @@ local SettingsRows = {}
 -- Toggle registry
 local ToggleRenderers = {}
 
+-- HUDStroke é criado mais abaixo, mas precisa ser atualizado pelo UI Accent.
+local HUDStroke
+
 local function RefreshToggleAccent()
     for _,Renderer in ipairs(ToggleRenderers) do
         if Renderer then Renderer() end
@@ -831,6 +835,9 @@ local function RefreshLinesAccent()
     QuickInfoStroke.Color = Accent()
     QuickInfoTitle.TextColor3 = Accent()
     Scroll.ScrollBarImageColor3 = Accent()
+    if HUDStroke then
+        HUDStroke.Color = Accent()
+    end
 end
 
 -- Toggle
@@ -1503,14 +1510,44 @@ AddPlayer(Toggle(Scroll, "No-Clip", "Walk through walls", Config.Player.NoClip, 
         end
     end
 end))
-AddPlayer(Slider(Scroll, "Jump Power", 50, 500, Config.Player.JumpPower, function(v)
-    Config.Player.JumpPower = v
+AddPlayer(Toggle(Scroll, "Jump Power", "Enable custom jump power", Config.Player.JumpPowerEnabled, function(v)
+    Config.Player.JumpPowerEnabled = v
     local Character = LocalPlayer.Character
     if Character then
         local Humanoid = Character:FindFirstChildOfClass("Humanoid")
         if Humanoid then
-            Humanoid.JumpPower = v
+            if v then
+                Humanoid.JumpPower = Config.Player.JumpPower
+            else
+                Humanoid.JumpPower = 50
+            end
         end
+    end
+end))
+AddPlayer(Slider(Scroll, "Jump Power Value", 50, 500, Config.Player.JumpPower, function(v)
+    Config.Player.JumpPower = v
+    if Config.Player.JumpPowerEnabled then
+        local Character = LocalPlayer.Character
+        if Character then
+            local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+            if Humanoid then
+                Humanoid.JumpPower = v
+            end
+        end
+    end
+end, function(v) return string.format("%.0f",v) end))
+AddPlayer(Toggle(Scroll, "Low Gravity", "Reduce workspace gravity", Config.Player.LowGravity, function(v)
+    Config.Player.LowGravity = v
+    if v then
+        workspace.Gravity = Config.Player.GravityValue
+    else
+        workspace.Gravity = 196.2
+    end
+end))
+AddPlayer(Slider(Scroll, "Gravity Value", 0, 196.2, Config.Player.GravityValue, function(v)
+    Config.Player.GravityValue = v
+    if Config.Player.LowGravity then
+        workspace.Gravity = v
     end
 end, function(v) return string.format("%.0f",v) end))
 AddPlayer(Toggle(Scroll, "Infinite Jump", "Jump infinitely", Config.Player.InfiniteJump, function(v)
@@ -1526,7 +1563,9 @@ AddWorld(Toggle(Scroll, "Full Bright", "Make everything bright", Config.World.Fu
     Config.World.FullBright = v
     if v then
         Lighting.Brightness = Config.World.Brightness
-        Lighting.ClockTime = Config.World.TimeOfDay
+        if Config.World.TimeOfDayEnabled then
+            Lighting.ClockTime = Config.World.TimeOfDay
+        end
         Lighting.FogEnd = 100000
         Lighting.GlobalShadows = false
     else
@@ -1552,63 +1591,33 @@ AddWorld(Toggle(Scroll, "Remove Fog", "Disable fog", Config.World.RemoveFog, fun
         Lighting.FogStart = 0
     end
 end))
-AddWorld(Slider(Scroll, "Time of Day", 0, 24, Config.World.TimeOfDay, function(v)
-    Config.World.TimeOfDay = v
-    Lighting.ClockTime = v
-end, function(v) return string.format("%.0fh",v) end))
-AddWorld(Toggle(Scroll, "Jump Power", "Enable custom jump power", Config.World.JumpPowerEnabled, function(v)
-    Config.World.JumpPowerEnabled = v
-    local Character = LocalPlayer.Character
-    if Character then
-        local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-        if Humanoid then
-            if v then
-                Humanoid.JumpPower = Config.World.JumpHeight
-            else
-                Humanoid.JumpPower = 50
-            end
-        end
-    end
-end))
-AddWorld(Slider(Scroll, "Jump Height", 50, 500, Config.World.JumpHeight, function(v)
-    Config.World.JumpHeight = v
-    if Config.World.JumpPowerEnabled then
-        local Character = LocalPlayer.Character
-        if Character then
-            local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-            if Humanoid then
-                Humanoid.JumpPower = v
-            end
-        end
-    end
-end, function(v) return string.format("%.0f",v) end))
-AddWorld(Toggle(Scroll, "Low Gravity", "Reduce gravity", Config.World.LowGravity, function(v)
-    Config.World.LowGravity = v
+AddWorld(Toggle(Scroll, "Time of Day", "Enable custom time of day", Config.World.TimeOfDayEnabled, function(v)
+    Config.World.TimeOfDayEnabled = v
     if v then
-        workspace.Gravity = Config.World.GravityValue
+        Lighting.ClockTime = Config.World.TimeOfDay
     else
-        workspace.Gravity = 196.2
+        Lighting.ClockTime = 14
     end
 end))
-AddWorld(Slider(Scroll, "Gravity Value", 0, 196.2, Config.World.GravityValue, function(v)
-    Config.World.GravityValue = v
-    if Config.World.LowGravity then
-        workspace.Gravity = v
+AddWorld(Slider(Scroll, "Time of Day Value", 0, 24, Config.World.TimeOfDay, function(v)
+    Config.World.TimeOfDay = v
+    if Config.World.TimeOfDayEnabled then
+        Lighting.ClockTime = v
     end
-end, function(v) return string.format("%.0f",v) end))
-AddWorld(Slider(Scroll, "Camera Zoom", 5, 30, Config.World.CameraZoom, function(v)
-    Config.World.CameraZoom = v
-    local Character = LocalPlayer.Character
-    if Character then
-        local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-        if Humanoid then
-            Humanoid.CameraDistance = v
-        end
+end, function(v) return string.format("%.0fh",v) end))
+AddWorld(Toggle(Scroll, "Field of View", "Enable custom camera FOV", Config.World.FOVEnabled, function(v)
+    Config.World.FOVEnabled = v
+    if v then
+        Camera.FieldOfView = Config.World.FOV
+    else
+        Camera.FieldOfView = 70
     end
-end, function(v) return string.format("%.0f",v) end))
-AddWorld(Slider(Scroll, "Field of View", 30, 120, Config.World.FOV, function(v)
+end))
+AddWorld(Slider(Scroll, "FOV Value", 30, 120, Config.World.FOV, function(v)
     Config.World.FOV = v
-    Camera.FieldOfView = v
+    if Config.World.FOVEnabled then
+        Camera.FieldOfView = v
+    end
 end, function(v) return string.format("%.0f",v) end))
 AddWorld(Toggle(Scroll, "No Shadows", "Disable all shadows", Config.World.NoShadows, function(v)
     Config.World.NoShadows = v
@@ -2272,7 +2281,7 @@ HUDFrame.Parent = Gui
 
 Instance.new("UICorner",HUDFrame).CornerRadius = UDim.new(0,7)
 
-local HUDStroke = Instance.new("UIStroke")
+HUDStroke = Instance.new("UIStroke")
 HUDStroke.Color = Accent()
 HUDStroke.Thickness = 1
 HUDStroke.Transparency = Config.HUD.Transparency
@@ -2308,6 +2317,7 @@ local HUDDragStart
 local HUDStartPosition
 
 HUDFrame.InputBegan:Connect(function(Input)
+    if Config.HUD.Locked then return end
     if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
         HUDDragging = true
         HUDDragStart = Input.Position
@@ -2343,6 +2353,12 @@ end
 AddHUD(Toggle(Scroll, "HUD", "Enable information panel", Config.HUD.Enabled, function(v)
     Config.HUD.Enabled = v
     HUDFrame.Visible = v
+end))
+AddHUD(Toggle(Scroll, "Lock HUD", "Prevent the HUD panel from being dragged", Config.HUD.Locked, function(v)
+    Config.HUD.Locked = v
+    if v then
+        HUDDragging = false
+    end
 end))
 AddHUD(Toggle(Scroll, "FPS Counter", "Show current FPS", Config.HUD.FPS, function(v)
     Config.HUD.FPS = v
@@ -2604,8 +2620,10 @@ local function CloseAll()
     Config.Player.NoClip = false
     Config.World.FullBright = false
     Config.World.RemoveFog = false
-    Config.World.JumpPowerEnabled = false
-    Config.World.LowGravity = false
+    Config.Player.JumpPowerEnabled = false
+    Config.Player.LowGravity = false
+    Config.World.TimeOfDayEnabled = false
+    Config.World.FOVEnabled = false
     Config.World.NoShadows = false
     Config.World.NoNeon = false
     
@@ -2630,7 +2648,6 @@ local function CloseAll()
             if Humanoid then
                 Humanoid.JumpPower = 50
                 Humanoid.WalkSpeed = 16
-                Humanoid.CameraDistance = 15
             end
         end
     end)
@@ -2946,10 +2963,11 @@ LocalPlayer.CharacterAdded:Connect(function()
         if Config.Player.SpeedHack then
             Humanoid.WalkSpeed = 16 * Config.Player.SpeedMultiplier
         end
-        if Config.World.JumpPowerEnabled then
-            Humanoid.JumpPower = Config.World.JumpHeight
+        if Config.Player.JumpPowerEnabled then
+            Humanoid.JumpPower = Config.Player.JumpPower
+        else
+            Humanoid.JumpPower = 50
         end
-        Humanoid.CameraDistance = Config.World.CameraZoom
     end
     if Config.Player.NoClip then
         for _,Part in ipairs(LocalPlayer.Character:GetDescendants()) do
@@ -2958,10 +2976,19 @@ LocalPlayer.CharacterAdded:Connect(function()
             end
         end
     end
-    if Config.World.LowGravity then
-        workspace.Gravity = Config.World.GravityValue
+    if Config.Player.LowGravity then
+        workspace.Gravity = Config.Player.GravityValue
+    else
+        workspace.Gravity = 196.2
     end
-    Camera.FieldOfView = Config.World.FOV
+    if Config.World.FOVEnabled then
+        Camera.FieldOfView = Config.World.FOV
+    else
+        Camera.FieldOfView = 70
+    end
+    if Config.World.TimeOfDayEnabled then
+        Lighting.ClockTime = Config.World.TimeOfDay
+    end
 end)
 
 -- TELA DE CARREGAMENTO (DEPOIS DE TUDO)
@@ -3150,4 +3177,37 @@ print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
 -- 6. Skeleton antigo é removido antes de reconstruir o ESP no respawn.
 -- 7. CreateESP recebeu validações defensivas.
 -- 8. ESP continua com tentativa imediata + retry por Heartbeat.
+-- ============================================================
+  Tween(Main, {
+        Size = UDim2.fromOffset(420 * Config.Customization.UIScale, 370 * Config.Customization.UIScale),
+        BackgroundTransparency = 0
+    }, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out))
+    task.wait(0.5)
+    Main.Position = UDim2.new(0.5, -210 * Config.Customization.UIScale, 0.5, -185 * Config.Customization.UIScale)
+    Main.AnchorPoint = Vector2.new(0, 0)
+    LoadingScreen:Destroy()
+end)
+
+-- INITIALIZATION
+UpdateFov()
+UpdateHUDAppearance()
+RefreshESP()
+RefreshToggleAccent()
+RefreshLinesAccent()
+ShowAim()
+
+print("NOVA HUB - STUDIO EDITION v4.0 carregado com sucesso!")
+
+-- ============================================================
+-- NOVA HUB - REVISÃO FINAL
+-- ============================================================
+-- Correções aplicadas:
+-- 1. ESP usa Drawing (sem deslocamento)
+-- 2. Player: Fly Hack estável (AutoRotate off), No-Clip, Jump Power com toggle, Gravidade
+-- 3. Camera Zoom removido
+-- 4. FOV com toggle de ativar/desativar
+-- 5. Infinite Jump implementado via InputBegan (imediato)
+-- 6. JumpPower e Gravidade concentrados no Player
+-- 7. HUD Lock adicionado e UI Accent aplicado à borda do HUD
+-- 8. Time of Day com toggle de ativar/desativar
 -- ============================================================
