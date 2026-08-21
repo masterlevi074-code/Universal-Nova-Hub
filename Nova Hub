@@ -4,7 +4,6 @@
     StarterPlayer > StarterPlayerScripts
     ESP com retry imediato (sem precisar morrer)
     Botão INFO adicionado
-    Correções: fontes sem espaços, noclip com hipheight, infinite jump, seletor de fonte centralizado
 ]]
 
 -- Services
@@ -1579,7 +1578,7 @@ AddPlayer(Toggle(Scroll, "No-Clip", "Walk through walls", Config.Player.NoClip, 
         if Humanoid then
             Humanoid.HipHeight = 2
             Humanoid.PlatformStand = false
-            Humanoid:ChangeState(Enum.HumanoidStateType.Falling)
+            Humanoid:ChangeState(Enum.HumanoidStateType.FallingDown)  -- CORRIGIDO
         end
         for _, part in ipairs(Character:GetDescendants()) do
             if part:IsA("BasePart") then part.CanCollide = true end
@@ -1940,7 +1939,6 @@ local function OpenFontPicker()
         {"Fantasy", Enum.Font.Fantasy},
         {"Indie Flower", Enum.Font.IndieFlower},
         {"Permanent Marker", Enum.Font.PermanentMarker},
-        {"Press Start 2P", Enum.Font.PressStart2P},
         {"Arcade", Enum.Font.Arcade},
         {"SciFi", Enum.Font.SciFi},
         {"Creepster", Enum.Font.Creepster},
