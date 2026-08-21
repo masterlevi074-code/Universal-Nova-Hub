@@ -1944,7 +1944,6 @@ local function OpenFontPicker()
         {"Creepster", Enum.Font.Creepster},
         {"Amatic SC", Enum.Font.AmaticSC},
         {"Bangers", Enum.Font.Bangers},
-        {"Chewy", Enum.Font.Chewy},
         {"Comic Neue", Enum.Font.ComicNeue},
         {"Comic Neue Angular", Enum.Font.ComicNeueAngular},
         {"Comic Neue Bold", Enum.Font.ComicNeueBold},
