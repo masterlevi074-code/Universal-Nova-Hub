@@ -555,17 +555,7 @@ InfoButton.MouseButton1Click:Connect(function()
     InfoText.Position = UDim2.fromOffset(15,45)
     InfoText.BackgroundTransparency = 1
     InfoText.Text = [[
-• ESP com retry imediato (sem precisar morrer)
-• Tela de carregamento sincronizada
-• Botão de fechar com confirmação
-• HUD sem espaços em branco
-• Abas horizontais (Aim, Visual, Player, World, Custom, HUD, Settings)
-• UI Scale escalona todos os elementos
-• Som de clique com ativação/desativação
-• Perfil do usuário e QuickInfo
-• World: Full Bright, Gravity, Jump Power, etc.
-• Player: Speed, Fly, NoClip, Jump
-• Skeleton ESP corrigido
+• Correções
 ]]
     InfoText.TextColor3 = Color3.fromRGB(200,202,210)
     InfoText.TextSize = 8
