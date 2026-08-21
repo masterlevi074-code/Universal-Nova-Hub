@@ -65,7 +65,7 @@ local Config = {
         ShowSessionTime = false,
         Locked = false,
         Position = UDim2.fromOffset(15,15),
-        Size = 118,
+        Size = 90,               -- tamanho padrão reduzido
         Transparency = 0
     },
     UI = {
@@ -462,7 +462,7 @@ InfoButton.TextSize = 6
 InfoButton.Font = Enum.Font.GothamBold
 InfoButton.AutoButtonColor = false
 InfoButton.Parent = Header
-InfoButton.ZIndex = 5  -- Correção: agora fica acima do DragButton
+InfoButton.ZIndex = 5
 
 Instance.new("UICorner", InfoButton).CornerRadius = UDim.new(0, 5)
 
@@ -874,14 +874,9 @@ Scroll.CanvasSize = UDim2.new()
 Scroll.Parent = Content
 
 local Layout = Instance.new("UIListLayout")
-Layout.Padding = UDim.new(0,6)
+Layout.Padding = UDim.new(0,4)  -- espaçamento reduzido entre itens
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 Layout.Parent = Scroll
-
--- Espaço extra somente no final do scroll para alcançar as últimas opções.
-local ScrollBottomPadding = Instance.new("UIPadding")
-ScrollBottomPadding.PaddingBottom = UDim.new(0,55)
-ScrollBottomPadding.Parent = Scroll
 
 -- FOV
 local FovGui = Instance.new("ScreenGui")
@@ -2389,9 +2384,9 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- HUD
+-- HUD (compacto e profissional)
 local HUDFrame = Instance.new("Frame")
-HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, 50)
+HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, 30)
 HUDFrame.Position = Config.HUD.Position
 HUDFrame.BackgroundColor3 = Color3.fromRGB(20,21,27)
 HUDFrame.BackgroundTransparency = Config.HUD.Transparency
@@ -2408,8 +2403,8 @@ HUDStroke.Transparency = Config.HUD.Transparency
 HUDStroke.Parent = HUDFrame
 
 local HUDText = Instance.new("TextLabel")
-HUDText.Size = UDim2.new(1,-12,1,-8)
-HUDText.Position = UDim2.fromOffset(6,4)
+HUDText.Size = UDim2.new(1,-12,1,-4)
+HUDText.Position = UDim2.fromOffset(6,2)
 HUDText.BackgroundTransparency = 1
 HUDText.TextColor3 = Color3.fromRGB(220,221,227)
 HUDText.TextSize = 8
@@ -2980,11 +2975,13 @@ RunService.RenderStepped:Connect(function(DT)
     HUDText.Text = table.concat(Lines, "\n")
     local numLines = #Lines
     if numLines > 0 then
-        local textHeight = numLines * 14
-        local newHeight = textHeight + 8
+        local textHeight = numLines * 10   -- fonte menor, menos altura
+        local newHeight = textHeight + 6
         HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, newHeight)
         HUDText.Size = UDim2.new(1,-12,0,textHeight)
-        HUDText.Position = UDim2.fromOffset(6,4)
+        HUDText.Position = UDim2.fromOffset(6, 3)
+    else
+        HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, 25)
     end
 end)
 
@@ -3118,6 +3115,17 @@ end)
 
 LocalPlayer.CharacterRemoving:Connect(function()
     StopFly()
+end)
+
+-- NO CLIP SEPARADO (mais robusto)
+RunService.Stepped:Connect(function()
+    if Config.Player.NoClip and LocalPlayer.Character then
+        for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
 end)
 
 -- TELA DE CARREGAMENTO (DEPOIS DE TUDO)
