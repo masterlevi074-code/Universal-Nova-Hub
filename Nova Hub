@@ -18,113 +18,6 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local Camera = workspace.CurrentCamera
 
--- FLY SYSTEM (CORRIGIDO)
-local FlyBodyVelocity = nil
-local FlyBodyGyro = nil
-
-local function StopFly()
-    if FlyBodyVelocity then
-        pcall(function() FlyBodyVelocity:Destroy() end)
-        FlyBodyVelocity = nil
-    end
-
-    if FlyBodyGyro then
-        pcall(function() FlyBodyGyro:Destroy() end)
-        FlyBodyGyro = nil
-    end
-
-    local Character = LocalPlayer.Character
-    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-
-    if Humanoid then
-        Humanoid.PlatformStand = false
-        Humanoid.AutoRotate = true
-        pcall(function()
-            Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-        end)
-    end
-end
-
-local function StartFly()
-    StopFly()
-
-    if not Config or not Config.Player or not Config.Player.FlyHack then
-        return
-    end
-
-    local Character = LocalPlayer.Character
-    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
-    local CurrentCamera = workspace.CurrentCamera
-
-    if not Character or not Humanoid or not Root or not CurrentCamera then
-        return
-    end
-
-    Humanoid.PlatformStand = true
-    Humanoid.AutoRotate = false
-
-    FlyBodyGyro = Instance.new("BodyGyro")
-    FlyBodyGyro.Name = "NovaFlyGyro"
-    FlyBodyGyro.MaxTorque = Vector3.new(400000, 400000, 400000)
-    FlyBodyGyro.CFrame = CurrentCamera.CFrame
-    FlyBodyGyro.P = 10000
-    FlyBodyGyro.D = 500
-    FlyBodyGyro.Parent = Root
-
-    FlyBodyVelocity = Instance.new("BodyVelocity")
-    FlyBodyVelocity.Name = "NovaFlyVelocity"
-    FlyBodyVelocity.MaxForce = Vector3.new(50000, 50000, 50000)
-    FlyBodyVelocity.Velocity = Vector3.zero
-    FlyBodyVelocity.Parent = Root
-end
-
-local function UpdateFly()
-    if not Config.Player.FlyHack then
-        if FlyBodyVelocity or FlyBodyGyro then
-            StopFly()
-        end
-        return
-    end
-
-    local Character = LocalPlayer.Character
-    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
-    local CurrentCamera = workspace.CurrentCamera
-
-    if not Character or not Humanoid or not Root or not CurrentCamera then
-        StopFly()
-        return
-    end
-
-    if not FlyBodyVelocity or not FlyBodyVelocity.Parent
-        or not FlyBodyGyro or not FlyBodyGyro.Parent then
-        StartFly()
-        return
-    end
-
-    FlyBodyGyro.CFrame = CurrentCamera.CFrame
-
-    local Direction = Humanoid.MoveDirection
-    local FlySpeed = math.max(0, tonumber(Config.Player.FlySpeed) or 50)
-    local VerticalVelocity = 0
-
-    if UserInputService:IsKeyDown(Enum.KeyCode.Space) or Humanoid.Jump then
-        VerticalVelocity = FlySpeed + 15
-    elseif UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-        VerticalVelocity = -(FlySpeed + 15)
-    elseif Direction.Magnitude > 0 then
-        local Look = CurrentCamera.CFrame.LookVector
-        if Look.Y < -0.3 or Look.Y > 0.3 then
-            VerticalVelocity = Look.Y * (FlySpeed + 10)
-        end
-    end
-
-    FlyBodyVelocity.Velocity =
-        (Direction * FlySpeed) +
-        Vector3.new(0, VerticalVelocity, 0)
-end
-
 -- Config
 local Config = {
     Aim = {
@@ -213,6 +106,113 @@ local Config = {
     }
 }
 
+-- FLY SYSTEM (CORRIGIDO - agora após a Config)
+local FlyBodyVelocity = nil
+local FlyBodyGyro = nil
+
+local function StopFly()
+    if FlyBodyVelocity then
+        pcall(function() FlyBodyVelocity:Destroy() end)
+        FlyBodyVelocity = nil
+    end
+
+    if FlyBodyGyro then
+        pcall(function() FlyBodyGyro:Destroy() end)
+        FlyBodyGyro = nil
+    end
+
+    local Character = LocalPlayer.Character
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+
+    if Humanoid then
+        Humanoid.PlatformStand = false
+        Humanoid.AutoRotate = true
+        pcall(function()
+            Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+        end)
+    end
+end
+
+local function StartFly()
+    StopFly()
+
+    if not Config.Player.FlyHack then
+        return
+    end
+
+    local Character = LocalPlayer.Character
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+    local CurrentCamera = workspace.CurrentCamera
+
+    if not Character or not Humanoid or not Root or not CurrentCamera then
+        return
+    end
+
+    Humanoid.PlatformStand = true
+    Humanoid.AutoRotate = false
+
+    FlyBodyGyro = Instance.new("BodyGyro")
+    FlyBodyGyro.Name = "NovaFlyGyro"
+    FlyBodyGyro.MaxTorque = Vector3.new(400000, 400000, 400000)
+    FlyBodyGyro.CFrame = CurrentCamera.CFrame
+    FlyBodyGyro.P = 10000
+    FlyBodyGyro.D = 500
+    FlyBodyGyro.Parent = Root
+
+    FlyBodyVelocity = Instance.new("BodyVelocity")
+    FlyBodyVelocity.Name = "NovaFlyVelocity"
+    FlyBodyVelocity.MaxForce = Vector3.new(50000, 50000, 50000)
+    FlyBodyVelocity.Velocity = Vector3.zero
+    FlyBodyVelocity.Parent = Root
+end
+
+local function UpdateFly()
+    if not Config.Player.FlyHack then
+        if FlyBodyVelocity or FlyBodyGyro then
+            StopFly()
+        end
+        return
+    end
+
+    local Character = LocalPlayer.Character
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+    local CurrentCamera = workspace.CurrentCamera
+
+    if not Character or not Humanoid or not Root or not CurrentCamera then
+        StopFly()
+        return
+    end
+
+    if not FlyBodyVelocity or not FlyBodyVelocity.Parent
+        or not FlyBodyGyro or not FlyBodyGyro.Parent then
+        StartFly()
+        return
+    end
+
+    FlyBodyGyro.CFrame = CurrentCamera.CFrame
+
+    local Direction = Humanoid.MoveDirection
+    local FlySpeed = math.max(0, tonumber(Config.Player.FlySpeed) or 50)
+    local VerticalVelocity = 0
+
+    if UserInputService:IsKeyDown(Enum.KeyCode.Space) or Humanoid.Jump then
+        VerticalVelocity = FlySpeed + 15
+    elseif UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+        VerticalVelocity = -(FlySpeed + 15)
+    elseif Direction.Magnitude > 0 then
+        local Look = CurrentCamera.CFrame.LookVector
+        if Look.Y < -0.3 or Look.Y > 0.3 then
+            VerticalVelocity = Look.Y * (FlySpeed + 10)
+        end
+    end
+
+    FlyBodyVelocity.Velocity =
+        (Direction * FlySpeed) +
+        Vector3.new(0, VerticalVelocity, 0)
+end
+
 -- Tween
 local TweenFast = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local TweenSmooth = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
@@ -270,7 +270,6 @@ local function PlayUISound(volume)
     Sound.Ended:Connect(Cleanup)
     Sound:Play()
 
-    -- Failsafe if the asset cannot report Ended.
     task.delay(2, Cleanup)
 end
 
@@ -282,7 +281,7 @@ local function PlayHoverSound()
     PlayUISound(0.1)
 end
 
--- PopupLayer (movido para cima para ser usado no Header)
+-- PopupLayer
 local PopupLayer = Instance.new("Frame")
 PopupLayer.Size = UDim2.fromScale(1,1)
 PopupLayer.BackgroundTransparency = 1
@@ -308,7 +307,7 @@ local function ClosePopup()
     end
 end
 
--- Main (criado primeiro)
+-- Main
 local Main = Instance.new("Frame")
 Main.Name = "Main"
 Main.Size = UDim2.fromOffset(420,370)
