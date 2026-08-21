@@ -4,6 +4,7 @@
     StarterPlayer > StarterPlayerScripts
     ESP com retry imediato (sem precisar morrer)
     Botão INFO adicionado
+    Correções: fontes sem espaços, noclip com hipheight, infinite jump, opção de fonte
 ]]
 
 -- Services
@@ -75,7 +76,8 @@ local Config = {
         Accent = Color3.fromRGB(105,108,145),
         ShowBypassIndicator = true,
         GlowEffects = true,
-        SoundEffects = true
+        SoundEffects = true,
+        Font = Enum.Font.Gotham  -- fonte padrão
     },
     Player = {
         SpeedHack = false,
@@ -106,7 +108,7 @@ local Config = {
     }
 }
 
--- FLY SYSTEM
+-- FLY SYSTEM (CORRIGIDO - agora após a Config)
 local FlyBodyVelocity = nil
 local FlyBodyGyro = nil
 
@@ -341,7 +343,7 @@ Logo.BackgroundColor3 = Accent()
 Logo.Text = "N"
 Logo.TextColor3 = Color3.new(1,1,1)
 Logo.TextSize = 15
-Logo.Font = Enum.Font.GothamBold
+Logo.Font = Enum.Font.Gotham
 Logo.Parent = Header
 
 local LogoCorner = Instance.new("UICorner")
@@ -361,7 +363,7 @@ HeaderTitle.BackgroundTransparency = 1
 HeaderTitle.Text = "NOVA HUB"
 HeaderTitle.TextColor3 = Color3.new(1,1,1)
 HeaderTitle.TextSize = 13
-HeaderTitle.Font = Enum.Font.GothamBold
+HeaderTitle.Font = Enum.Font.Gotham
 HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
 HeaderTitle.Parent = Header
 
@@ -372,7 +374,7 @@ HeaderSub.BackgroundTransparency = 1
 HeaderSub.Text = "STUDIO EDITION v4.0"
 HeaderSub.TextColor3 = Color3.fromRGB(110,113,125)
 HeaderSub.TextSize = 7
-HeaderSub.Font = Enum.Font.GothamMedium
+HeaderSub.Font = Enum.Font.Gotham
 HeaderSub.TextXAlignment = Enum.TextXAlignment.Left
 HeaderSub.Parent = Header
 
@@ -407,7 +409,7 @@ BypassLabel.BackgroundTransparency = 1
 BypassLabel.Text = "BYPASS"
 BypassLabel.TextColor3 = Color3.fromRGB(120,180,120)
 BypassLabel.TextSize = 6
-BypassLabel.Font = Enum.Font.GothamBold
+BypassLabel.Font = Enum.Font.Gotham
 BypassLabel.TextXAlignment = Enum.TextXAlignment.Left
 BypassLabel.Parent = BypassContainer
 
@@ -419,7 +421,7 @@ InfoButton.BackgroundColor3 = Color3.fromRGB(30,31,39)
 InfoButton.Text = "INFO"
 InfoButton.TextColor3 = Color3.fromRGB(180,180,190)
 InfoButton.TextSize = 6
-InfoButton.Font = Enum.Font.GothamBold
+InfoButton.Font = Enum.Font.Gotham
 InfoButton.AutoButtonColor = false
 InfoButton.Parent = Header
 InfoButton.ZIndex = 5
@@ -470,7 +472,7 @@ InfoButton.MouseButton1Click:Connect(function()
     Title.Text = "📌 Atualizações e Correções"
     Title.TextColor3 = Color3.new(1,1,1)
     Title.TextSize = 12
-    Title.Font = Enum.Font.GothamBold
+    Title.Font = Enum.Font.Gotham
     Title.TextXAlignment = Enum.TextXAlignment.Left
     Title.ZIndex = 1000
     Title.Parent = InfoPopup
@@ -482,7 +484,7 @@ InfoButton.MouseButton1Click:Connect(function()
     CloseInfoBtn.Text = "×"
     CloseInfoBtn.TextColor3 = Color3.fromRGB(200,200,210)
     CloseInfoBtn.TextSize = 14
-    CloseInfoBtn.Font = Enum.Font.GothamBold
+    CloseInfoBtn.Font = Enum.Font.Gotham
     CloseInfoBtn.AutoButtonColor = false
     CloseInfoBtn.ZIndex = 1000
     CloseInfoBtn.Parent = InfoPopup
@@ -529,7 +531,7 @@ InfoButton.MouseButton1Click:Connect(function()
 ]]
     InfoText.TextColor3 = Color3.fromRGB(200,202,210)
     InfoText.TextSize = 8
-    InfoText.Font = Enum.Font.GothamMedium
+    InfoText.Font = Enum.Font.Gotham
     InfoText.TextXAlignment = Enum.TextXAlignment.Left
     InfoText.TextYAlignment = Enum.TextYAlignment.Top
     InfoText.TextWrapped = true
@@ -551,7 +553,7 @@ Minimize.BackgroundColor3 = Color3.fromRGB(30,31,39)
 Minimize.Text = "—"
 Minimize.TextColor3 = Color3.fromRGB(180,180,190)
 Minimize.TextSize = 12
-Minimize.Font = Enum.Font.GothamBold
+Minimize.Font = Enum.Font.Gotham
 Minimize.Parent = Header
 
 local Close = Instance.new("TextButton")
@@ -561,7 +563,7 @@ Close.BackgroundColor3 = Color3.fromRGB(30,31,39)
 Close.Text = "×"
 Close.TextColor3 = Color3.fromRGB(180,180,190)
 Close.TextSize = 16
-Close.Font = Enum.Font.GothamBold
+Close.Font = Enum.Font.Gotham
 Close.Parent = Header
 
 Instance.new("UICorner",Minimize).CornerRadius = UDim.new(0,7)
@@ -619,7 +621,7 @@ local function MakeTab(Text, X)
     Button.Text = Text
     Button.TextColor3 = Color3.fromRGB(130,133,143)
     Button.TextSize = 14
-    Button.Font = Enum.Font.GothamBold
+    Button.Font = Enum.Font.Gotham
     Button.AutoButtonColor = false
     Button.Parent = TabBar
 
@@ -630,12 +632,18 @@ local function MakeTab(Text, X)
     Button.MouseEnter:Connect(function()
         PlayHoverSound()
         if ActiveTab ~= Button then
-            Tween(Button,{ BackgroundColor3 = Color3.fromRGB(28,30,38), TextColor3 = Color3.new(1,1,1) })
+            Tween(Button,{
+                BackgroundColor3 = Color3.fromRGB(28,30,38),
+                TextColor3 = Color3.new(1,1,1)
+            })
         end
     end)
     Button.MouseLeave:Connect(function()
         if ActiveTab ~= Button then
-            Tween(Button,{ BackgroundColor3 = Color3.fromRGB(18,19,24), TextColor3 = Color3.fromRGB(130,133,143) })
+            Tween(Button,{
+                BackgroundColor3 = Color3.fromRGB(18,19,24),
+                TextColor3 = Color3.fromRGB(130,133,143)
+            })
         end
     end)
     Button.MouseButton1Click:Connect(function()
@@ -677,7 +685,7 @@ UserNameLabel.BackgroundTransparency = 1
 UserNameLabel.Text = LocalPlayer.DisplayName
 UserNameLabel.TextColor3 = Color3.new(1,1,1)
 UserNameLabel.TextSize = 6
-UserNameLabel.Font = Enum.Font.GothamBold
+UserNameLabel.Font = Enum.Font.Gotham
 UserNameLabel.TextXAlignment = Enum.TextXAlignment.Center
 UserNameLabel.TextScaled = true
 UserNameLabel.TextWrapped = true
@@ -705,7 +713,7 @@ VersionLabel.BackgroundTransparency = 1
 VersionLabel.Text = "V4"
 VersionLabel.TextColor3 = Color3.fromRGB(110,113,125)
 VersionLabel.TextSize = 6
-VersionLabel.Font = Enum.Font.GothamBold
+VersionLabel.Font = Enum.Font.Gotham
 VersionLabel.TextXAlignment = Enum.TextXAlignment.Center
 VersionLabel.Parent = ProfileContainer
 
@@ -733,7 +741,7 @@ QuickInfoTitle.BackgroundTransparency = 1
 QuickInfoTitle.Text = "INFO"
 QuickInfoTitle.TextColor3 = Accent()
 QuickInfoTitle.TextSize = 7
-QuickInfoTitle.Font = Enum.Font.GothamBold
+QuickInfoTitle.Font = Enum.Font.Gotham
 QuickInfoTitle.TextXAlignment = Enum.TextXAlignment.Center
 QuickInfoTitle.Parent = QuickInfo
 
@@ -744,7 +752,7 @@ QuickFPS.BackgroundTransparency = 1
 QuickFPS.Text = "FPS: 60"
 QuickFPS.TextColor3 = Color3.fromRGB(200,200,210)
 QuickFPS.TextSize = 6
-QuickFPS.Font = Enum.Font.GothamMedium
+QuickFPS.Font = Enum.Font.Gotham
 QuickFPS.TextXAlignment = Enum.TextXAlignment.Center
 QuickFPS.Parent = QuickInfo
 
@@ -755,7 +763,7 @@ QuickPing.BackgroundTransparency = 1
 QuickPing.Text = "Ping: 0ms"
 QuickPing.TextColor3 = Color3.fromRGB(200,200,210)
 QuickPing.TextSize = 6
-QuickPing.Font = Enum.Font.GothamMedium
+QuickPing.Font = Enum.Font.Gotham
 QuickPing.TextXAlignment = Enum.TextXAlignment.Center
 QuickPing.Parent = QuickInfo
 
@@ -766,7 +774,7 @@ QuickPlayers.BackgroundTransparency = 1
 QuickPlayers.Text = "Players: 0"
 QuickPlayers.TextColor3 = Color3.fromRGB(200,200,210)
 QuickPlayers.TextSize = 6
-QuickPlayers.Font = Enum.Font.GothamMedium
+QuickPlayers.Font = Enum.Font.Gotham
 QuickPlayers.TextXAlignment = Enum.TextXAlignment.Center
 QuickPlayers.Parent = QuickInfo
 
@@ -777,7 +785,7 @@ QuickSession.BackgroundTransparency = 1
 QuickSession.Text = "Session: 00:00"
 QuickSession.TextColor3 = Color3.fromRGB(200,200,210)
 QuickSession.TextSize = 6
-QuickSession.Font = Enum.Font.GothamMedium
+QuickSession.Font = Enum.Font.Gotham
 QuickSession.TextXAlignment = Enum.TextXAlignment.Center
 QuickSession.Parent = QuickInfo
 
@@ -795,7 +803,7 @@ PageTitle.BackgroundTransparency = 1
 PageTitle.Text = "Aim Assist"
 PageTitle.TextColor3 = Color3.new(1,1,1)
 PageTitle.TextSize = 14
-PageTitle.Font = Enum.Font.GothamBold
+PageTitle.Font = Enum.Font.Gotham
 PageTitle.TextXAlignment = Enum.TextXAlignment.Left
 PageTitle.Parent = Content
 
@@ -828,7 +836,7 @@ Scroll.CanvasSize = UDim2.new()
 Scroll.Parent = Content
 
 local Layout = Instance.new("UIListLayout")
-Layout.Padding = UDim.new(0,4)
+Layout.Padding = UDim.new(0,4)  -- espaçamento reduzido
 Layout.SortOrder = Enum.SortOrder.LayoutOrder
 Layout.Parent = Scroll
 
@@ -924,7 +932,7 @@ local function Toggle(Parent, Title, Description, Initial, Callback)
     Name.Text = Title
     Name.TextColor3 = Color3.fromRGB(230,231,237)
     Name.TextSize = 9
-    Name.Font = Enum.Font.GothamBold
+    Name.Font = Enum.Font.Gotham
     Name.TextXAlignment = Enum.TextXAlignment.Left
     Name.Parent = Row
 
@@ -935,7 +943,7 @@ local function Toggle(Parent, Title, Description, Initial, Callback)
     Desc.Text = Description
     Desc.TextColor3 = Color3.fromRGB(100,103,115)
     Desc.TextSize = 7
-    Desc.Font = Enum.Font.GothamMedium
+    Desc.Font = Enum.Font.Gotham
     Desc.TextXAlignment = Enum.TextXAlignment.Left
     Desc.Parent = Row
 
@@ -1020,7 +1028,7 @@ local function Slider(Parent, Title, Min, Max, Value, Callback, Format)
     Label.Text = Title
     Label.TextColor3 = Color3.fromRGB(230,231,237)
     Label.TextSize = 9
-    Label.Font = Enum.Font.GothamBold
+    Label.Font = Enum.Font.Gotham
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = Row
 
@@ -1030,7 +1038,7 @@ local function Slider(Parent, Title, Min, Max, Value, Callback, Format)
     Number.BackgroundColor3 = Color3.fromRGB(35,37,45)
     Number.TextColor3 = Color3.fromRGB(180,183,194)
     Number.TextSize = 8
-    Number.Font = Enum.Font.GothamBold
+    Number.Font = Enum.Font.Gotham
     Number.TextXAlignment = Enum.TextXAlignment.Center
     Number.TextYAlignment = Enum.TextYAlignment.Center
     Number.Parent = Row
@@ -1138,7 +1146,7 @@ local function Dropdown(Parent, Title, Options, Current, Callback)
     Label.Text = Title
     Label.TextColor3 = Color3.fromRGB(230,231,237)
     Label.TextSize = 9
-    Label.Font = Enum.Font.GothamBold
+    Label.Font = Enum.Font.Gotham
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = Row
 
@@ -1149,7 +1157,7 @@ local function Dropdown(Parent, Title, Options, Current, Callback)
     Button.Text = Current.." ▼"
     Button.TextColor3 = Color3.fromRGB(180,183,194)
     Button.TextSize = 8
-    Button.Font = Enum.Font.GothamBold
+    Button.Font = Enum.Font.Gotham
     Button.AutoButtonColor = false
     Button.Parent = Row
 
@@ -1194,7 +1202,7 @@ local function Dropdown(Parent, Title, Options, Current, Callback)
             OptionButton.Text = Option
             OptionButton.TextColor3 = Color3.fromRGB(200,202,210)
             OptionButton.TextSize = 8
-            OptionButton.Font = Enum.Font.GothamMedium
+            OptionButton.Font = Enum.Font.Gotham
             OptionButton.AutoButtonColor = false
             OptionButton.ZIndex = 1001
             OptionButton.Parent = Popup
@@ -1258,7 +1266,7 @@ local function ColorPicker(Parent, Title, Current, Callback)
     Label.Text = Title
     Label.TextColor3 = Color3.fromRGB(230,231,237)
     Label.TextSize = 9
-    Label.Font = Enum.Font.GothamBold
+    Label.Font = Enum.Font.Gotham
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = Row
 
@@ -1336,7 +1344,7 @@ local function ColorPicker(Parent, Title, Current, Callback)
         CloseButton.Text = "×"
         CloseButton.TextColor3 = Color3.fromRGB(200,200,210)
         CloseButton.TextSize = 16
-        CloseButton.Font = Enum.Font.GothamBold
+        CloseButton.Font = Enum.Font.Gotham
         CloseButton.AutoButtonColor = false
         CloseButton.ZIndex = 1000
         CloseButton.Parent = Popup
@@ -1373,7 +1381,7 @@ local function ColorPicker(Parent, Title, Current, Callback)
         PopupTitle.Text = "🎨 Selecionar Cor"
         PopupTitle.TextColor3 = Color3.new(1,1,1)
         PopupTitle.TextSize = 13
-        PopupTitle.Font = Enum.Font.GothamBold
+        PopupTitle.Font = Enum.Font.Gotham
         PopupTitle.TextXAlignment = Enum.TextXAlignment.Left
         PopupTitle.ZIndex = 1000
         PopupTitle.Parent = Popup
@@ -1435,7 +1443,7 @@ local function ColorPicker(Parent, Title, Current, Callback)
             Tooltip.Text = Data[1]
             Tooltip.TextColor3 = Color3.fromRGB(150,153,164)
             Tooltip.TextSize = 7
-            Tooltip.Font = Enum.Font.GothamMedium
+            Tooltip.Font = Enum.Font.Gotham
             Tooltip.Visible = false
             Tooltip.ZIndex = 1002
             Tooltip.Parent = ColorButton
@@ -1560,18 +1568,21 @@ end, function(v) return string.format("%.0f",v) end))
 AddPlayer(Toggle(Scroll, "No-Clip", "Walk through walls", Config.Player.NoClip, function(v)
     Config.Player.NoClip = v
     local Character = LocalPlayer.Character
-    if Character then
-        for _,Part in ipairs(Character:GetDescendants()) do
-            if Part:IsA("BasePart") then
-                Part.CanCollide = not v
-            end
+    if not Character then return end
+    local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+    if v then
+        if Humanoid then Humanoid.HipHeight = 0 end
+        for _, part in ipairs(Character:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
         end
-        if not v then
-            local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-            if Humanoid then
-                Humanoid.PlatformStand = false
-                Humanoid:ChangeState(Enum.HumanoidStateType.Falling)
-            end
+    else
+        if Humanoid then
+            Humanoid.HipHeight = 2
+            Humanoid.PlatformStand = false
+            Humanoid:ChangeState(Enum.HumanoidStateType.Falling)
+        end
+        for _, part in ipairs(Character:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = true end
         end
     end
 end))
@@ -1796,7 +1807,22 @@ end))
 AddCustom(Toggle(Scroll, "Animations", "Enable animations", Config.UI.Animations, function(v)
     Config.UI.Animations = v
 end))
-
+AddCustom(Dropdown(Scroll, "UI Font", {"Gotham", "Ubuntu", "Code", "Arial", "Highway", "Oswald"}, "Gotham", function(fontName)
+    local fontMap = {
+        Gotham = Enum.Font.Gotham,
+        Ubuntu = Enum.Font.Ubuntu,
+        Code = Enum.Font.Code,
+        Arial = Enum.Font.Arial,
+        Highway = Enum.Font.Highway,
+        Oswald = Enum.Font.Oswald
+    }
+    Config.UI.Font = fontMap[fontName] or Enum.Font.Gotham
+    for _, obj in ipairs(Gui:GetDescendants()) do
+        if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+            obj.Font = Config.UI.Font
+        end
+    end
+end))
 
 -- ESP (com retry imediato)
 local ESPData = {}
@@ -1958,7 +1984,7 @@ local function CreateESP(Player)
         Text.TextColor3 = Config.Visual.Color
         Text.TextStrokeTransparency = .4
         Text.TextSize = Config.Visual.TextSize
-        Text.Font = Enum.Font.GothamBold
+        Text.Font = Enum.Font.Gotham
         Text.Parent = Billboard
         Data.Billboard = Billboard
         Data.InfoText = Text
@@ -2027,7 +2053,6 @@ local function RefreshESP()
         end
     end
 end
-
 
 -- VISUAL PAGE
 local function VisualToggle(Title, Description, Key)
@@ -2337,7 +2362,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- HUD (compacto e profissional)
+-- HUD
 local HUDFrame = Instance.new("Frame")
 HUDFrame.Size = UDim2.fromOffset(Config.HUD.Size, 30)
 HUDFrame.Position = Config.HUD.Position
@@ -2361,7 +2386,7 @@ HUDText.Position = UDim2.fromOffset(6,2)
 HUDText.BackgroundTransparency = 1
 HUDText.TextColor3 = Color3.fromRGB(220,221,227)
 HUDText.TextSize = 8
-HUDText.Font = Enum.Font.GothamMedium
+HUDText.Font = Enum.Font.Gotham
 HUDText.TextXAlignment = Enum.TextXAlignment.Left
 HUDText.TextYAlignment = Enum.TextYAlignment.Top
 HUDText.Parent = HUDFrame
@@ -2630,7 +2655,7 @@ Mini.BackgroundColor3 = Accent()
 Mini.Text = "N"
 Mini.TextColor3 = Color3.new(1,1,1)
 Mini.TextSize = 17 * Config.Customization.UIScale
-Mini.Font = Enum.Font.GothamBold
+Mini.Font = Enum.Font.Gotham
 Mini.Visible = false
 Mini.AutoButtonColor = false
 Mini.Parent = Gui
@@ -2773,7 +2798,7 @@ Close.MouseButton1Click:Connect(function()
     DialogTitle.Text = "Fechar Nova Hub?"
     DialogTitle.TextColor3 = Color3.new(1,1,1)
     DialogTitle.TextSize = 11
-    DialogTitle.Font = Enum.Font.GothamBold
+    DialogTitle.Font = Enum.Font.Gotham
     DialogTitle.ZIndex = 1000
     DialogTitle.Parent = ConfirmDialog
 
@@ -2784,7 +2809,7 @@ Close.MouseButton1Click:Connect(function()
     DialogDesc.Text = "Todas as funções serão desativadas!"
     DialogDesc.TextColor3 = Color3.fromRGB(255,150,150)
     DialogDesc.TextSize = 7
-    DialogDesc.Font = Enum.Font.GothamMedium
+    DialogDesc.Font = Enum.Font.Gotham
     DialogDesc.ZIndex = 1000
     DialogDesc.Parent = ConfirmDialog
 
@@ -2795,7 +2820,7 @@ Close.MouseButton1Click:Connect(function()
     NoButton.Text = "No"
     NoButton.TextColor3 = Color3.fromRGB(200,200,210)
     NoButton.TextSize = 9
-    NoButton.Font = Enum.Font.GothamBold
+    NoButton.Font = Enum.Font.Gotham
     NoButton.AutoButtonColor = false
     NoButton.ZIndex = 1000
     NoButton.Parent = ConfirmDialog
@@ -2811,7 +2836,7 @@ Close.MouseButton1Click:Connect(function()
     OkButton.Text = "Ok"
     OkButton.TextColor3 = Color3.new(1,1,1)
     OkButton.TextSize = 9
-    OkButton.Font = Enum.Font.GothamBold
+    OkButton.Font = Enum.Font.Gotham
     OkButton.AutoButtonColor = false
     OkButton.ZIndex = 1000
     OkButton.Parent = ConfirmDialog
@@ -3080,6 +3105,17 @@ RunService.Stepped:Connect(function()
     end
 end)
 
+-- Infinite Jump
+UserInputService.JumpRequest:Connect(function()
+    if Config.Player.InfiniteJump and LocalPlayer.Character then
+        local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if Humanoid then
+            Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            Humanoid.Jump = true
+        end
+    end
+end)
+
 -- TELA DE CARREGAMENTO
 local LoadingScreen = Instance.new("Frame")
 LoadingScreen.Name = "LoadingScreen"
@@ -3112,7 +3148,7 @@ LoadingLogo.BackgroundColor3 = Accent()
 LoadingLogo.Text = "N"
 LoadingLogo.TextColor3 = Color3.new(1,1,1)
 LoadingLogo.TextSize = 35
-LoadingLogo.Font = Enum.Font.GothamBold
+LoadingLogo.Font = Enum.Font.Gotham
 LoadingLogo.ZIndex = 1002
 LoadingLogo.Parent = LoadingScreen
 
@@ -3134,7 +3170,7 @@ LoadingTitle.BackgroundTransparency = 1
 LoadingTitle.Text = "NOVA HUB"
 LoadingTitle.TextColor3 = Color3.new(1,1,1)
 LoadingTitle.TextSize = 24
-LoadingTitle.Font = Enum.Font.GothamBold
+LoadingTitle.Font = Enum.Font.Gotham
 LoadingTitle.ZIndex = 1002
 LoadingTitle.Parent = LoadingScreen
 
@@ -3145,7 +3181,7 @@ LoadingSub.BackgroundTransparency = 1
 LoadingSub.Text = "STUDIO EDITION v4.0"
 LoadingSub.TextColor3 = Color3.fromRGB(150,153,164)
 LoadingSub.TextSize = 10
-LoadingSub.Font = Enum.Font.GothamMedium
+LoadingSub.Font = Enum.Font.Gotham
 LoadingSub.ZIndex = 1002
 LoadingSub.Parent = LoadingScreen
 
@@ -3186,7 +3222,7 @@ LoadingStatus.BackgroundTransparency = 1
 LoadingStatus.Text = "Carregando..."
 LoadingStatus.TextColor3 = Color3.fromRGB(180,183,194)
 LoadingStatus.TextSize = 9
-LoadingStatus.Font = Enum.Font.GothamMedium
+LoadingStatus.Font = Enum.Font.Gotham
 LoadingStatus.ZIndex = 1002
 LoadingStatus.Parent = LoadingScreen
 
