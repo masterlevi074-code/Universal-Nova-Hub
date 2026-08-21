@@ -18,8 +18,7 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local Camera = workspace.CurrentCamera
 
--- FLY SYSTEM
--- Adapted only from the working flight logic supplied by the user.
+-- FLY SYSTEM (CORRIGIDO)
 local FlyBodyVelocity = nil
 local FlyBodyGyro = nil
 
@@ -39,6 +38,7 @@ local function StopFly()
 
     if Humanoid then
         Humanoid.PlatformStand = false
+        Humanoid.AutoRotate = true
         pcall(function()
             Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
         end)
@@ -62,18 +62,19 @@ local function StartFly()
     end
 
     Humanoid.PlatformStand = true
+    Humanoid.AutoRotate = false
 
     FlyBodyGyro = Instance.new("BodyGyro")
     FlyBodyGyro.Name = "NovaFlyGyro"
-    FlyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    FlyBodyGyro.MaxTorque = Vector3.new(400000, 400000, 400000)
     FlyBodyGyro.CFrame = CurrentCamera.CFrame
-    FlyBodyGyro.P = 9e4
+    FlyBodyGyro.P = 10000
     FlyBodyGyro.D = 500
     FlyBodyGyro.Parent = Root
 
     FlyBodyVelocity = Instance.new("BodyVelocity")
     FlyBodyVelocity.Name = "NovaFlyVelocity"
-    FlyBodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    FlyBodyVelocity.MaxForce = Vector3.new(50000, 50000, 50000)
     FlyBodyVelocity.Velocity = Vector3.zero
     FlyBodyVelocity.Parent = Root
 end
@@ -108,15 +109,10 @@ local function UpdateFly()
     local FlySpeed = math.max(0, tonumber(Config.Player.FlySpeed) or 50)
     local VerticalVelocity = 0
 
-    -- Keyboard + mobile jump button.
     if UserInputService:IsKeyDown(Enum.KeyCode.Space) or Humanoid.Jump then
         VerticalVelocity = FlySpeed + 15
-
-    -- Keyboard downward movement.
     elseif UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
         VerticalVelocity = -(FlySpeed + 15)
-
-    -- When moving with the mobile/keyboard joystick, follow the camera pitch.
     elseif Direction.Magnitude > 0 then
         local Look = CurrentCamera.CFrame.LookVector
         if Look.Y < -0.3 or Look.Y > 0.3 then
@@ -467,6 +463,7 @@ InfoButton.TextSize = 6
 InfoButton.Font = Enum.Font.GothamBold
 InfoButton.AutoButtonColor = false
 InfoButton.Parent = Header
+InfoButton.ZIndex = 5  -- Correção: agora fica acima do DragButton
 
 Instance.new("UICorner", InfoButton).CornerRadius = UDim.new(0, 5)
 
@@ -626,9 +623,13 @@ Close.MouseLeave:Connect(function()
     Tween(Close,{BackgroundColor3 = Color3.fromRGB(30,31,39), TextColor3 = Color3.fromRGB(180,180,190)})
 end)
 
+-- Declaração antecipada para evitar nil
+local MinimizeHub
+local CloseAll
+
 Minimize.MouseButton1Click:Connect(function()
     PlayClickSound()
-    MinimizeHub()
+    if MinimizeHub then MinimizeHub() end
 end)
 
 -- TAB BAR
@@ -2703,7 +2704,8 @@ MiniGlow.Thickness = 2
 MiniGlow.Transparency = 0.5
 MiniGlow.Parent = Mini
 
-local function MinimizeHub()
+-- Definir MinimizeHub e CloseAll (agora atribuindo aos locais pré-declarados)
+function MinimizeHub()
     ClosePopup()
     MainDragging = false
     HUDDragging = false
@@ -2718,12 +2720,7 @@ local function MinimizeHub()
     Main.AnchorPoint = Vector2.new(0, 0)
 end
 
-Minimize.MouseButton1Click:Connect(function()
-    PlayClickSound()
-    MinimizeHub()
-end)
-
-local function CloseAll()
+function CloseAll()
     Config.Aim.Enabled = false
     Config.Aim.FOVEnabled = false
     Config.Visual.ESP = false
@@ -3012,10 +3009,8 @@ local function BuildESPImmediately(Player, Character)
     if not Config.Visual.ESP then return end
     if not Character or Player.Character ~= Character then return end
 
-    -- First attempt is immediate: no task.wait and no artificial delay.
     CreateESP(Player)
 
-    -- If Roblox is still assembling R6/R15, retry on Heartbeat.
     if not ESPData[Player] then
         task.spawn(function()
             for _ = 1, 12 do
@@ -3066,7 +3061,6 @@ local function SetupPlayer(Player)
         end
     end))
 
-    -- Existing players are also handled immediately.
     if Player.Character then
         BuildESPImmediately(Player, Player.Character)
     end
@@ -3121,6 +3115,10 @@ LocalPlayer.CharacterAdded:Connect(function()
     if Config.World.TimeOfDayEnabled then
         Lighting.ClockTime = Config.World.TimeOfDay
     end
+end)
+
+LocalPlayer.CharacterRemoving:Connect(function()
+    StopFly()
 end)
 
 -- TELA DE CARREGAMENTO (DEPOIS DE TUDO)
@@ -3294,4 +3292,3 @@ RefreshLinesAccent()
 ShowAim()
 
 print("NOVA HUB - STUDIO EDITION v4.3 carregado com sucesso!")
-
