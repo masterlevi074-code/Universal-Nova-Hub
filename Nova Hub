@@ -1919,7 +1919,6 @@ local function OpenFontPicker()
         {"Legacy", Enum.Font.Legacy},
         {"Code", Enum.Font.Code},
         {"Highway", Enum.Font.Highway},
-        {"Highway Gothic", Enum.Font.HighwayGothic},
         {"Denk One", Enum.Font.DenkOne},
         {"Fredoka One", Enum.Font.FredokaOne},
         {"Grenze Gotisch", Enum.Font.GrenzeGotisch},
