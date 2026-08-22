@@ -3336,7 +3336,7 @@ local LoadingSub = Instance.new("TextLabel")
 LoadingSub.Size = UDim2.new(0,300,0,20)
 LoadingSub.Position = UDim2.new(0.5,-150,0.60,-10)
 LoadingSub.BackgroundTransparency = 1
-LoadingSub.Text = "STUDIO EDITION v4.5.2"
+LoadingSub.Text = "STUDIO EDITION v4.5.4"
 LoadingSub.TextColor3 = Color3.fromRGB(150,153,164)
 LoadingSub.TextSize = 10
 LoadingSub.Font = Enum.Font.Gotham
@@ -3386,8 +3386,9 @@ LoadingStatus.Parent = LoadingScreen
 
 task.spawn(function()
     -- ============================================================
-    -- NOVA HUB - TRANSIÇÃO FLUIDA v2
-    -- Loading -> Main sem pausa ou "travada" no final.
+    -- NOVA HUB - TRANSIÇÃO FLUIDA v4.5.4
+    -- O bloco visual inteiro da Loading sai junto com a transição.
+    -- Durante o carregamento, N e barra continuam exatamente iguais.
     -- ============================================================
 
     for _, Particle in ipairs(Particles) do
@@ -3410,11 +3411,18 @@ task.spawn(function()
 
     task.spawn(function()
         while LoadingScreen.Parent do
-            Tween(LoadingLogo, {Size = UDim2.fromOffset(86,86)},
-                TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut))
+            Tween(
+                LoadingLogo,
+                {Size = UDim2.fromOffset(86,86)},
+                TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+            )
             task.wait(0.55)
-            Tween(LoadingLogo, {Size = UDim2.fromOffset(80,80)},
-                TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut))
+
+            Tween(
+                LoadingLogo,
+                {Size = UDim2.fromOffset(80,80)},
+                TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+            )
             task.wait(0.55)
         end
     end)
@@ -3447,26 +3455,19 @@ task.spawn(function()
     local FinalWidth = 420 * Scale
     local FinalHeight = 370 * Scale
 
-    -- O Main já fica preparado atrás da Loading.
     Main.Visible = true
     Main.AnchorPoint = Vector2.new(0.5,0.5)
     Main.Position = UDim2.new(0.5,0,0.5,12)
     Main.Size = UDim2.fromOffset(FinalWidth * 0.94, FinalHeight * 0.94)
     Main.BackgroundTransparency = 1
 
-    -- Mesma duração/easing para os dois lados do crossfade.
     local TransitionInfo = TweenInfo.new(
         0.72,
         Enum.EasingStyle.Quint,
         Enum.EasingDirection.Out
     )
 
-    local LoadingFade = Tween(
-        LoadingScreen,
-        {BackgroundTransparency = 1},
-        TransitionInfo
-    )
-
+    -- O Main e o container da Loading começam no mesmo instante.
     local MainEnter = Tween(
         Main,
         {
@@ -3477,37 +3478,60 @@ task.spawn(function()
         TransitionInfo
     )
 
-    -- Conteúdo desaparece suavemente antes do fundo.
-    local ContentFade = TweenInfo.new(
-        0.50,
+    -- A própria LoadingScreen recebe o fade.
+    Tween(
+        LoadingScreen,
+        {BackgroundTransparency = 1},
+        TransitionInfo
+    )
+
+    -- IMPORTANTE:
+    -- O fundo roxo visual é composto também pelos objetos filhos.
+    -- Eles precisam participar do mesmo fade; caso contrário o
+    -- container fica invisível mas o conteúdo continua na tela até
+    -- Destroy(), causando exatamente o atraso relatado.
+    local LoadingChildrenFade = TweenInfo.new(
+        0.72,
         Enum.EasingStyle.Quint,
         Enum.EasingDirection.Out
     )
 
-    for _, Object in ipairs({
-        LoadingLogo,
-        LoadingTitle,
-        LoadingSub,
-        LoadingStatus
-    }) do
-        if Object and Object.Parent then
+    for _, Object in ipairs(LoadingScreen:GetDescendants()) do
+        if Object:IsA("Frame") then
             pcall(function()
-                Tween(Object, {TextTransparency = 1}, ContentFade)
+                Tween(Object, {
+                    BackgroundTransparency = 1
+                }, LoadingChildrenFade)
+            end)
+
+        elseif Object:IsA("TextLabel") or Object:IsA("TextButton") then
+            pcall(function()
+                Tween(Object, {
+                    TextTransparency = 1
+                }, LoadingChildrenFade)
+            end)
+
+        elseif Object:IsA("ImageLabel") or Object:IsA("ImageButton") then
+            pcall(function()
+                Tween(Object, {
+                    ImageTransparency = 1
+                }, LoadingChildrenFade)
+            end)
+
+        elseif Object:IsA("UIStroke") then
+            pcall(function()
+                Tween(Object, {
+                    Transparency = 1
+                }, LoadingChildrenFade)
             end)
         end
     end
 
-    pcall(function()
-        Tween(LoadingBarBg, {BackgroundTransparency = 1}, ContentFade)
-        Tween(LoadingBarFill, {BackgroundTransparency = 1}, ContentFade)
-    end)
-
-    -- Tween() já inicia a animação. Apenas aguardamos o Main.
+    -- Tween() já chama :Play(); somente aguardamos a entrada do Main.
     if MainEnter then
         MainEnter.Completed:Wait()
     end
 
-    -- Estado final exato, sem um segundo tween.
     Main.Position = UDim2.new(0.5,0,0.5,0)
     Main.Size = UDim2.fromOffset(FinalWidth, FinalHeight)
     Main.BackgroundTransparency = 0
