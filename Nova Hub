@@ -370,7 +370,7 @@ local HeaderSub = Instance.new("TextLabel")
 HeaderSub.Position = UDim2.fromOffset(52,25)
 HeaderSub.Size = UDim2.fromOffset(170,14)
 HeaderSub.BackgroundTransparency = 1
-HeaderSub.Text = "STUDIO EDITION v4.0"
+HeaderSub.Text = "STUDIO EDITION v4.5"
 HeaderSub.TextColor3 = Color3.fromRGB(110,113,125)
 HeaderSub.TextSize = 7
 HeaderSub.Font = Enum.Font.Gotham
@@ -3374,71 +3374,128 @@ LoadingStatus.ZIndex = 1002
 LoadingStatus.Parent = LoadingScreen
 
 task.spawn(function()
+    -- NOVA HUB - TRANSIÇÃO PREMIUM LOADING -> MAIN
+
     for _, Particle in ipairs(Particles) do
         task.spawn(function()
             while LoadingScreen.Parent do
                 pcall(function()
-                    local newX = math.random()
-                    local newY = math.random()
-                    local newTransparency = math.random(50, 90) / 100
                     Tween(Particle, {
-                        Position = UDim2.new(newX, 0, newY, 0),
-                        BackgroundTransparency = newTransparency
+                        Position = UDim2.new(math.random(), 0, math.random(), 0),
+                        BackgroundTransparency = math.random(50, 90) / 100
                     }, TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut))
                 end)
                 task.wait(2)
             end
         end)
     end
+
     task.spawn(function()
         while LoadingScreen.Parent do
-            pcall(function()
-                Tween(LoadingLogo, {Size = UDim2.fromOffset(85,85)}, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut))
-            end)
-            task.wait(0.5)
-            pcall(function()
-                Tween(LoadingLogo, {Size = UDim2.fromOffset(80,80)}, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut))
-            end)
-            task.wait(0.5)
+            Tween(LoadingLogo, {
+                Size = UDim2.fromOffset(86,86)
+            }, TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut))
+            task.wait(0.55)
+
+            Tween(LoadingLogo, {
+                Size = UDim2.fromOffset(80,80)
+            }, TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut))
+            task.wait(0.55)
         end
     end)
-    local Statuses = {"Carregando...", "Inicializando...", "Configurando...", "Quase pronto..."}
-    for i = 1, 4 do
-        LoadingStatus.Text = Statuses[i]
-        task.wait(0.6)
+
+    local Statuses = {
+        "Carregando...",
+        "Inicializando...",
+        "Configurando...",
+        "Quase pronto..."
+    }
+
+    for _, Status in ipairs(Statuses) do
+        LoadingStatus.Text = Status
+        task.wait(0.55)
     end
-    Tween(LoadingBarFill, {Size = UDim2.new(1,0,1,0)}, TweenInfo.new(2.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out))
-    task.wait(3)
-    -- Escala final do painel
-local scale = Config.Customization.UIScale
-local finalW = 420 * scale
-local finalH = 370 * scale
 
--- Animação de saída da tela de carregamento: logo cresce suavemente e tela some
-TweenService:Create(LoadingLogo, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), 
-    { Size = UDim2.fromOffset(100, 100) }):Play()
-TweenService:Create(LoadingScreen, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), 
-    { BackgroundTransparency = 1 }):Play()
+    -- Finaliza a barra antes da transição.
+    local BarTween = Tween(
+        LoadingBarFill,
+        {Size = UDim2.new(1,0,1,0)},
+        TweenInfo.new(1.15, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+    )
+    BarTween.Completed:Wait()
 
--- Prepara o painel principal para a entrada
-Main.Visible = true
-Main.BackgroundTransparency = 1
-local startW = finalW * 0.7
-local startH = finalH * 0.7
-Main.AnchorPoint = Vector2.new(0, 0)
-Main.Size = UDim2.fromOffset(startW, startH)
-Main.Position = UDim2.new(0.5, -startW/2, 0.5, -startH/2)
+    LoadingStatus.Text = "Pronto!"
 
-task.wait(0.3)
-LoadingScreen:Destroy()
+    -- Prepara o painel principal enquanto a loading ainda está visível.
+    local Scale = Config.Customization.UIScale
+    local FinalWidth = 420 * Scale
+    local FinalHeight = 370 * Scale
 
--- Animação de entrada: painel cresce (de 70% para 100%) e fica opaco
-local finalPos = UDim2.new(0.5, -finalW/2, 0.5, -finalH/2)
-TweenService:Create(Main, TweenInfo.new(0.7, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-    BackgroundTransparency = 0,
-    Size = UDim2.fromOffset(finalW, finalH),
-    Position = finalPos
-}):Play()
+    Main.Visible = true
+    Main.AnchorPoint = Vector2.new(0.5,0.5)
+    Main.Position = UDim2.new(0.5,0,0.5,22)
+    Main.Size = UDim2.fromOffset(FinalWidth * 0.88, FinalHeight * 0.88)
+    Main.BackgroundTransparency = 1
+
+    -- Crossfade sincronizado: loading sai enquanto o painel entra.
+    local TransitionInfo = TweenInfo.new(
+        0.58,
+        Enum.EasingStyle.Quart,
+        Enum.EasingDirection.Out
+    )
+
+    local LoadingFade = Tween(
+        LoadingScreen,
+        {BackgroundTransparency = 1},
+        TransitionInfo
+    )
+
+    local MainEnter = Tween(
+        Main,
+        {
+            Size = UDim2.fromOffset(FinalWidth, FinalHeight),
+            Position = UDim2.new(0.5,0,0.5,0),
+            BackgroundTransparency = 0
+        },
+        TransitionInfo
+    )
+
+    -- Conteúdo da loading desaparece um pouco antes do fundo.
+    local ContentInfo = TweenInfo.new(
+        0.40,
+        Enum.EasingStyle.Quad,
+        Enum.EasingDirection.Out
+    )
+
+    for _, Object in ipairs({
+        LoadingLogo,
+        LoadingTitle,
+        LoadingSub,
+        LoadingStatus
+    }) do
+        pcall(function()
+            Tween(Object, {TextTransparency = 1}, ContentInfo)
+        end)
+    end
+
+    pcall(function()
+        Tween(LoadingBarBg, {BackgroundTransparency = 1}, ContentInfo)
+        Tween(LoadingBarFill, {BackgroundTransparency = 1}, ContentInfo)
+    end)
+
+    -- Os dois tweens começam juntos.
+    LoadingFade:Play()
+    MainEnter:Play()
+
+    MainEnter.Completed:Wait()
+
+    Main.AnchorPoint = Vector2.new(0.5,0.5)
+    Main.Position = UDim2.new(0.5,0,0.5,0)
+
+    if LoadingScreen.Parent then
+        LoadingScreen:Destroy()
+    end
+end)
 
 -- INITIALIZATION
 UpdateFov()
