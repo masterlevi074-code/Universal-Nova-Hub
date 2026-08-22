@@ -1,5 +1,5 @@
 --[[
-    NOVA HUB - STUDIO EDITION v4.3
+    NOVA HUB - STUDIO EDITION v4.5.2
     LocalScript
     StarterPlayer > StarterPlayerScripts
     ESP com retry imediato (sem precisar morrer)
@@ -200,12 +200,23 @@ local TweenBounce = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirecti
 local TweenSpring = TweenInfo.new(0.5, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out)
 
 local function Tween(Object, Properties, Info)
-    if not Object or not Object.Parent then return end
+    if not Object or not Object.Parent then return nil end
+
     if not Config.UI.Animations then
-        for Property,Value in pairs(Properties) do Object[Property] = Value end
-        return
+        for Property,Value in pairs(Properties) do
+            Object[Property] = Value
+        end
+        return nil
     end
-    TweenService:Create(Object, Info or TweenFast, Properties):Play()
+
+    local TweenObject = TweenService:Create(
+        Object,
+        Info or TweenFast,
+        Properties
+    )
+
+    TweenObject:Play()
+    return TweenObject
 end
 
 -- Cores
@@ -3325,7 +3336,7 @@ local LoadingSub = Instance.new("TextLabel")
 LoadingSub.Size = UDim2.new(0,300,0,20)
 LoadingSub.Position = UDim2.new(0.5,-150,0.60,-10)
 LoadingSub.BackgroundTransparency = 1
-LoadingSub.Text = "STUDIO EDITION v4.0"
+LoadingSub.Text = "STUDIO EDITION v4.5.2"
 LoadingSub.TextColor3 = Color3.fromRGB(150,153,164)
 LoadingSub.TextSize = 10
 LoadingSub.Font = Enum.Font.Gotham
@@ -3422,7 +3433,10 @@ task.spawn(function()
         {Size = UDim2.new(1,0,1,0)},
         TweenInfo.new(1.15, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
     )
-    BarTween.Completed:Wait()
+
+    if BarTween then
+        BarTween.Completed:Wait()
+    end
 
     LoadingStatus.Text = "Pronto!"
 
@@ -3460,6 +3474,10 @@ task.spawn(function()
         TransitionInfo
     )
 
+    -- Se animações estiverem desativadas, Tween() aplica os valores
+    -- instantaneamente e retorna nil. Nesse caso não há nada para aguardar.
+
+
     -- Conteúdo da loading desaparece um pouco antes do fundo.
     local ContentInfo = TweenInfo.new(
         0.40,
@@ -3483,11 +3501,11 @@ task.spawn(function()
         Tween(LoadingBarFill, {BackgroundTransparency = 1}, ContentInfo)
     end)
 
-    -- Os dois tweens começam juntos.
-    LoadingFade:Play()
-    MainEnter:Play()
-
-    MainEnter.Completed:Wait()
+    -- Tween() já inicia os tweens imediatamente.
+    -- Apenas aguardamos a conclusão do MainEnter.
+    if MainEnter then
+        MainEnter.Completed:Wait()
+    end
 
     Main.AnchorPoint = Vector2.new(0.5,0.5)
     Main.Position = UDim2.new(0.5,0,0.5,0)
@@ -3505,4 +3523,4 @@ RefreshToggleAccent()
 RefreshLinesAccent()
 ShowAim()
 
-print("NOVA HUB - STUDIO EDITION v4.3 carregado com sucesso!")
+print("NOVA HUB - STUDIO EDITION v4.5.2 carregado com sucesso!")
