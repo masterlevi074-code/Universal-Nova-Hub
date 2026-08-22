@@ -3336,7 +3336,7 @@ local LoadingSub = Instance.new("TextLabel")
 LoadingSub.Size = UDim2.new(0,300,0,20)
 LoadingSub.Position = UDim2.new(0.5,-150,0.60,-10)
 LoadingSub.BackgroundTransparency = 1
-LoadingSub.Text = "STUDIO EDITION v4.5.4"
+LoadingSub.Text = "STUDIO EDITION v4.5.5"
 LoadingSub.TextColor3 = Color3.fromRGB(150,153,164)
 LoadingSub.TextSize = 10
 LoadingSub.Font = Enum.Font.Gotham
@@ -3485,44 +3485,45 @@ task.spawn(function()
         TransitionInfo
     )
 
-    -- IMPORTANTE:
-    -- O fundo roxo visual é composto também pelos objetos filhos.
-    -- Eles precisam participar do mesmo fade; caso contrário o
-    -- container fica invisível mas o conteúdo continua na tela até
-    -- Destroy(), causando exatamente o atraso relatado.
+    -- O bloco rosa/roxo visual da Loading é um Frame filho.
+    -- Ele recebe exatamente o mesmo fade da tela.
+    -- A barra e o N continuam com o comportamento que já estava certo.
     local LoadingChildrenFade = TweenInfo.new(
         0.72,
         Enum.EasingStyle.Quint,
         Enum.EasingDirection.Out
     )
 
-    for _, Object in ipairs(LoadingScreen:GetDescendants()) do
+    for _, Object in ipairs(LoadingScreen:GetChildren()) do
         if Object:IsA("Frame") then
             pcall(function()
-                Tween(Object, {
-                    BackgroundTransparency = 1
-                }, LoadingChildrenFade)
+                Tween(
+                    Object,
+                    {BackgroundTransparency = 1},
+                    LoadingChildrenFade
+                )
             end)
-
-        elseif Object:IsA("TextLabel") or Object:IsA("TextButton") then
-            pcall(function()
-                Tween(Object, {
-                    TextTransparency = 1
-                }, LoadingChildrenFade)
-            end)
-
-        elseif Object:IsA("ImageLabel") or Object:IsA("ImageButton") then
-            pcall(function()
-                Tween(Object, {
-                    ImageTransparency = 1
-                }, LoadingChildrenFade)
-            end)
-
         elseif Object:IsA("UIStroke") then
             pcall(function()
-                Tween(Object, {
-                    Transparency = 1
-                }, LoadingChildrenFade)
+                Tween(
+                    Object,
+                    {Transparency = 1},
+                    LoadingChildrenFade
+                )
+            end)
+        end
+    end
+
+    -- Bordas/contornos que estiverem dentro desse bloco acompanham
+    -- o mesmo relógio, sem mexer no comportamento durante o loading.
+    for _, Object in ipairs(LoadingScreen:GetDescendants()) do
+        if Object:IsA("UIStroke") then
+            pcall(function()
+                Tween(
+                    Object,
+                    {Transparency = 1},
+                    LoadingChildrenFade
+                )
             end)
         end
     end
