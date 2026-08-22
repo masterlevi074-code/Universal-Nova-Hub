@@ -1,5 +1,5 @@
 --[[
-    NOVA HUB - STUDIO EDITION v4.5.2
+    NOVA HUB - STUDIO EDITION v4.5.3
     LocalScript
     StarterPlayer > StarterPlayerScripts
     ESP com retry imediato (sem precisar morrer)
@@ -3385,16 +3385,23 @@ LoadingStatus.ZIndex = 1002
 LoadingStatus.Parent = LoadingScreen
 
 task.spawn(function()
-    -- NOVA HUB - TRANSIÇÃO PREMIUM LOADING -> MAIN
+    -- ============================================================
+    -- NOVA HUB - TRANSIÇÃO FLUIDA v2
+    -- Loading -> Main sem pausa ou "travada" no final.
+    -- ============================================================
 
     for _, Particle in ipairs(Particles) do
         task.spawn(function()
             while LoadingScreen.Parent do
                 pcall(function()
-                    Tween(Particle, {
-                        Position = UDim2.new(math.random(), 0, math.random(), 0),
-                        BackgroundTransparency = math.random(50, 90) / 100
-                    }, TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut))
+                    Tween(
+                        Particle,
+                        {
+                            Position = UDim2.new(math.random(), 0, math.random(), 0),
+                            BackgroundTransparency = math.random(50, 90) / 100
+                        },
+                        TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+                    )
                 end)
                 task.wait(2)
             end
@@ -3403,14 +3410,11 @@ task.spawn(function()
 
     task.spawn(function()
         while LoadingScreen.Parent do
-            Tween(LoadingLogo, {
-                Size = UDim2.fromOffset(86,86)
-            }, TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut))
+            Tween(LoadingLogo, {Size = UDim2.fromOffset(86,86)},
+                TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut))
             task.wait(0.55)
-
-            Tween(LoadingLogo, {
-                Size = UDim2.fromOffset(80,80)
-            }, TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut))
+            Tween(LoadingLogo, {Size = UDim2.fromOffset(80,80)},
+                TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut))
             task.wait(0.55)
         end
     end)
@@ -3427,7 +3431,6 @@ task.spawn(function()
         task.wait(0.55)
     end
 
-    -- Finaliza a barra antes da transição.
     local BarTween = Tween(
         LoadingBarFill,
         {Size = UDim2.new(1,0,1,0)},
@@ -3440,21 +3443,21 @@ task.spawn(function()
 
     LoadingStatus.Text = "Pronto!"
 
-    -- Prepara o painel principal enquanto a loading ainda está visível.
     local Scale = Config.Customization.UIScale
     local FinalWidth = 420 * Scale
     local FinalHeight = 370 * Scale
 
+    -- O Main já fica preparado atrás da Loading.
     Main.Visible = true
     Main.AnchorPoint = Vector2.new(0.5,0.5)
-    Main.Position = UDim2.new(0.5,0,0.5,22)
-    Main.Size = UDim2.fromOffset(FinalWidth * 0.88, FinalHeight * 0.88)
+    Main.Position = UDim2.new(0.5,0,0.5,12)
+    Main.Size = UDim2.fromOffset(FinalWidth * 0.94, FinalHeight * 0.94)
     Main.BackgroundTransparency = 1
 
-    -- Crossfade sincronizado: loading sai enquanto o painel entra.
+    -- Mesma duração/easing para os dois lados do crossfade.
     local TransitionInfo = TweenInfo.new(
-        0.58,
-        Enum.EasingStyle.Quart,
+        0.72,
+        Enum.EasingStyle.Quint,
         Enum.EasingDirection.Out
     )
 
@@ -3474,14 +3477,10 @@ task.spawn(function()
         TransitionInfo
     )
 
-    -- Se animações estiverem desativadas, Tween() aplica os valores
-    -- instantaneamente e retorna nil. Nesse caso não há nada para aguardar.
-
-
-    -- Conteúdo da loading desaparece um pouco antes do fundo.
-    local ContentInfo = TweenInfo.new(
-        0.40,
-        Enum.EasingStyle.Quad,
+    -- Conteúdo desaparece suavemente antes do fundo.
+    local ContentFade = TweenInfo.new(
+        0.50,
+        Enum.EasingStyle.Quint,
         Enum.EasingDirection.Out
     )
 
@@ -3491,24 +3490,27 @@ task.spawn(function()
         LoadingSub,
         LoadingStatus
     }) do
-        pcall(function()
-            Tween(Object, {TextTransparency = 1}, ContentInfo)
-        end)
+        if Object and Object.Parent then
+            pcall(function()
+                Tween(Object, {TextTransparency = 1}, ContentFade)
+            end)
+        end
     end
 
     pcall(function()
-        Tween(LoadingBarBg, {BackgroundTransparency = 1}, ContentInfo)
-        Tween(LoadingBarFill, {BackgroundTransparency = 1}, ContentInfo)
+        Tween(LoadingBarBg, {BackgroundTransparency = 1}, ContentFade)
+        Tween(LoadingBarFill, {BackgroundTransparency = 1}, ContentFade)
     end)
 
-    -- Tween() já inicia os tweens imediatamente.
-    -- Apenas aguardamos a conclusão do MainEnter.
+    -- Tween() já inicia a animação. Apenas aguardamos o Main.
     if MainEnter then
         MainEnter.Completed:Wait()
     end
 
-    Main.AnchorPoint = Vector2.new(0.5,0.5)
+    -- Estado final exato, sem um segundo tween.
     Main.Position = UDim2.new(0.5,0,0.5,0)
+    Main.Size = UDim2.fromOffset(FinalWidth, FinalHeight)
+    Main.BackgroundTransparency = 0
 
     if LoadingScreen.Parent then
         LoadingScreen:Destroy()
