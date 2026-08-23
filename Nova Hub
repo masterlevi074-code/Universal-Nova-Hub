@@ -3350,7 +3350,7 @@ local LoadingSub = Instance.new("TextLabel")
 LoadingSub.Size = UDim2.new(0,300,0,20)
 LoadingSub.Position = UDim2.new(0.5,-150,0.60,-10)
 LoadingSub.BackgroundTransparency = 1
-LoadingSub.Text = "STUDIO EDITION v4.7.0"
+LoadingSub.Text = "STUDIO EDITION v4.8.0"
 LoadingSub.TextColor3 = Color3.fromRGB(150,153,164)
 LoadingSub.TextSize = 10
 LoadingSub.Font = Enum.Font.Gotham
@@ -3481,43 +3481,39 @@ task.spawn(function()
     Main.BackgroundTransparency = 1
 
     -- ============================================================
-    -- SAÍDA DA LOADING
-    --
-    -- Em vez de tentar controlar cada objeto individualmente,
-    -- usamos o CanvasGroup como uma única camada visual.
-    -- Isso mantém N, fundo, barra e bordas sincronizados.
+    -- ANIMAÇÃO FINAL — Loading desaparece suavemente enquanto
+    -- sobe alguns pixels. O painel principal entra de baixo e
+    -- desacelera até a posição final.
     -- ============================================================
 
     local LoadingOutInfo = TweenInfo.new(
-        0.9,
-        Enum.EasingStyle.Quart,
+        0.85,
+        Enum.EasingStyle.Quint,
         Enum.EasingDirection.Out
     )
 
     local MainInInfo = TweenInfo.new(
-        0.72,
-        Enum.EasingStyle.Quart,
+        0.85,
+        Enum.EasingStyle.Quint,
         Enum.EasingDirection.Out
     )
 
+    -- A Loading fica visivelmente transparente e sobe levemente.
     local LoadingFade = Tween(
         LoadingFadeGroup,
         {
-            GroupTransparency = 1
+            GroupTransparency = 1,
+            Position = UDim2.new(0, 0, -0.025, 0)
         },
         LoadingOutInfo
     )
 
-    -- ============================================================
-    -- ENTRADA DO PAINEL
-    -- Começa junto com a saída da Loading.
-    -- ============================================================
-
+    -- O painel principal entra de baixo com um pequeno movimento suave.
     local MainEnter = Tween(
         Main,
         {
             Size = UDim2.fromOffset(FinalWidth, FinalHeight),
-            Position = UDim2.new(0.5,0,0.5,0),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
             BackgroundTransparency = 0
         },
         MainInInfo
