@@ -200,23 +200,28 @@ local TweenBounce = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirecti
 local TweenSpring = TweenInfo.new(0.5, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out)
 
 local function Tween(Object, Properties, Info)
-    if not Object or not Object.Parent then return nil end
+    if not Object or not Object.Parent then
+        return nil
+    end
 
     if not Config.UI.Animations then
-        for Property,Value in pairs(Properties) do
+        for Property, Value in pairs(Properties) do
             Object[Property] = Value
         end
         return nil
     end
 
-    local TweenObject = TweenService:Create(
-        Object,
-        Info or TweenFast,
-        Properties
-    )
+    local Success, TweenObject = pcall(function()
+        local Created = TweenService:Create(Object, Info or TweenFast, Properties)
+        Created:Play()
+        return Created
+    end)
 
-    TweenObject:Play()
-    return TweenObject
+    if Success then
+        return TweenObject
+    end
+
+    return nil
 end
 
 -- Cores
@@ -3415,6 +3420,20 @@ task.spawn(function()
                             BackgroundTransparency = math.random(50, 90) / 100
                         },
                         TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+ task.spawn(function()
+    -- NOVA HUB v5.1.2 — transição revisada em fluxo único
+
+    for _, Particle in ipairs(Particles) do
+        task.spawn(function()
+            while LoadingScreen.Parent do
+                pcall(function()
+                    Tween(
+                        Particle,
+                        {
+                            Position = UDim2.new(math.random(), 0, math.random(), 0),
+                            BackgroundTransparency = math.random(50, 90) / 100
+                        },
+                        TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
                     )
                 end)
                 task.wait(2)
@@ -3424,29 +3443,16 @@ task.spawn(function()
 
     task.spawn(function()
         while LoadingScreen.Parent do
-            Tween(
-                LoadingLogo,
-                {Size = UDim2.fromOffset(86,86)},
-                TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-            )
+            Tween(LoadingLogo, {Size = UDim2.fromOffset(86,86)},
+                TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut))
             task.wait(0.55)
-
-            Tween(
-                LoadingLogo,
-                {Size = UDim2.fromOffset(80,80)},
-                TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-            )
+            Tween(LoadingLogo, {Size = UDim2.fromOffset(80,80)},
+                TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut))
             task.wait(0.55)
         end
     end)
 
-    local Statuses = {
-        "Carregando...",
-        "Inicializando...",
-        "Configurando...",
-        "Quase pronto..."
-    }
-
+    local Statuses = {"Carregando...", "Inicializando...", "Configurando...", "Quase pronto..."}
     for _, Status in ipairs(Statuses) do
         LoadingStatus.Text = Status
         task.wait(0.55)
@@ -3457,15 +3463,7 @@ task.spawn(function()
         {Size = UDim2.new(1,0,1,0)},
         TweenInfo.new(1.15, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
     )
-
-    if BarTween then
-        BarTween.Completed:Wait()
-    end
-
-    -- ============================================================
-    -- PRONTO!
-    -- A partir daqui a transição começa imediatamente.
-    -- ============================================================
+    if BarTween then BarTween.Completed:Wait() end
 
     LoadingStatus.Text = "Pronto!"
 
@@ -3473,157 +3471,61 @@ task.spawn(function()
     local FinalWidth = 420 * Scale
     local FinalHeight = 370 * Scale
 
-    -- Painel principal preparado para entrar suavemente.
     Main.Visible = true
     Main.AnchorPoint = Vector2.new(0.5,0.5)
-    Main.Position = UDim2.new(0.5,0,0.5,18)
-    Main.Size = UDim2.fromOffset(FinalWidth * 0.92, FinalHeight * 0.92)
-    Main.BackgroundTransparency = 1
-
-    -- ============================================================
-    -- ANIMAÇÃO FINAL v5.1.1 — FADE VERTICAL PROFISSIONAL
-    --
-    -- A Loading sobe suavemente e desaparece com um fade progressivo.
-    -- A parte inferior recebe uma camada de fade que cresce junto,
-    -- criando a sensação de que a tela está "se desfazendo" de baixo
-    -- para cima.
-    -- ============================================================
-
-    local LoadingOutInfo = TweenInfo.new(
-        1.05,
-        Enum.EasingStyle.Quint,
-        Enum.EasingDirection.InOut
-    )
-
-    local MainInInfo = TweenInfo.new(
-        0.9,
-        Enum.EasingStyle.Quint,
-        Enum.EasingDirection.Out
-    )
-
-    Main.Position = UDim2.new(0.5, 0, 0.5, 32)
+    Main.Position = UDim2.new(0.5,0,0.5,28)
     Main.Size = UDim2.fromOffset(FinalWidth * 0.90, FinalHeight * 0.90)
     Main.BackgroundTransparency = 1
 
-    -- Loading inteira: slide + fade.
-    local LoadingFade = Tween(
+    -- Loading desliza para cima + fade.
+    local LoadingOut = Tween(
         LoadingFadeGroup,
         {
             GroupTransparency = 1,
-            Position = UDim2.new(0, 0, -1.05, 0)
+            Position = UDim2.new(0,0,-1.05,0)
         },
-        LoadingOutInfo
+        TweenInfo.new(0.95, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
     )
 
-    -- Máscara visual independente para dar o acabamento no rodapé.
-    -- Ela começa transparente e cresce de baixo para cima.
-    local FadeMask = Instance.new("Frame")
-    FadeMask.Name = "LoadingBottomFade"
-    FadeMask.Size = UDim2.fromScale(1, 0)
-    FadeMask.Position = UDim2.fromScale(0, 1)
-    FadeMask.AnchorPoint = Vector2.new(0, 1)
-    FadeMask.BackgroundColor3 = Color3.new(0, 0, 0)
-    FadeMask.BackgroundTransparency = 0
-    FadeMask.BorderSizePixel = 0
-    FadeMask.ZIndex = 2000
-    FadeMask.Parent = LoadingFadeGroup
-
-    local FadeGradient = Instance.new("UIGradient")
-    FadeGradient.Rotation = 90
-    FadeGradient.Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 0),
-        NumberSequenceKeypoint.new(0.45, 0.30),
-        NumberSequenceKeypoint.new(0.75, 0.75),
-        NumberSequenceKeypoint.new(1, 1)
-    })
-    FadeGradient.Parent = FadeMask
-
-    Tween(
-        FadeMask,
-        {
-            Size = UDim2.fromScale(1, 1.15)
-        },
-        LoadingOutInfo
-    )
-
-    -- Main entra de baixo e cresce até o tamanho final.
-    local MainEnter = Tween(
+    -- Main entra de baixo.
+    local MainIn = Tween(
         Main,
         {
-            Size = UDim2.fromOffset(FinalWidth, FinalHeight),
-            Position = UDim2.new(0.5, 0, 0.5, 0),
+            Position = UDim2.new(0.5,0,0.5,0),
+            Size = UDim2.fromOffset(FinalWidth,FinalHeight),
             BackgroundTransparency = 0
         },
-        MainInInfo
+        TweenInfo.new(0.85, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
     )
 
-    -- Pequeno settle, sem criar outro bloco duplicado.
-    task.spawn(function()
-        if MainEnter then
-            MainEnter.Completed:Wait()
-        end
+    if MainIn then MainIn.Completed:Wait() end
 
-        local Settle = Tween(
-            Main,
-            {
-                Size = UDim2.fromOffset(FinalWidth * 0.985, FinalHeight * 0.985)
-            },
-            TweenInfo.new(0.10, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        )
+    local Settle = Tween(
+        Main,
+        {Size = UDim2.fromOffset(FinalWidth * 0.985, FinalHeight * 0.985)},
+        TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    )
+    if Settle then Settle.Completed:Wait() end
 
-        if Settle then
-            Settle.Completed:Wait()
-        end
+    local SettleBack = Tween(
+        Main,
+        {Size = UDim2.fromOffset(FinalWidth, FinalHeight)},
+        TweenInfo.new(0.14, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+    )
+    if SettleBack then SettleBack.Completed:Wait() end
 
-        Tween(
-            Main,
-            {
-                Size = UDim2.fromOffset(FinalWidth, FinalHeight)
-            },
-            TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-        )
-    end)
-
-    if MainEnter then
-            MainEnter.Completed:Wait()
-        end
-
-        local Settle = Tween(
-            Main,
-            {
-                Size = UDim2.fromOffset(FinalWidth * 0.985, FinalHeight * 0.985)
-            },
-            TweenInfo.new(0.10, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        )
-
-        if Settle then
-            Settle.Completed:Wait()
-        end
-
-        Tween(
-            Main,
-            {
-                Size = UDim2.fromOffset(FinalWidth, FinalHeight)
-            },
-            TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-        )
-    end)
-
-    if MainEnter then
-        MainEnter.Completed:Wait()
-    end
-
-    -- Espera a Loading terminar de desaparecer antes de destruí-la.
-    if LoadingFade then
-        LoadingFade.Completed:Wait()
-    end
+    if LoadingOut then LoadingOut.Completed:Wait() end
 
     Main.Position = UDim2.new(0.5,0,0.5,0)
-    Main.Size = UDim2.fromOffset(FinalWidth, FinalHeight)
+    Main.Size = UDim2.fromOffset(FinalWidth,FinalHeight)
     Main.BackgroundTransparency = 0
 
     if LoadingFadeGroup and LoadingFadeGroup.Parent then
         LoadingFadeGroup:Destroy()
+    elseif LoadingScreen and LoadingScreen.Parent then
+        LoadingScreen:Destroy()
+    end
+end)     LoadingFadeGroup:Destroy()
     elseif LoadingScreen.Parent then
         LoadingScreen:Destroy()
     end
@@ -3637,4 +3539,4 @@ RefreshToggleAccent()
 RefreshLinesAccent()
 ShowAim()
 
-print("NOVA HUB - STUDIO EDITION v5.1.1 carregado com sucesso!")
+print("NOVA HUB - STUDIO EDITION v5.1.2 carregado com sucesso!")
