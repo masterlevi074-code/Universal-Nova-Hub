@@ -3405,50 +3405,11 @@ LoadingStatus.Parent = LoadingScreen
 
 task.spawn(function()
     -- ============================================================
-    -- NOVA HUB - TRANSIÇÃO FINAL
-    -- Loading -> Main com saída suave e entrada elegante.
-    -- ============================================================
-
-    for _, Particle in ipairs(Particles) do
-        task.spawn(function()
-            while LoadingScreen.Parent do
-                pcall(function()
-                    Tween(
-                        Particle,
-                        {
-                            Position = UDim2.new(math.random(), 0, math.random(), 0),
-                            BackgroundTransparency = math.random(50, 90) / 100
-                        },
-                        TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
- task.spawn(function()
-    -- NOVA HUB v5.1.2 — transição revisada em fluxo único
-
-    for _, Particle in ipairs(Particles) do
-        task.spawn(function()
-            while LoadingScreen.Parent do
-                pcall(function()
-                    Tween(
-                        Particle,
-                        {
-                            Position = UDim2.new(math.random(), 0, math.random(), 0),
-                            BackgroundTransparency = math.random(50, 90) / 100
-                        },
-                        TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-                    )
-                end)
-                task.wait(2)
-            end
-        end)
-    end
-
-    task.spawn(function()
-    -- ============================================================
-    -- NOVA HUB v5.1.3 — TRANSIÇÃO SEGURA
-    -- A transição não depende do helper Tween() global.
+    -- NOVA HUB v5.1.4 — TRANSIÇÃO LIMPA
     -- ============================================================
 
     local function SafePlay(Object, Properties, Info)
-        if not Object or not Object.Parent or not TweenService then
+        if not Object or not Object.Parent then
             return nil
         end
 
@@ -3458,32 +3419,10 @@ task.spawn(function()
             return created
         end)
 
-        if ok then
-            return tween
-        end
-
-        return nil
+        return ok and tween or nil
     end
 
-    -- Loading normal.
-    for _, Particle in ipairs(Particles) do
-        task.spawn(function()
-            while LoadingScreen and LoadingScreen.Parent do
-                pcall(function()
-                    SafePlay(
-                        Particle,
-                        {
-                            Position = UDim2.new(math.random(), 0, math.random(), 0),
-                            BackgroundTransparency = math.random(50, 90) / 100
-                        },
-                        TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-                    )
-                end)
-                task.wait(2)
-            end
-        end)
-    end
-
+    -- Pequena animação da logo enquanto a Loading está ativa.
     task.spawn(function()
         while LoadingScreen and LoadingScreen.Parent do
             SafePlay(
@@ -3526,7 +3465,10 @@ task.spawn(function()
         BarTween.Completed:Wait()
     end
 
-    -- PRONTO! A transição começa imediatamente.
+    -- ============================================================
+    -- PRONTO!
+    -- ============================================================
+
     if LoadingStatus and LoadingStatus.Parent then
         LoadingStatus.Text = "Pronto!"
     end
@@ -3537,21 +3479,21 @@ task.spawn(function()
 
     Main.Visible = true
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
-    Main.Position = UDim2.new(0.5, 0, 0.5, 30)
+    Main.Position = UDim2.new(0.5, 0, 0.5, 35)
     Main.Size = UDim2.fromOffset(FinalWidth * 0.90, FinalHeight * 0.90)
     Main.BackgroundTransparency = 1
 
-    -- Loading: slide para cima + fade.
+    -- Loading sobe inteira e desaparece suavemente.
     local LoadingOut = SafePlay(
         LoadingFadeGroup,
         {
             GroupTransparency = 1,
             Position = UDim2.new(0, 0, -1.05, 0)
         },
-        TweenInfo.new(0.95, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+        TweenInfo.new(1.05, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
     )
 
-    -- Main: entrada suave de baixo.
+    -- Main entra de baixo e encaixa no centro.
     local MainIn = SafePlay(
         Main,
         {
@@ -3566,7 +3508,7 @@ task.spawn(function()
         MainIn.Completed:Wait()
     end
 
-    -- Pequeno acabamento final.
+    -- Pequeno acabamento de escala.
     local Settle = SafePlay(
         Main,
         {Size = UDim2.fromOffset(FinalWidth * 0.985, FinalHeight * 0.985)},
@@ -3610,4 +3552,4 @@ RefreshToggleAccent()
 RefreshLinesAccent()
 ShowAim()
 
-print("NOVA HUB - STUDIO EDITION v5.1.3 carregado com sucesso!")
+print("NOVA HUB - STUDIO EDITION v5.1.4 carregado com sucesso!")
