@@ -3481,15 +3481,16 @@ task.spawn(function()
     Main.BackgroundTransparency = 1
 
     -- ============================================================
-    -- ANIMAÇÃO FINAL — TRANSIÇÃO VISÍVEL
+    -- ANIMAÇÃO FINAL v5.1 — TRANSIÇÃO PREMIUM
     --
-    -- A Loading desliza para cima enquanto fica transparente.
-    -- O painel principal sobe de baixo e encaixa no centro.
-    -- Assim existe movimento real na tela, não apenas um fade.
+    -- A Loading sobe suavemente e a região inferior vai ficando
+    -- progressivamente mais transparente. O resultado é um fade
+    -- vertical elegante, em vez de toda a tela desaparecer de uma
+    -- vez.
     -- ============================================================
 
     local LoadingOutInfo = TweenInfo.new(
-        0.95,
+        1.05,
         Enum.EasingStyle.Quint,
         Enum.EasingDirection.InOut
     )
@@ -3500,7 +3501,11 @@ task.spawn(function()
         Enum.EasingDirection.Out
     )
 
-    -- A Loading sai inteira para cima + fade.
+    Main.Position = UDim2.new(0.5, 0, 0.5, 32)
+    Main.Size = UDim2.fromOffset(FinalWidth * 0.90, FinalHeight * 0.90)
+    Main.BackgroundTransparency = 1
+
+    -- A camada principal faz o slide + fade geral.
     local LoadingFade = Tween(
         LoadingFadeGroup,
         {
@@ -3510,8 +3515,38 @@ task.spawn(function()
         LoadingOutInfo
     )
 
-    -- O painel entra de baixo, com uma pequena distância para
-    -- deixar o movimento claramente perceptível.
+    -- Efeito profissional adicional:
+    -- a parte inferior da Loading perde opacidade antes do topo.
+    -- Isso é feito por uma máscara visual que sobe junto com a tela.
+    local FadeMask = Instance.new("Frame")
+    FadeMask.Name = "LoadingBottomFade"
+    FadeMask.AnchorPoint = Vector2.new(0, 1)
+    FadeMask.Position = UDim2.fromScale(0, 1)
+    FadeMask.Size = UDim2.fromScale(1, 0)
+    FadeMask.BackgroundTransparency = 1
+    FadeMask.BorderSizePixel = 0
+    FadeMask.ZIndex = 2000
+    FadeMask.Parent = LoadingFadeGroup
+
+    local FadeGradient = Instance.new("UIGradient")
+    FadeGradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(0.45, 0.35),
+        NumberSequenceKeypoint.new(0.75, 0.78),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    FadeGradient.Rotation = 90
+    FadeGradient.Parent = FadeMask
+
+    Tween(
+        FadeMask,
+        {
+            Size = UDim2.fromScale(1, 1.15)
+        },
+        LoadingOutInfo
+    )
+
+    -- O painel principal entra de baixo e cresce suavemente.
     local MainEnter = Tween(
         Main,
         {
@@ -3521,6 +3556,58 @@ task.spawn(function()
         },
         MainInInfo
     )
+
+    -- Pequeno settle final para dar acabamento premium.
+    task.spawn(function()
+        if MainEnter then
+            MainEnter.Completed:Wait()
+        end
+
+        local Settle = Tween(
+            Main,
+            {
+                Size = UDim2.fromOffset(FinalWidth * 0.985, FinalHeight * 0.985)
+            },
+            TweenInfo.new(0.10, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        )
+
+        if Settle then
+            Settle.Completed:Wait()
+        end
+
+        Tween(
+            Main,
+            {
+                Size = UDim2.fromOffset(FinalWidth, FinalHeight)
+            },
+            TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+        )
+    end)
+
+    if MainEnter then
+            MainEnter.Completed:Wait()
+        end
+
+        local Settle = Tween(
+            Main,
+            {
+                Size = UDim2.fromOffset(FinalWidth * 0.985, FinalHeight * 0.985)
+            },
+            TweenInfo.new(0.10, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        )
+
+        if Settle then
+            Settle.Completed:Wait()
+        end
+
+        Tween(
+            Main,
+            {
+                Size = UDim2.fromOffset(FinalWidth, FinalHeight)
+            },
+            TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+        )
+    end)
 
     if MainEnter then
         MainEnter.Completed:Wait()
@@ -3550,4 +3637,4 @@ RefreshToggleAccent()
 RefreshLinesAccent()
 ShowAim()
 
-print("NOVA HUB - STUDIO EDITION v4.9.0 carregado com sucesso!")
+print("NOVA HUB - STUDIO EDITION v5.1.0 carregado com sucesso!")
