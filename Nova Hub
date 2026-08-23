@@ -3496,7 +3496,7 @@ task.spawn(function()
     )
 
     local MainInInfo = TweenInfo.new(
-        0.75,                      -- duração média
+        0.9,                      -- duração média
         Enum.EasingStyle.Back,     -- leve bounce
         Enum.EasingDirection.Out
     )
