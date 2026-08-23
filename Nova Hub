@@ -3480,14 +3480,10 @@ task.spawn(function()
     Main.Size = UDim2.fromOffset(FinalWidth * 0.92, FinalHeight * 0.92)
     Main.BackgroundTransparency = 1
 
-    -- ============================================================
+     --=========================================================
     -- TRANSIÇÃO FINAL APRIMORADA
     --
-    -- A Loading sai com fade + leve subida.
-    -- O painel principal entra com fade + escala + deslize de baixo,
-    -- com um pequeno efeito de overshoot (bounce) para dar vida.
-    -- Tudo é sincronizado para evitar "travadas".
-    -- ============================================================
+    -- A Loading sai com fade + leve subida. --=========================================================
 
     local LoadingOutInfo = TweenInfo.new(
         0.4,                                             
