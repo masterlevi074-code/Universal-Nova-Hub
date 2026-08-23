@@ -3481,12 +3481,12 @@ task.spawn(function()
     Main.BackgroundTransparency = 1
 
     -- ============================================================
-    -- ANIMAÇÃO FINAL v5.1 — TRANSIÇÃO PREMIUM
+    -- ANIMAÇÃO FINAL v5.1.1 — FADE VERTICAL PROFISSIONAL
     --
-    -- A Loading sobe suavemente e a região inferior vai ficando
-    -- progressivamente mais transparente. O resultado é um fade
-    -- vertical elegante, em vez de toda a tela desaparecer de uma
-    -- vez.
+    -- A Loading sobe suavemente e desaparece com um fade progressivo.
+    -- A parte inferior recebe uma camada de fade que cresce junto,
+    -- criando a sensação de que a tela está "se desfazendo" de baixo
+    -- para cima.
     -- ============================================================
 
     local LoadingOutInfo = TweenInfo.new(
@@ -3505,7 +3505,7 @@ task.spawn(function()
     Main.Size = UDim2.fromOffset(FinalWidth * 0.90, FinalHeight * 0.90)
     Main.BackgroundTransparency = 1
 
-    -- A camada principal faz o slide + fade geral.
+    -- Loading inteira: slide + fade.
     local LoadingFade = Tween(
         LoadingFadeGroup,
         {
@@ -3515,27 +3515,27 @@ task.spawn(function()
         LoadingOutInfo
     )
 
-    -- Efeito profissional adicional:
-    -- a parte inferior da Loading perde opacidade antes do topo.
-    -- Isso é feito por uma máscara visual que sobe junto com a tela.
+    -- Máscara visual independente para dar o acabamento no rodapé.
+    -- Ela começa transparente e cresce de baixo para cima.
     local FadeMask = Instance.new("Frame")
     FadeMask.Name = "LoadingBottomFade"
-    FadeMask.AnchorPoint = Vector2.new(0, 1)
-    FadeMask.Position = UDim2.fromScale(0, 1)
     FadeMask.Size = UDim2.fromScale(1, 0)
-    FadeMask.BackgroundTransparency = 1
+    FadeMask.Position = UDim2.fromScale(0, 1)
+    FadeMask.AnchorPoint = Vector2.new(0, 1)
+    FadeMask.BackgroundColor3 = Color3.new(0, 0, 0)
+    FadeMask.BackgroundTransparency = 0
     FadeMask.BorderSizePixel = 0
     FadeMask.ZIndex = 2000
     FadeMask.Parent = LoadingFadeGroup
 
     local FadeGradient = Instance.new("UIGradient")
+    FadeGradient.Rotation = 90
     FadeGradient.Transparency = NumberSequence.new({
         NumberSequenceKeypoint.new(0, 0),
-        NumberSequenceKeypoint.new(0.45, 0.35),
-        NumberSequenceKeypoint.new(0.75, 0.78),
+        NumberSequenceKeypoint.new(0.45, 0.30),
+        NumberSequenceKeypoint.new(0.75, 0.75),
         NumberSequenceKeypoint.new(1, 1)
     })
-    FadeGradient.Rotation = 90
     FadeGradient.Parent = FadeMask
 
     Tween(
@@ -3546,7 +3546,7 @@ task.spawn(function()
         LoadingOutInfo
     )
 
-    -- O painel principal entra de baixo e cresce suavemente.
+    -- Main entra de baixo e cresce até o tamanho final.
     local MainEnter = Tween(
         Main,
         {
@@ -3557,7 +3557,7 @@ task.spawn(function()
         MainInInfo
     )
 
-    -- Pequeno settle final para dar acabamento premium.
+    -- Pequeno settle, sem criar outro bloco duplicado.
     task.spawn(function()
         if MainEnter then
             MainEnter.Completed:Wait()
@@ -3637,4 +3637,4 @@ RefreshToggleAccent()
 RefreshLinesAccent()
 ShowAim()
 
-print("NOVA HUB - STUDIO EDITION v5.1.0 carregado com sucesso!")
+print("NOVA HUB - STUDIO EDITION v5.1.1 carregado com sucesso!")
