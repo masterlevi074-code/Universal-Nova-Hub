@@ -3480,20 +3480,23 @@ task.spawn(function()
     Main.Size = UDim2.fromOffset(FinalWidth * 0.92, FinalHeight * 0.92)
     Main.BackgroundTransparency = 1
 
-     --=========================================================
-    -- TRANSIÇÃO FINAL APRIMORADA
+    -- ============================================================
+    -- ANIMAÇÃO FINAL — TRANSIÇÃO VISÍVEL
     --
-    -- A Loading sai com fade + leve subida. --=========================================================
+    -- A Loading desliza para cima enquanto fica transparente.
+    -- O painel principal sobe de baixo e encaixa no centro.
+    -- Assim existe movimento real na tela, não apenas um fade.
+    -- ============================================================
 
     local LoadingOutInfo = TweenInfo.new(
-        0.4,                                             
-        Enum.EasingStyle.Quad,
-        Enum.EasingDirection.Out
+        0.95,
+        Enum.EasingStyle.Quint,
+        Enum.EasingDirection.InOut
     )
 
     local MainInInfo = TweenInfo.new(
-        0.75,                                          
-        Enum.EasingStyle.Back,                           leve bounce
+        0.9,
+        Enum.EasingStyle.Quint,
         Enum.EasingDirection.Out
     )
 
@@ -3507,11 +3510,8 @@ task.spawn(function()
         LoadingOutInfo
     )
 
-    -- Pequeno delay para a Loading começar a sumir antes do Main aparecer.
-    task.wait(0.1)
-
-    -- O painel entra de baixo, com leve redução de escala inicial
-    -- (já foi definido como 92% do tamanho final acima).
+    -- O painel entra de baixo, com uma pequena distância para
+    -- deixar o movimento claramente perceptível.
     local MainEnter = Tween(
         Main,
         {
@@ -3522,17 +3522,16 @@ task.spawn(function()
         MainInInfo
     )
 
-    -- Aguarda as duas animações terminarem.
     if MainEnter then
         MainEnter.Completed:Wait()
     end
 
+    -- Espera a Loading terminar de desaparecer antes de destruí-la.
     if LoadingFade then
         LoadingFade.Completed:Wait()
     end
 
-    -- Garante valores finais exatos.
-    Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+    Main.Position = UDim2.new(0.5,0,0.5,0)
     Main.Size = UDim2.fromOffset(FinalWidth, FinalHeight)
     Main.BackgroundTransparency = 0
 
