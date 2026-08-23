@@ -3350,7 +3350,7 @@ local LoadingSub = Instance.new("TextLabel")
 LoadingSub.Size = UDim2.new(0,300,0,20)
 LoadingSub.Position = UDim2.new(0.5,-150,0.60,-10)
 LoadingSub.BackgroundTransparency = 1
-LoadingSub.Text = "STUDIO EDITION v4.5.6"
+LoadingSub.Text = "STUDIO EDITION v4.5.7"
 LoadingSub.TextColor3 = Color3.fromRGB(150,153,164)
 LoadingSub.TextSize = 10
 LoadingSub.Font = Enum.Font.Gotham
@@ -3502,9 +3502,13 @@ task.spawn(function()
     -- • partículas
     --
     -- Assim nenhum elemento fica sobrando por ~1 segundo.
+    -- Animação suave de saída: fade + leve redução de escala.
     local LoadingFade = Tween(
         LoadingFadeGroup,
-        {GroupTransparency = 1},
+        {
+            GroupTransparency = 1,
+            Size = UDim2.fromScale(0.96, 0.96)
+        },
         TransitionInfo
     )
 
