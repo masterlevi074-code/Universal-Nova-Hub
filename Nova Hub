@@ -3350,7 +3350,7 @@ local LoadingSub = Instance.new("TextLabel")
 LoadingSub.Size = UDim2.new(0,300,0,20)
 LoadingSub.Position = UDim2.new(0.5,-150,0.60,-10)
 LoadingSub.BackgroundTransparency = 1
-LoadingSub.Text = "STUDIO EDITION v4.5.9"
+LoadingSub.Text = "STUDIO EDITION v4.6.0"
 LoadingSub.TextColor3 = Color3.fromRGB(150,153,164)
 LoadingSub.TextSize = 10
 LoadingSub.Font = Enum.Font.Gotham
@@ -3507,6 +3507,9 @@ task.spawn(function()
     -- Saída simples e elegante:
     -- a Loading apenas fica invisível suavemente, sem zoom/escala.
     -- Depois que o fade termina, o grupo é destruído.
+    -- Fade real da tela inteira.
+    -- O CanvasGroup controla todos os descendentes visualmente.
+    -- Não há escala nem mudança de posição: somente transparência.
     local LoadingFade = Tween(
         LoadingFadeGroup,
         {
@@ -3514,7 +3517,7 @@ task.spawn(function()
         },
         TweenInfo.new(
             2,
-            Enum.EasingStyle.Quad,
+            Enum.EasingStyle.Linear,
             Enum.EasingDirection.Out
         )
     )
@@ -3524,9 +3527,12 @@ task.spawn(function()
         MainEnter.Completed:Wait()
     end
 
-    -- Espera o fade da Loading terminar antes de destruir.
+    -- A Loading só é destruída depois dos 2 segundos completos.
     if LoadingFade then
         LoadingFade.Completed:Wait()
+    else
+        -- Fallback caso as animações estejam desativadas.
+        LoadingFadeGroup.GroupTransparency = 1
     end
 
     Main.Position = UDim2.new(0.5,0,0.5,0)
