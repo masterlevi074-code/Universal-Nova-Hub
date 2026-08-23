@@ -3350,7 +3350,7 @@ local LoadingSub = Instance.new("TextLabel")
 LoadingSub.Size = UDim2.new(0,300,0,20)
 LoadingSub.Position = UDim2.new(0.5,-150,0.60,-10)
 LoadingSub.BackgroundTransparency = 1
-LoadingSub.Text = "STUDIO EDITION v4.6.0"
+LoadingSub.Text = "STUDIO EDITION v4.7.0"
 LoadingSub.TextColor3 = Color3.fromRGB(150,153,164)
 LoadingSub.TextSize = 10
 LoadingSub.Font = Enum.Font.Gotham
@@ -3400,9 +3400,8 @@ LoadingStatus.Parent = LoadingScreen
 
 task.spawn(function()
     -- ============================================================
-    -- NOVA HUB - TRANSIÇÃO FLUIDA v4.5.4
-    -- O bloco visual inteiro da Loading sai junto com a transição.
-    -- Durante o carregamento, N e barra continuam exatamente iguais.
+    -- NOVA HUB - TRANSIÇÃO FINAL
+    -- Loading -> Main com saída suave e entrada elegante.
     -- ============================================================
 
     for _, Particle in ipairs(Particles) do
@@ -3463,27 +3462,57 @@ task.spawn(function()
         BarTween.Completed:Wait()
     end
 
-    -- Ao chegar em "Pronto!", a Loading começa imediatamente
-    -- seu desaparecimento suave de 2 segundos.
+    -- ============================================================
+    -- PRONTO!
+    -- A partir daqui a transição começa imediatamente.
+    -- ============================================================
+
     LoadingStatus.Text = "Pronto!"
 
     local Scale = Config.Customization.UIScale
     local FinalWidth = 420 * Scale
     local FinalHeight = 370 * Scale
 
+    -- Painel principal preparado para entrar suavemente.
     Main.Visible = true
     Main.AnchorPoint = Vector2.new(0.5,0.5)
-    Main.Position = UDim2.new(0.5,0,0.5,12)
-    Main.Size = UDim2.fromOffset(FinalWidth * 0.94, FinalHeight * 0.94)
+    Main.Position = UDim2.new(0.5,0,0.5,18)
+    Main.Size = UDim2.fromOffset(FinalWidth * 0.92, FinalHeight * 0.92)
     Main.BackgroundTransparency = 1
 
-    local TransitionInfo = TweenInfo.new(
-        0.72,
-        Enum.EasingStyle.Quint,
+    -- ============================================================
+    -- SAÍDA DA LOADING
+    --
+    -- Em vez de tentar controlar cada objeto individualmente,
+    -- usamos o CanvasGroup como uma única camada visual.
+    -- Isso mantém N, fundo, barra e bordas sincronizados.
+    -- ============================================================
+
+    local LoadingOutInfo = TweenInfo.new(
+        0.9,
+        Enum.EasingStyle.Quart,
         Enum.EasingDirection.Out
     )
 
-    -- O Main e o container da Loading começam no mesmo instante.
+    local MainInInfo = TweenInfo.new(
+        0.72,
+        Enum.EasingStyle.Quart,
+        Enum.EasingDirection.Out
+    )
+
+    local LoadingFade = Tween(
+        LoadingFadeGroup,
+        {
+            GroupTransparency = 1
+        },
+        LoadingOutInfo
+    )
+
+    -- ============================================================
+    -- ENTRADA DO PAINEL
+    -- Começa junto com a saída da Loading.
+    -- ============================================================
+
     local MainEnter = Tween(
         Main,
         {
@@ -3491,48 +3520,16 @@ task.spawn(function()
             Position = UDim2.new(0.5,0,0.5,0),
             BackgroundTransparency = 0
         },
-        TransitionInfo
+        MainInInfo
     )
 
-    -- A Loading inteira sai como UMA unidade.
-    -- Isso inclui automaticamente:
-    -- • fundo
-    -- • N e fundo do N
-    -- • barra e preenchimento
-    -- • borda/glow da barra
-    -- • textos
-    -- • partículas
-    --
-    -- Assim nenhum elemento fica sobrando por ~1 segundo.
-    -- Saída simples e elegante:
-    -- a Loading apenas fica invisível suavemente, sem zoom/escala.
-    -- Depois que o fade termina, o grupo é destruído.
-    -- Fade real da tela inteira.
-    -- O CanvasGroup controla todos os descendentes visualmente.
-    -- Não há escala nem mudança de posição: somente transparência.
-    local LoadingFade = Tween(
-        LoadingFadeGroup,
-        {
-            GroupTransparency = 1
-        },
-        TweenInfo.new(
-            2,
-            Enum.EasingStyle.Linear,
-            Enum.EasingDirection.Out
-        )
-    )
-
-    -- Tween() já chama :Play(); somente aguardamos a entrada do Main.
     if MainEnter then
         MainEnter.Completed:Wait()
     end
 
-    -- A Loading só é destruída depois dos 2 segundos completos.
+    -- Espera a Loading terminar de desaparecer antes de destruí-la.
     if LoadingFade then
         LoadingFade.Completed:Wait()
-    else
-        -- Fallback caso as animações estejam desativadas.
-        LoadingFadeGroup.GroupTransparency = 1
     end
 
     Main.Position = UDim2.new(0.5,0,0.5,0)
