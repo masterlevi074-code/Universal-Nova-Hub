@@ -3281,7 +3281,21 @@ LoadingScreen.Size = UDim2.fromScale(1,1)
 LoadingScreen.BackgroundColor3 = Color3.fromRGB(10,10,15)
 LoadingScreen.BorderSizePixel = 0
 LoadingScreen.ZIndex = 1000
-LoadingScreen.Parent = Gui
+
+-- Grupo único para a saída da Loading.
+-- CanvasGroup permite fazer o fade de TODO o conteúdo ao mesmo tempo,
+-- sem precisar animar N, barra, fundo e bordas separadamente.
+local LoadingFadeGroup = Instance.new("CanvasGroup")
+LoadingFadeGroup.Name = "LoadingFadeGroup"
+LoadingFadeGroup.Size = UDim2.fromScale(1,1)
+LoadingFadeGroup.Position = UDim2.fromScale(0,0)
+LoadingFadeGroup.BackgroundTransparency = 1
+LoadingFadeGroup.BorderSizePixel = 0
+LoadingFadeGroup.ZIndex = 1000
+LoadingFadeGroup.GroupTransparency = 0
+LoadingFadeGroup.Parent = Gui
+
+LoadingScreen.Parent = LoadingFadeGroup
 
 local Particles = {}
 for i = 1, 15 do
@@ -3336,7 +3350,7 @@ local LoadingSub = Instance.new("TextLabel")
 LoadingSub.Size = UDim2.new(0,300,0,20)
 LoadingSub.Position = UDim2.new(0.5,-150,0.60,-10)
 LoadingSub.BackgroundTransparency = 1
-LoadingSub.Text = "STUDIO EDITION v4.5.5"
+LoadingSub.Text = "STUDIO EDITION v4.5.6"
 LoadingSub.TextColor3 = Color3.fromRGB(150,153,164)
 LoadingSub.TextSize = 10
 LoadingSub.Font = Enum.Font.Gotham
@@ -3478,55 +3492,21 @@ task.spawn(function()
         TransitionInfo
     )
 
-    -- A própria LoadingScreen recebe o fade.
-    Tween(
-        LoadingScreen,
-        {BackgroundTransparency = 1},
+    -- A Loading inteira sai como UMA unidade.
+    -- Isso inclui automaticamente:
+    -- • fundo
+    -- • N e fundo do N
+    -- • barra e preenchimento
+    -- • borda/glow da barra
+    -- • textos
+    -- • partículas
+    --
+    -- Assim nenhum elemento fica sobrando por ~1 segundo.
+    local LoadingFade = Tween(
+        LoadingFadeGroup,
+        {GroupTransparency = 1},
         TransitionInfo
     )
-
-    -- O bloco rosa/roxo visual da Loading é um Frame filho.
-    -- Ele recebe exatamente o mesmo fade da tela.
-    -- A barra e o N continuam com o comportamento que já estava certo.
-    local LoadingChildrenFade = TweenInfo.new(
-        0.72,
-        Enum.EasingStyle.Quint,
-        Enum.EasingDirection.Out
-    )
-
-    for _, Object in ipairs(LoadingScreen:GetChildren()) do
-        if Object:IsA("Frame") then
-            pcall(function()
-                Tween(
-                    Object,
-                    {BackgroundTransparency = 1},
-                    LoadingChildrenFade
-                )
-            end)
-        elseif Object:IsA("UIStroke") then
-            pcall(function()
-                Tween(
-                    Object,
-                    {Transparency = 1},
-                    LoadingChildrenFade
-                )
-            end)
-        end
-    end
-
-    -- Bordas/contornos que estiverem dentro desse bloco acompanham
-    -- o mesmo relógio, sem mexer no comportamento durante o loading.
-    for _, Object in ipairs(LoadingScreen:GetDescendants()) do
-        if Object:IsA("UIStroke") then
-            pcall(function()
-                Tween(
-                    Object,
-                    {Transparency = 1},
-                    LoadingChildrenFade
-                )
-            end)
-        end
-    end
 
     -- Tween() já chama :Play(); somente aguardamos a entrada do Main.
     if MainEnter then
@@ -3537,7 +3517,9 @@ task.spawn(function()
     Main.Size = UDim2.fromOffset(FinalWidth, FinalHeight)
     Main.BackgroundTransparency = 0
 
-    if LoadingScreen.Parent then
+    if LoadingFadeGroup and LoadingFadeGroup.Parent then
+        LoadingFadeGroup:Destroy()
+    elseif LoadingScreen.Parent then
         LoadingScreen:Destroy()
     end
 end)
@@ -3550,4 +3532,4 @@ RefreshToggleAccent()
 RefreshLinesAccent()
 ShowAim()
 
-print("NOVA HUB - STUDIO EDITION v4.5.2 carregado com sucesso!")
+print("NOVA HUB - STUDIO EDITION v4.5.6 carregado com sucesso!")
