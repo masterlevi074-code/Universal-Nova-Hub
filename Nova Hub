@@ -3442,91 +3442,162 @@ task.spawn(function()
     end
 
     task.spawn(function()
-        while LoadingScreen.Parent do
-            Tween(LoadingLogo, {Size = UDim2.fromOffset(86,86)},
-                TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut))
+    -- ============================================================
+    -- NOVA HUB v5.1.3 — TRANSIÇÃO SEGURA
+    -- A transição não depende do helper Tween() global.
+    -- ============================================================
+
+    local function SafePlay(Object, Properties, Info)
+        if not Object or not Object.Parent or not TweenService then
+            return nil
+        end
+
+        local ok, tween = pcall(function()
+            local created = TweenService:Create(Object, Info, Properties)
+            created:Play()
+            return created
+        end)
+
+        if ok then
+            return tween
+        end
+
+        return nil
+    end
+
+    -- Loading normal.
+    for _, Particle in ipairs(Particles) do
+        task.spawn(function()
+            while LoadingScreen and LoadingScreen.Parent do
+                pcall(function()
+                    SafePlay(
+                        Particle,
+                        {
+                            Position = UDim2.new(math.random(), 0, math.random(), 0),
+                            BackgroundTransparency = math.random(50, 90) / 100
+                        },
+                        TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+                    )
+                end)
+                task.wait(2)
+            end
+        end)
+    end
+
+    task.spawn(function()
+        while LoadingScreen and LoadingScreen.Parent do
+            SafePlay(
+                LoadingLogo,
+                {Size = UDim2.fromOffset(86, 86)},
+                TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+            )
             task.wait(0.55)
-            Tween(LoadingLogo, {Size = UDim2.fromOffset(80,80)},
-                TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut))
+
+            SafePlay(
+                LoadingLogo,
+                {Size = UDim2.fromOffset(80, 80)},
+                TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+            )
             task.wait(0.55)
         end
     end)
 
-    local Statuses = {"Carregando...", "Inicializando...", "Configurando...", "Quase pronto..."}
+    local Statuses = {
+        "Carregando...",
+        "Inicializando...",
+        "Configurando...",
+        "Quase pronto..."
+    }
+
     for _, Status in ipairs(Statuses) do
-        LoadingStatus.Text = Status
+        if LoadingStatus and LoadingStatus.Parent then
+            LoadingStatus.Text = Status
+        end
         task.wait(0.55)
     end
 
-    local BarTween = Tween(
+    local BarTween = SafePlay(
         LoadingBarFill,
-        {Size = UDim2.new(1,0,1,0)},
+        {Size = UDim2.new(1, 0, 1, 0)},
         TweenInfo.new(1.15, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
     )
-    if BarTween then BarTween.Completed:Wait() end
 
-    LoadingStatus.Text = "Pronto!"
+    if BarTween then
+        BarTween.Completed:Wait()
+    end
+
+    -- PRONTO! A transição começa imediatamente.
+    if LoadingStatus and LoadingStatus.Parent then
+        LoadingStatus.Text = "Pronto!"
+    end
 
     local Scale = Config.Customization.UIScale
     local FinalWidth = 420 * Scale
     local FinalHeight = 370 * Scale
 
     Main.Visible = true
-    Main.AnchorPoint = Vector2.new(0.5,0.5)
-    Main.Position = UDim2.new(0.5,0,0.5,28)
+    Main.AnchorPoint = Vector2.new(0.5, 0.5)
+    Main.Position = UDim2.new(0.5, 0, 0.5, 30)
     Main.Size = UDim2.fromOffset(FinalWidth * 0.90, FinalHeight * 0.90)
     Main.BackgroundTransparency = 1
 
-    -- Loading desliza para cima + fade.
-    local LoadingOut = Tween(
+    -- Loading: slide para cima + fade.
+    local LoadingOut = SafePlay(
         LoadingFadeGroup,
         {
             GroupTransparency = 1,
-            Position = UDim2.new(0,0,-1.05,0)
+            Position = UDim2.new(0, 0, -1.05, 0)
         },
         TweenInfo.new(0.95, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
     )
 
-    -- Main entra de baixo.
-    local MainIn = Tween(
+    -- Main: entrada suave de baixo.
+    local MainIn = SafePlay(
         Main,
         {
-            Position = UDim2.new(0.5,0,0.5,0),
-            Size = UDim2.fromOffset(FinalWidth,FinalHeight),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            Size = UDim2.fromOffset(FinalWidth, FinalHeight),
             BackgroundTransparency = 0
         },
         TweenInfo.new(0.85, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
     )
 
-    if MainIn then MainIn.Completed:Wait() end
+    if MainIn then
+        MainIn.Completed:Wait()
+    end
 
-    local Settle = Tween(
+    -- Pequeno acabamento final.
+    local Settle = SafePlay(
         Main,
         {Size = UDim2.fromOffset(FinalWidth * 0.985, FinalHeight * 0.985)},
         TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     )
-    if Settle then Settle.Completed:Wait() end
 
-    local SettleBack = Tween(
+    if Settle then
+        Settle.Completed:Wait()
+    end
+
+    local SettleBack = SafePlay(
         Main,
         {Size = UDim2.fromOffset(FinalWidth, FinalHeight)},
         TweenInfo.new(0.14, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
     )
-    if SettleBack then SettleBack.Completed:Wait() end
 
-    if LoadingOut then LoadingOut.Completed:Wait() end
+    if SettleBack then
+        SettleBack.Completed:Wait()
+    end
 
-    Main.Position = UDim2.new(0.5,0,0.5,0)
-    Main.Size = UDim2.fromOffset(FinalWidth,FinalHeight)
+    if LoadingOut then
+        LoadingOut.Completed:Wait()
+    end
+
+    Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+    Main.Size = UDim2.fromOffset(FinalWidth, FinalHeight)
     Main.BackgroundTransparency = 0
 
     if LoadingFadeGroup and LoadingFadeGroup.Parent then
         LoadingFadeGroup:Destroy()
     elseif LoadingScreen and LoadingScreen.Parent then
-        LoadingScreen:Destroy()
-    end
-end)     LoadingFadeGroup:Destroy()
-    elseif LoadingScreen.Parent then
         LoadingScreen:Destroy()
     end
 end)
@@ -3539,4 +3610,4 @@ RefreshToggleAccent()
 RefreshLinesAccent()
 ShowAim()
 
-print("NOVA HUB - STUDIO EDITION v5.1.2 carregado com sucesso!")
+print("NOVA HUB - STUDIO EDITION v5.1.3 carregado com sucesso!")
